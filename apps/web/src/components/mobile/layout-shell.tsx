@@ -1,0 +1,60 @@
+'use client';
+
+import Link from 'next/link';
+import { useLang } from '@/lib/i18n';
+
+interface LayoutUser {
+  id: number;
+  email?: string;
+}
+
+export function MobileLayoutShell({ children, user }: { children: React.ReactNode; user?: LayoutUser | null }) {
+  const { lang, setLang, t } = useLang();
+
+  const navItems = [
+    { href: '/', label: t('nav.articles') === '文章' ? '首页' : 'Home', icon: '🏠' },
+    { href: '/articles', label: t('nav.articles'), icon: '📰' },
+    { href: '/vocabulary', label: t('nav.vocabulary'), icon: '📚' },
+    { href: user ? '/vocabulary' : '/login', label: user ? (lang === 'zh' ? '我的' : 'Me') : t('nav.login'), icon: '👤' },
+  ];
+
+  return (
+    <div className="mobile-layout">
+      <header className="border-b bg-white sticky top-0 z-50 px-4 h-14 flex items-center justify-between">
+        <Link href="/" className="text-lg font-bold text-primary-600">
+          EnglishHub
+        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+            className="text-xs text-slate-400 border border-slate-200 rounded px-2 py-0.5"
+          >
+            {t('nav.lang_tip')}
+          </button>
+          {user && (
+            <span className="text-xs text-slate-500 truncate max-w-[120px]">
+              {user.email || `User #${user.id}`}
+            </span>
+          )}
+        </div>
+      </header>
+
+      <main className="flex-1 px-4 py-4">
+        {children}
+      </main>
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t h-16 flex items-center justify-around z-50">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-primary-600 transition-colors"
+          >
+            <span className="text-xl">{item.icon}</span>
+            <span className="text-xs">{item.label}</span>
+          </Link>
+        ))}
+      </nav>
+    </div>
+  );
+}

@@ -1,0 +1,237 @@
+'use client';
+
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+
+export type Lang = 'zh' | 'en';
+
+// ── Translation dictionaries ──
+const zh: Record<string, string> = {
+  'nav.articles': '文章',
+  'nav.vocabulary': '词汇',
+  'nav.ielts': '雅思',
+  'nav.login': '登录',
+  'nav.register': '注册',
+  'nav.logout': '退出登录',
+  'nav.my_vocab': '我的生词本',
+  'nav.lang_tip': 'English',
+
+  'home.title': '每天进步一点点，',
+  'home.title_hl': '轻松掌握英语',
+  'home.subtitle': '阅读外刊、积累词汇、模拟雅思考试——一站式英语学习平台',
+  'home.cta_logged': '开始阅读',
+  'home.cta_guest': '免费注册',
+  'home.browse': '浏览文章',
+
+  'home.f1_title': '外刊阅读',
+  'home.f1_desc': '精选来自顶级外刊的文章，点击任意单词即可查看音标、释义和例句，支持短语查询。',
+  'home.f2_title': '智能背单词',
+  'home.f2_desc': '基于间隔重复算法的生词本，支持 CET-4、CET-6、IELTS、TOEFL 等词书。',
+  'home.f3_title': '雅思模拟考试',
+  'home.f3_desc': '真实还原雅思官方考试界面，听力+阅读全真模拟，自动计时和评分。',
+
+  'login.title': '登录',
+  'login.email_tab': '邮箱登录',
+  'login.sms_tab': '短信登录',
+  'login.email_label': '邮箱',
+  'login.password_label': '密码',
+  'login.phone_label': '手机号',
+  'login.code_label': '验证码',
+  'login.send_code': '发送验证码',
+  'login.submit': '登录',
+  'login.submitting': '登录中...',
+  'login.no_account': '还没有账号？',
+  'login.signup': '免费注册',
+
+  'register.title': '注册',
+  'register.email_tab': '邮箱注册',
+  'register.sms_tab': '短信注册',
+  'register.nickname': '昵称',
+  'register.email_label': '邮箱',
+  'register.password_label': '密码',
+  'register.phone_label': '手机号',
+  'register.code_label': '验证码',
+  'register.send_code': '发送验证码',
+  'register.submit': '注册',
+  'register.submitting': '正在注册...',
+  'register.has_account': '已有账号？',
+  'register.login': '立即登录',
+
+  'vocab.title': '我的生词本',
+  'vocab.total': '共 {n} 个单词',
+  'vocab.empty': '生词本还是空的',
+  'vocab.empty_hint': '去阅读文章，点击单词加入生词本吧',
+  'vocab.browse': '浏览文章 →',
+  'vocab.remove': '移除',
+  'vocab.prev': '上一页',
+  'vocab.next': '下一页',
+
+  'article.back': '返回文章列表',
+  'article.load_fail': '文章未找到',
+  'article.back_short': '返回',
+  'article.translate': '翻译',
+  'article.translating': '翻译中...',
+  'article.no_trans': '暂无翻译',
+  'article.end': '— 已阅读完毕 —',
+  'article.filter_all': '全部',
+  'article.filter_beginner': '初级',
+  'article.filter_intermediate': '中级',
+  'article.filter_advanced': '高级',
+  'article.load_more': '加载更多',
+  'article.loading_more': '加载中...',
+  'article.all_loaded': '— 已加载全部 —',
+
+  'popup.loading': '正在查询中，请稍后',
+  'popup.add_vocab': '加入生词本',
+  'popup.remove_vocab': '从生词本移除',
+
+  'common.retry': '重试',
+  'common.back': '返回',
+  'common.none': '暂无',
+};
+
+const en: Record<string, string> = {
+  'nav.articles': 'Articles',
+  'nav.vocabulary': 'Vocabulary',
+  'nav.ielts': 'IELTS',
+  'nav.login': 'Login',
+  'nav.register': 'Sign Up',
+  'nav.logout': 'Logout',
+  'nav.my_vocab': 'My Vocabulary',
+  'nav.lang_tip': '中文',
+
+  'home.title': 'Master English, ',
+  'home.title_hl': 'One Day at a Time',
+  'home.subtitle': 'Read foreign journals, build vocabulary, and ace the IELTS — all in one place.',
+  'home.cta_logged': 'Start Reading',
+  'home.cta_guest': 'Get Started Free',
+  'home.browse': 'Browse Articles',
+
+  'home.f1_title': 'Journal Reading',
+  'home.f1_desc': 'Read articles from top sources. Click any word for instant translation, phonetics, and examples.',
+  'home.f2_title': 'Smart Vocabulary',
+  'home.f2_desc': 'Spaced repetition algorithm. Study by CET-4, CET-6, IELTS, TOEFL books.',
+  'home.f3_title': 'IELTS Mock Exams',
+  'home.f3_desc': 'Realistic IELTS exam interface. Listening + Reading with auto-timing and scoring.',
+
+  'login.title': 'Login',
+  'login.email_tab': 'Email',
+  'login.sms_tab': 'SMS',
+  'login.email_label': 'Email',
+  'login.password_label': 'Password',
+  'login.phone_label': 'Phone',
+  'login.code_label': 'Code',
+  'login.send_code': 'Send Code',
+  'login.submit': 'Login',
+  'login.submitting': 'Logging in...',
+  'login.no_account': "Don't have an account?",
+  'login.signup': 'Sign up',
+
+  'register.title': 'Create Account',
+  'register.email_tab': 'Email',
+  'register.sms_tab': 'SMS',
+  'register.nickname': 'Nickname',
+  'register.email_label': 'Email',
+  'register.password_label': 'Password',
+  'register.phone_label': 'Phone',
+  'register.code_label': 'Code',
+  'register.send_code': 'Send Code',
+  'register.submit': 'Create Account',
+  'register.submitting': 'Creating...',
+  'register.has_account': 'Already have an account?',
+  'register.login': 'Login',
+
+  'vocab.title': 'My Vocabulary',
+  'vocab.total': '{n} words',
+  'vocab.empty': 'Your vocabulary list is empty',
+  'vocab.empty_hint': 'Read articles and click words to add them',
+  'vocab.browse': 'Browse Articles →',
+  'vocab.remove': 'Remove',
+  'vocab.prev': 'Previous',
+  'vocab.next': 'Next',
+
+  'article.back': '← Back to Articles',
+  'article.load_fail': 'Article not found',
+  'article.back_short': '← Back',
+  'article.translate': 'Translate',
+  'article.translating': 'Translating...',
+  'article.no_trans': 'No translation yet',
+  'article.end': '— End of article —',
+  'article.filter_all': 'All',
+  'article.filter_beginner': 'Beginner',
+  'article.filter_intermediate': 'Intermediate',
+  'article.filter_advanced': 'Advanced',
+  'article.load_more': 'Load More',
+  'article.loading_more': 'Loading...',
+  'article.all_loaded': '— All loaded —',
+
+  'popup.loading': 'Looking up...',
+  'popup.add_vocab': 'Add to Vocabulary',
+  'popup.remove_vocab': 'Remove from Vocabulary',
+
+  'common.retry': 'Retry',
+  'common.back': 'Back',
+  'common.none': 'None',
+};
+
+const dictionaries = { zh, en };
+
+// ── Context ──
+interface LangContextType {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}
+
+const LangContext = createContext<LangContextType>({
+  lang: 'zh',
+  setLang: () => {},
+  t: (k) => k,
+});
+
+export function useLang() {
+  return useContext(LangContext);
+}
+
+export function tFn(lang: Lang) {
+  const dict = dictionaries[lang];
+  return (key: string, vars?: Record<string, string | number>): string => {
+    let text = dict[key] || key;
+    if (vars) {
+      for (const [k, v] of Object.entries(vars)) {
+        text = text.replace(`{${k}}`, String(v));
+      }
+    }
+    return text;
+  };
+}
+
+// ── Cookie helpers ──
+export function getLangCookie(): Lang {
+  if (typeof document === 'undefined') return 'zh';
+  const match = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
+  return (match?.[1] === 'en' ? 'en' : 'zh') as Lang;
+}
+
+export function setLangCookie(lang: Lang) {
+  document.cookie = `lang=${lang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
+}
+
+// ── Provider ──
+
+export function LangProvider({ children, initialLang = 'zh' }: { children: ReactNode; initialLang?: Lang }) {
+  const [lang, setLangState] = useState<Lang>(initialLang);
+
+  const setLang = useCallback((l: Lang) => {
+    setLangState(l);
+    setLangCookie(l);
+    window.location.reload();
+  }, []);
+
+  const t = tFn(lang);
+
+  return (
+    <LangContext.Provider value={{ lang, setLang, t }}>
+      {children}
+    </LangContext.Provider>
+  );
+}

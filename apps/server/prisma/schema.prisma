@@ -1,0 +1,384 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================
+// AUTH & USERS
+// ========================
+
+model User {
+  id                Int       @id @default(autoincrement())
+  email             String?   @unique @db.VarChar(255)
+  phone             String?   @unique @db.VarChar(20)
+  passwordHash      String?   @db.VarChar(255)
+  nickname          String    @db.VarChar(100)
+  avatarUrl         String?   @db.VarChar(500)
+
+  wechatUnionId     String?   @unique @db.VarChar(64)
+  wechatOpenId      String?   @unique @db.VarChar(64)
+
+  // Membership (Phase 6)
+  membershipId        Int?
+  membership          Membership?       @relation(fields: [membershipId], references: [id])
+  membershipExpiresAt DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  refreshTokens          RefreshToken[]
+  payments               Payment[]
+  userVocabulary         UserVocabulary[]
+  ieltsAttempts          IELTSAttempt[]
+  articleProgress        ArticleProgress[]
+  usageQuotas            UserUsageQuota[]
+  vocabularyBookProgress VocabularyBookProgress[]
+  vocabularyReviewLogs   VocabularyReviewLog[]
+
+  @@index([membershipId])
+  @@index([email])
+  @@index([phone])
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @db.VarChar(500)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model SmsCode {
+  id        Int      @id @default(autoincrement())
+  phone     String   @db.VarChar(20)
+  code      String   @db.VarChar(10)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, code])
+}
+
+// ========================
+// AI USAGE QUOTAS
+// ========================
+
+model UserUsageQuota {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotaType     String   @db.VarChar(50)
+  dailyLimit    Int      @default(5)
+  usedToday     Int      @default(0)
+  lastResetDate DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, quotaType])
+}
+
+// ========================
+// MEMBERSHIP & PAYMENTS (Phase 6)
+// ========================
+
+model Membership {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(100)
+  slug        String     @unique @db.VarChar(50)
+  description String?    @db.Text
+  priceMonthly Decimal   @db.Decimal(10, 2)
+  priceYearly  Decimal   @db.Decimal(10, 2)
+  features    String     @db.Text
+  sortOrder   Int        @default(0)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  users       User[]
+  payments    Payment[]
+}
+
+model Payment {
+  id              Int        @id @default(autoincrement())
+  userId          Int
+  user            User       @relation(fields: [userId], references: [id])
+  membershipId    Int
+  membership      Membership @relation(fields: [membershipId], references: [id])
+  amount          Decimal    @db.Decimal(10, 2)
+  currency        String     @default("CNY") @db.VarChar(10)
+  channel         String     @db.VarChar(20)
+  providerOrderId String?    @unique @db.VarChar(128)
+  status          String     @default("pending") @db.VarChar(20)
+  paymentUrl      String?    @db.Text
+  paidAt          DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ========================
+// ARTICLES & JOURNAL READING
+// ========================
+
+model Article {
+  id                Int       @id @default(autoincrement())
+  title             String    @db.VarChar(500)
+  slug              String    @unique @db.VarChar(500)
+  source            String?   @db.VarChar(255)
+  summary           String?   @db.Text
+  content           String    @db.LongText
+  difficultyLevel   String    @default("intermediate") @db.VarChar(20)
+  wordCount         Int       @default(0)
+  estimatedMinutes  Int       @default(5)
+  coverImage        String?   @db.VarChar(500)
+  publishDate       DateTime?
+  isMembershipOnly  Boolean   @default(false)
+  isPublished       Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  paragraphs        ArticleParagraph[]
+  articleProgress   ArticleProgress[]
+
+  @@index([difficultyLevel])
+  @@index([isMembershipOnly])
+  @@index([isPublished])
+}
+
+model ArticleParagraph {
+  id              Int       @id @default(autoincrement())
+  articleId       Int
+  article         Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  paragraphIndex  Int
+  contentEn       String    @db.Text
+  contentZh       String?   @db.Text
+  createdAt       DateTime  @default(now())
+
+  @@index([articleId, paragraphIndex])
+}
+
+model WordAnnotation {
+  id              Int       @id @default(autoincrement())
+  word            String    @unique @db.VarChar(255)
+  phonetic        String?   @db.VarChar(255)
+  phoneticUk      String?   @db.VarChar(255)
+  phoneticUs      String?   @db.VarChar(255)
+  partOfSpeech    String?   @db.VarChar(50)
+  translation     String    @db.VarChar(500)
+  definitionEn    String?   @db.Text
+  exampleSentence String?   @db.Text
+  examplesJson    String?   @db.Text
+  aiAnalysis      String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  userVocabulary  UserVocabulary[]
+}
+
+model UserVocabulary {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordAnnotationId  Int
+  wordAnnotation    WordAnnotation @relation(fields: [wordAnnotationId], references: [id])
+  addedFrom         String?   @db.VarChar(50)
+  masteryLevel      Int       @default(0)
+  nextReviewAt      DateTime?
+  reviewCount       Int       @default(0)
+  lastReviewedAt    DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@unique([userId, wordAnnotationId])
+  @@index([userId, nextReviewAt])
+  @@index([userId, masteryLevel])
+}
+
+model ArticleProgress {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId       Int
+  article         Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  isCompleted     Boolean   @default(false)
+  scrollPercent   Int       @default(0)
+  timeSpentSeconds Int     @default(0)
+  lastReadAt      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, articleId])
+}
+
+// ========================
+// VOCABULARY BOOKS
+// ========================
+
+model VocabularyBook {
+  id                Int       @id @default(autoincrement())
+  name              String    @db.VarChar(255)
+  slug              String    @unique @db.VarChar(100)
+  description       String?   @db.Text
+  category          String    @db.VarChar(50)
+  totalWords        Int       @default(0)
+  isMembershipOnly  Boolean   @default(false)
+  sortOrder         Int       @default(0)
+  isPublished       Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  words             VocabularyWord[]
+  userProgress      VocabularyBookProgress[]
+
+  @@index([category])
+  @@index([isMembershipOnly])
+}
+
+model VocabularyWord {
+  id              Int       @id @default(autoincrement())
+  bookId          Int
+  book            VocabularyBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  word            String    @db.VarChar(255)
+  phonetic        String?   @db.VarChar(255)
+  partOfSpeech    String?   @db.VarChar(50)
+  translation     String    @db.VarChar(500)
+  definitionEn    String?   @db.Text
+  exampleSentence String?   @db.Text
+  wordIndex       Int
+  createdAt       DateTime  @default(now())
+
+  @@index([bookId, wordIndex])
+}
+
+model VocabularyBookProgress {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId          Int
+  book            VocabularyBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  learnedCount    Int       @default(0)
+  reviewingCount  Int       @default(0)
+  masteredCount   Int       @default(0)
+  lastStudiedAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, bookId])
+}
+
+model VocabularyReviewLog {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordId          Int
+  quality         Int
+  reviewDurationMs Int
+  reviewedAt      DateTime  @default(now())
+
+  @@index([userId, wordId])
+  @@index([userId, reviewedAt])
+}
+
+// ========================
+// IELTS MOCK EXAMS (Desktop Only)
+// ========================
+
+model IELTSExam {
+  id                Int       @id @default(autoincrement())
+  title             String    @db.VarChar(255)
+  type              String    @db.VarChar(20)
+  isFullExam        Boolean   @default(false)
+  difficultyLevel   String    @default("intermediate") @db.VarChar(20)
+  totalQuestions    Int       @default(0)
+  totalSections     Int       @default(1)
+  durationMinutes   Int
+  audioUrl          String?   @db.VarChar(500)
+  isMembershipOnly  Boolean   @default(false)
+  isPublished       Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sections          IELTSExamSection[]
+  attempts          IELTSAttempt[]
+
+  @@index([type])
+  @@index([isPublished])
+}
+
+model IELTSExamSection {
+  id            Int              @id @default(autoincrement())
+  examId        Int
+  exam          IELTSExam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  sectionIndex  Int
+  title         String           @db.VarChar(255)
+  instructions  String?          @db.Text
+  createdAt     DateTime         @default(now())
+
+  questions     IELTSQuestion[]
+
+  @@index([examId, sectionIndex])
+}
+
+model IELTSQuestion {
+  id                Int              @id @default(autoincrement())
+  sectionId         Int
+  section           IELTSExamSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  questionIndex     Int
+  questionType      String           @db.VarChar(30)
+  questionText      String?          @db.Text
+  options           String?          @db.Text
+  correctAnswer     String           @db.Text
+  score             Decimal          @default(1.0) @db.Decimal(5, 2)
+  answerExplanation String?          @db.Text
+  passageText       String?          @db.LongText
+  createdAt         DateTime         @default(now())
+
+  userAnswers       IELTSUserAnswer[]
+
+  @@index([sectionId, questionIndex])
+}
+
+model IELTSAttempt {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  examId          Int
+  exam            IELTSExam @relation(fields: [examId], references: [id])
+  status          String    @default("in_progress") @db.VarChar(20)
+  startedAt       DateTime  @default(now())
+  submittedAt     DateTime?
+  totalScore      Decimal?  @db.Decimal(5, 2)
+  maxScore        Decimal   @db.Decimal(5, 2)
+  timeSpentSeconds Int?
+  isFreeTrial     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  answers         IELTSUserAnswer[]
+
+  @@index([userId, examId])
+  @@index([userId, startedAt])
+}
+
+model IELTSUserAnswer {
+  id          Int       @id @default(autoincrement())
+  attemptId   Int
+  attempt     IELTSAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId  Int
+  question    IELTSQuestion @relation(fields: [questionId], references: [id])
+  userAnswer  String?   @db.Text
+  isCorrect   Boolean?
+  scoreEarned Decimal?  @db.Decimal(5, 2)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+}

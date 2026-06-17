@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-slate-900 antialiased;
+  }
+}
+
+@layer components {
+  /* Word clickable in article reader */
+  .word-clickable {
+    @apply cursor-pointer rounded px-0.5 transition-colors hover:bg-yellow-100;
+  }
+
+  /* Word already in user's vocabulary */
+  .word-in-vocab {
+    @apply border-b-2 border-primary-400 cursor-pointer rounded px-0.5 transition-colors hover:bg-primary-50;
+  }
+
+  /* PC layout */
+  .pc-layout {
+    @apply min-h-screen flex flex-col;
+  }
+
+  /* Mobile layout */
+  .mobile-layout {
+    @apply min-h-screen flex flex-col pb-16;
+  }
+}

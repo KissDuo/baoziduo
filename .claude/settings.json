@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm dev)",
+      "Bash(pnpm --filter * typecheck)",
+      "Bash(pnpm --filter * build)",
+      "Bash(curl *)",
+      "Bash(lsof -i :*)",
+      "Bash(pkill -f *)",
+      "Bash(npx prisma generate)",
+      "Bash(npx prisma migrate diff *)",
+      "Bash(mkdir -p *)",
+      "Bash(ls -la *)",
+      "Bash(cat *)"
+    ]
+  }
+}
