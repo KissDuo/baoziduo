@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api-client';
 import { useLang } from '@/lib/i18n';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
   const { t } = useLang();
   const [mode, setMode] = useState<'email' | 'sms'>('email');
   const [email, setEmail] = useState('');
@@ -23,7 +25,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await api.post('/auth/login/email', { email, password });
-      router.push('/');
+      router.push(redirect);
       router.refresh();
     } catch (err: any) {
       setError(err.message || t('login.submit') + ' ' + t('common.retry'));
@@ -47,7 +49,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await api.post('/auth/login/sms/verify', { phone, code });
-      router.push('/');
+      router.push(redirect);
       router.refresh();
     } catch (err: any) {
       setError(err.message || t('login.submit') + ' ' + t('common.retry'));

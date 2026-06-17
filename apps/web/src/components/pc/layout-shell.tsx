@@ -1,7 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
+
+const NAV_LINKS = [
+  { href: '/articles', key: 'nav.articles', match: '/articles' },
+  { href: '/vocabulary', key: 'nav.vocabulary', match: '/vocabulary' },
+  { href: '/ielts', key: 'nav.ielts', match: '/ielts' },
+];
 
 interface LayoutUser {
   id: number;
@@ -10,6 +17,7 @@ interface LayoutUser {
 
 export function PCLayoutShell({ children, user }: { children: React.ReactNode; user?: LayoutUser | null }) {
   const { lang, setLang, t } = useLang();
+  const pathname = usePathname();
 
   return (
     <div className="pc-layout">
@@ -20,15 +28,22 @@ export function PCLayoutShell({ children, user }: { children: React.ReactNode; u
               EnglishHub
             </Link>
             <nav className="flex items-center gap-6">
-              <Link href="/articles" className="text-slate-600 hover:text-slate-900 transition-colors">
-                {t('nav.articles')}
-              </Link>
-              <Link href="/vocabulary" className="text-slate-600 hover:text-slate-900 transition-colors">
-                {t('nav.vocabulary')}
-              </Link>
-              <Link href="/ielts" className="text-slate-600 hover:text-slate-900 transition-colors">
-                {t('nav.ielts')}
-              </Link>
+              {NAV_LINKS.map((link) => {
+                const isActive = pathname.startsWith(link.match);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`transition-colors ${
+                      isActive
+                        ? 'text-primary-600 font-semibold border-b-2 border-primary-500 pb-0.5'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {t(link.key)}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
           <div className="flex items-center gap-3">

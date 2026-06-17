@@ -27,6 +27,26 @@ class ApiClient {
     });
 
     if (!res.ok) {
+      // 401 → try refresh token, then retry once
+      if (res.status === 401 && typeof window !== 'undefined' && !(options.headers as any)?.['x-retry']) {
+        try {
+          const refreshRes = await fetch(`${this.baseUrl}/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+          if (refreshRes.ok) {
+            // Retry the original request with refreshed token
+            return this.request<T>(path, {
+              ...options,
+              headers: { ...options.headers, 'x-retry': '1' },
+            });
+          }
+        } catch {}
+        // Refresh failed — redirect to login
+        const current = window.location.pathname + window.location.search;
+        window.location.href = `/login?redirect=${encodeURIComponent(current)}`;
+        throw new ApiError(401, 'Please login first', 'AUTH_REQUIRED');
+      }
       const body = await res.json().catch(() => ({}));
       throw new ApiError(res.status, body.error || 'Request failed', body.code);
     }
