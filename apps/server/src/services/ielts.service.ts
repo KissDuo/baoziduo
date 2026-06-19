@@ -69,6 +69,8 @@ export class IeltsService {
         sectionIndex: s.sectionIndex,
         title: s.title,
         instructions: s.instructions,
+        audioUrl: s.audioUrl,
+        imageUrl: s.imageUrl,
         questions: s.questions.map((q) => ({
           id: q.id,
           sectionId: q.sectionId,

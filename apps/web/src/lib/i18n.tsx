@@ -6,7 +6,7 @@ export type Lang = 'zh' | 'en';
 
 // ── Translation dictionaries ──
 const zh: Record<string, string> = {
-  'nav.articles': '文章',
+  'nav.articles': '外刊',
   'nav.vocabulary': '词汇',
   'nav.ielts': '雅思',
   'nav.login': '登录',
@@ -18,9 +18,9 @@ const zh: Record<string, string> = {
   'home.title': '每天进步一点点，',
   'home.title_hl': '轻松掌握英语',
   'home.subtitle': '阅读外刊、积累词汇、模拟雅思考试——一站式英语学习平台',
+  'home.browse': '浏览外刊',
   'home.cta_logged': '开始阅读',
   'home.cta_guest': '免费注册',
-  'home.browse': '浏览文章',
 
   'home.f1_title': '外刊阅读',
   'home.f1_desc': '精选来自顶级外刊的文章，点击任意单词即可查看音标、释义和例句，支持短语查询。',
@@ -90,7 +90,7 @@ const zh: Record<string, string> = {
 };
 
 const en: Record<string, string> = {
-  'nav.articles': 'Articles',
+  'nav.articles': 'Journals',
   'nav.vocabulary': 'Vocabulary',
   'nav.ielts': 'IELTS',
   'nav.login': 'Login',
@@ -104,7 +104,7 @@ const en: Record<string, string> = {
   'home.subtitle': 'Read foreign journals, build vocabulary, and ace the IELTS — all in one place.',
   'home.cta_logged': 'Start Reading',
   'home.cta_guest': 'Get Started Free',
-  'home.browse': 'Browse Articles',
+  'home.browse': 'Browse Journals',
 
   'home.f1_title': 'Journal Reading',
   'home.f1_desc': 'Read articles from top sources. Click any word for instant translation, phonetics, and examples.',

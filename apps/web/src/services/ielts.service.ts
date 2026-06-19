@@ -15,6 +15,8 @@ export interface IeltsSection {
   sectionIndex: number;
   title: string;
   instructions: string | null;
+  audioUrl: string | null;
+  imageUrl: string | null;
   questions: IeltsQuestion[];
 }
 

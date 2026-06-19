@@ -6,7 +6,6 @@ import { useLang } from '@/lib/i18n';
 
 const NAV_LINKS = [
   { href: '/articles', key: 'nav.articles', match: '/articles' },
-  { href: '/vocabulary', key: 'nav.vocabulary', match: '/vocabulary' },
   { href: '/ielts', key: 'nav.ielts', match: '/ielts' },
 ];
 

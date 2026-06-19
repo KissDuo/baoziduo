@@ -1,6 +1,26 @@
 import prisma from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
 
+function formatWordAnnotation(wa: any) {
+  let examples = null;
+  if (wa.examplesJson) { try { examples = JSON.parse(wa.examplesJson); } catch {} }
+  let levels = null;
+  if (wa.levels) { try { levels = JSON.parse(wa.levels); } catch { levels = wa.levels; } }
+  return {
+    word: wa.word,
+    phonetic: wa.phonetic,
+    phoneticUk: wa.phoneticUk || wa.phonetic || null,
+    phoneticUs: wa.phoneticUs || wa.phonetic || null,
+    translation: wa.translation,
+    partOfSpeech: wa.partOfSpeech,
+    definitionEn: wa.definitionEn,
+    exampleSentence: wa.exampleSentence,
+    aiAnalysis: wa.aiAnalysis,
+    examples,
+    levels,
+  };
+}
+
 export class VocabularyService {
   // ── Add Word to Vocabulary ──
   async addWord(userId: number, rawWord: string, addedFrom?: string) {
@@ -39,15 +59,7 @@ export class VocabularyService {
       // Already in vocabulary — return existing with word annotation
       return {
         id: existing.id,
-        word: {
-          word: annotation.word,
-          phonetic: annotation.phonetic,
-          translation: annotation.translation,
-          partOfSpeech: annotation.partOfSpeech,
-          definitionEn: annotation.definitionEn,
-          exampleSentence: annotation.exampleSentence,
-          aiAnalysis: annotation.aiAnalysis,
-        },
+        word: formatWordAnnotation(annotation),
         masteryLevel: existing.masteryLevel,
         nextReviewAt: existing.nextReviewAt?.toISOString() ?? null,
         reviewCount: existing.reviewCount,
@@ -66,15 +78,7 @@ export class VocabularyService {
 
     return {
       id: vocab.id,
-      word: {
-        word: annotation.word,
-        phonetic: annotation.phonetic,
-        translation: annotation.translation,
-        partOfSpeech: annotation.partOfSpeech,
-        definitionEn: annotation.definitionEn,
-        exampleSentence: annotation.exampleSentence,
-        aiAnalysis: annotation.aiAnalysis,
-      },
+      word: formatWordAnnotation(annotation),
       masteryLevel: vocab.masteryLevel,
       nextReviewAt: vocab.nextReviewAt?.toISOString() ?? null,
       reviewCount: vocab.reviewCount,
@@ -90,9 +94,7 @@ export class VocabularyService {
     const [items, total] = await Promise.all([
       prisma.userVocabulary.findMany({
         where,
-        include: {
-          wordAnnotation: true,
-        },
+        include: { wordAnnotation: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -102,15 +104,7 @@ export class VocabularyService {
 
     const serialized = items.map((v) => ({
       id: v.id,
-      word: {
-        word: v.wordAnnotation.word,
-        phonetic: v.wordAnnotation.phonetic,
-        translation: v.wordAnnotation.translation,
-        partOfSpeech: v.wordAnnotation.partOfSpeech,
-        definitionEn: v.wordAnnotation.definitionEn,
-        exampleSentence: v.wordAnnotation.exampleSentence,
-        aiAnalysis: v.wordAnnotation.aiAnalysis,
-      },
+      word: formatWordAnnotation(v.wordAnnotation),
       masteryLevel: v.masteryLevel,
       nextReviewAt: v.nextReviewAt?.toISOString() ?? null,
       reviewCount: v.reviewCount,

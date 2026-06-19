@@ -16,8 +16,8 @@ export function MobileLayoutShell({ children, user }: { children: React.ReactNod
   const navItems = [
     { href: '/', match: '/', label: lang === 'zh' ? '首页' : 'Home', icon: '🏠' },
     { href: '/articles', match: '/articles', label: t('nav.articles'), icon: '📰' },
-    { href: '/vocabulary', match: '/vocabulary', label: t('nav.vocabulary'), icon: '📚' },
     { href: user ? '/vocabulary' : '/login', match: user ? '/vocabulary' : '/login', label: user ? (lang === 'zh' ? '我的' : 'Me') : t('nav.login'), icon: '👤' },
+    { href: '/ielts', match: '/ielts', label: t('nav.ielts'), icon: '✈️' },
   ];
 
   return (

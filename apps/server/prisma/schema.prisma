@@ -178,6 +178,7 @@ model WordAnnotation {
   exampleSentence String?   @db.Text
   examplesJson    String?   @db.Text
   aiAnalysis      String?   @db.Text
+  levels          String?   @db.VarChar(500)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -320,6 +321,8 @@ model IELTSExamSection {
   sectionIndex  Int
   title         String           @db.VarChar(255)
   instructions  String?          @db.Text
+  audioUrl      String?          @db.VarChar(500)
+  imageUrl      String?          @db.VarChar(500)
   createdAt     DateTime         @default(now())
 
   questions     IELTSQuestion[]

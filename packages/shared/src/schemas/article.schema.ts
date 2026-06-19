@@ -51,11 +51,16 @@ export const wordAnnotationSchema = z.object({
   exampleSentence: z.string().nullable(),
   examples: z.array(wordExampleSchema).nullable(),
   aiAnalysis: z.string().nullable(),
+  levels: z.string().nullable(),
 });
 
 export const userVocabularySchema = z.object({
   id: z.number(),
-  word: wordAnnotationSchema,
+  word: wordAnnotationSchema.extend({
+    phoneticUk: z.string().nullable().optional(),
+    phoneticUs: z.string().nullable().optional(),
+    examples: z.array(wordExampleSchema).nullable().optional(),
+  }),
   masteryLevel: z.number().min(0).max(5),
   nextReviewAt: z.string().nullable(),
   reviewCount: z.number(),

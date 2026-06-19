@@ -5,16 +5,16 @@ import Link from 'next/link';
 import { ieltsService } from '@/services/ielts.service';
 import type { IeltsExamItem } from '@/services/ielts.service';
 
-type IeltsType = 'all' | 'reading' | 'listening';
+type IeltsType = 'listening' | 'reading';
 
 export default function IeltsPage() {
   const [exams, setExams] = useState<IeltsExamItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState<IeltsType>('all');
+  const [typeFilter, setTypeFilter] = useState<IeltsType>('listening');
   const [bookFilter, setBookFilter] = useState<string>('all');
 
   useEffect(() => {
-    ieltsService.listExams(typeFilter === 'all' ? undefined : typeFilter)
+    ieltsService.listExams(typeFilter)
       .then(setExams)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -52,9 +52,8 @@ export default function IeltsPage() {
   }, [exams, bookFilter]);
 
   const TYPE_TABS: { value: IeltsType; label: string }[] = [
-    { value: 'all', label: '全部' },
-    { value: 'reading', label: '📖 阅读' },
     { value: 'listening', label: '🎧 听力' },
+    { value: 'reading', label: '📖 阅读' },
   ];
 
   return (
@@ -127,18 +126,13 @@ export default function IeltsPage() {
       {!loading && filtered.map((exam) => (
         <Link
           key={exam.id}
-          href={exam.type === 'listening' ? '/ielts' : `/ielts/exam/${exam.id}`}
-          className={`block bg-white border border-slate-200 rounded-xl p-6 mb-4 transition-all ${
-            exam.type === 'listening' ? 'opacity-60 hover:opacity-80' : 'hover:shadow-md hover:border-primary-200'
-          }`}
+          href={exam.type === 'listening' ? `/ielts/listening/${exam.id}` : `/ielts/exam/${exam.id}`}
+          className={`block bg-white border border-slate-200 rounded-xl p-6 mb-4 transition-all hover:shadow-md hover:border-primary-200`}
         >
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900 mb-1">
                 {exam.title}
-                {exam.type === 'listening' && (
-                  <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">即将上线</span>
-                )}
               </h2>
               <div className="flex items-center gap-4 text-sm text-slate-500">
                 <span>{exam.type === 'reading' ? '📖 阅读' : '🎧 听力'}</span>
