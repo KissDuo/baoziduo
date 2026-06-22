@@ -300,7 +300,7 @@ export const NoteGroup = memo(function NoteGroup({
         return <p key={li} className="leading-8">{parts.map((p, pi) => {
           const m = p.match(/^\{Q(\d+)\}$/);
           if (m) { const qi = parseInt(m[1]!); const q = qMap.get(qi);
-            return q ? <BlankInput key={pi} qid={q.id} initial={answers[q.id]||''} attemptId={attemptId} onSave={onSave} />
+            return q ? <span key={pi} className="inline-flex items-center gap-0.5 align-baseline"><b className="text-xs text-slate-600">{q.questionIndex}</b><BlankInput qid={q.id} initial={answers[q.id]||''} attemptId={attemptId} onSave={onSave} /></span>
               : <span key={pi} className="border-b-2 border-slate-400 px-1">______</span>; }
           return <span key={pi}>{p}</span>;
         })}</p>;
