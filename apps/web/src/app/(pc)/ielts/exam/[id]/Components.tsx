@@ -235,6 +235,51 @@ export const MatchingGroup = memo(function MatchingGroup({
 });
 
 // ═══════════════════════════════════════════
+// SingleChoice — 单选题 (radio)
+// ═══════════════════════════════════════════
+export const SingleChoice = memo(function SingleChoice({ q, ans, onSave }: {
+  q: any; ans: string; onSave: (qid: number, val: string) => void;
+}) {
+  let options: string[] = [];
+  if (q.options) { try { options = JSON.parse(q.options); } catch {} }
+  return (
+    <div className="py-2.5 border-b border-slate-100 last:border-0">
+      <div className="text-xs text-slate-400 mb-1">第 {q.questionIndex} 题</div>
+      {q.questionText && <p className="text-sm font-bold text-slate-800 mb-3">{q.questionText}</p>}
+      {options.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {options.map((opt, i) => (
+            <label key={i} className={`flex items-start gap-2 p-2.5 rounded border cursor-pointer text-sm ${ans===opt?'border-primary-400 bg-primary-50':'border-slate-200 hover:bg-slate-50'}`}>
+              <input type="radio" name={`q-${q.id}`} checked={ans===opt} onChange={()=>onSave(q.id,opt)} className="mt-0.5 flex-shrink-0" />
+              <span className="text-slate-800">{opt}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════
+// TrueFalse — 判断题 (TRUE / FALSE / NOT GIVEN)
+// ═══════════════════════════════════════════
+export const TrueFalse = memo(function TrueFalse({ q, ans, onSave }: {
+  q: any; ans: string; onSave: (qid: number, val: string) => void;
+}) {
+  return (
+    <div className="py-2.5 border-b border-slate-100 last:border-0">
+      <div className="text-xs text-slate-400 mb-1">第 {q.questionIndex} 题</div>
+      {q.questionText && <p className="text-sm font-bold text-slate-800 mb-3">{q.questionText}</p>}
+      <div className="flex gap-2">
+        {['TRUE','FALSE','NOT GIVEN'].map(o => (
+          <button key={o} onClick={()=>onSave(q.id,o)} className={`px-4 py-1.5 rounded border text-xs font-medium ${ans===o?'bg-primary-600 text-white border-primary-600':'border-slate-300 text-slate-600 hover:bg-slate-50'}`}>{o}</button>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════
 // NoteGroup — {QX} 格式笔记
 // ═══════════════════════════════════════════
 export const NoteGroup = memo(function NoteGroup({
