@@ -25,7 +25,7 @@ export const ieltsQuestionSchema = z.object({
   id: z.number(),
   sectionId: z.number(),
   questionIndex: z.number(),
-  questionType: z.enum(['multiple_choice', 'fill_blank', 'true_false', 'matching', 'short_answer']),
+  questionType: z.enum(['multiple_choice', 'fill_blank', 'true_false', 'matching', 'short_answer', 'map_labelling']),
   questionText: z.string().nullable(),
   options: z.string().nullable(), // JSON string
   score: z.number(),

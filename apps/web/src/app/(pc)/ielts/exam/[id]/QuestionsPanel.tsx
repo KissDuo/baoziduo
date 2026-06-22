@@ -1,163 +1,74 @@
 'use client';
 
-import { memo, useRef } from 'react';
+import { memo } from 'react';
 import { useTextHighlight } from '../../useTextHighlight';
+import { BlankInput, FillBlank, TableGroup, MultiChoiceGroup, MatchingGroup, NoteGroup } from './Components';
 
-// ── Stable blank input ──
-function BlankInput({ qid, initial, attemptId, onSave }: {
-  qid: number; initial: string; attemptId?: number; onSave: (qid: number, val: string) => void;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  const cb = useRef(onSave);
-  const aid = useRef(attemptId);
-  cb.current = onSave;
-  aid.current = attemptId;
-
-  return (
-    <input
-      ref={ref}
-      type="text"
-      defaultValue={initial}
-      onBlur={() => {
-        const v = ref.current?.value || '';
-        if (v.trim() && aid.current) cb.current(qid, v);
-      }}
-      className="border border-dashed border-slate-400 rounded px-2 py-0.5 outline-none text-sm bg-transparent text-center focus:border-primary-500"
-      style={{ width: `${Math.max(60, (initial.length || 8) * 11)}px` }}
-    />
-  );
+// ── Group detection helpers ──
+function getMatchingGroup(qs: any[]) {
+  const first = qs.find((q: any) => q.questionType === 'matching');
+  if (!first) return null;
+  let opts: string[] = [];
+  try { opts = JSON.parse(first.options); } catch { return null; }
+  const group = qs.filter((q: any) => q.questionType === 'matching' && q.options === first.options);
+  if (group.length < 2) return null;
+  return { ids: group.map((g:any)=>g.id), items: group.map((g:any)=>({qid:g.id,qi:g.questionIndex,text:g.questionText||''})), options:opts };
 }
 
-function renderFillBlank(text: string, qid: number, ans: string, label: string, attemptId?: number, onSave?: (qid: number, val: string) => void) {
-  const parts = text.split(/(_{2,}|\.{3,})/);
-  return parts.map((part, i) => {
-    if (/^_{2,}$/.test(part) || /^\.{3,}$/.test(part)) {
-      return (
-        <span key={`b-${qid}-${i}`} className="inline-flex items-center gap-0.5 mx-0.5">
-          <b className="text-xs text-slate-600">{label}</b>
-          <BlankInput qid={qid} initial={ans} attemptId={attemptId} onSave={onSave!} />
-        </span>
-      );
+function getMultiChoiceGroups(qs: any[], exclude: Set<number>) {
+  const groups: { ids: number[]; indices: number[]; options: string[]; firstId: number }[] = [];
+  for (let i = 0; i < qs.length; i++) {
+    const q = qs[i]!;
+    if (q.questionType !== 'multiple_choice' || !q.options || exclude.has(q.id)) continue;
+    const group = [q];
+    for (let j = i+1; j < qs.length && qs[j]!.questionType==='multiple_choice' && qs[j]!.options===q.options && !exclude.has(qs[j]!.id); j++) group.push(qs[j]!);
+    if (group.length >= 2) {
+      let opts: string[] = [];
+      try { opts = JSON.parse(q.options); } catch {}
+      groups.push({ ids: group.map(g=>g.id), indices: group.map(g=>g.questionIndex), options:opts, firstId: group[0]!.id });
+      i += group.length - 1;
     }
-    return <span key={`t-${qid}-${i}`}>{part}</span>;
-  });
+  }
+  return groups;
 }
 
-// ── Parse [table] data from passageText ──
-function parseTableData(text: string): { headers: string[]; rows: string[][] } | null {
-  if (!text || !text.trim().startsWith('[table]')) return null;
-  const lines = text.trim().split('\n').slice(1).filter(l => l.trim());
-  if (lines.length < 2) return null;
-  const headers = lines[0]!.split('|').map(h => h.trim());
-  const rows = lines.slice(1).map(line => line.split('|').map(c => c.trim()));
-  return { headers, rows };
+function getTableGroup(qs: any[]) {
+  const first = qs.find((q: any) => q.passageText && q.passageText.trim().startsWith('[table]'));
+  if (!first) return null;
+  const start = first.questionIndex;
+  // Collect fill_blank questions starting from the table question
+  const tableQs = qs.filter((q: any) => q.questionIndex >= start && q.questionIndex < start + 10 &&
+    (q.questionType === 'fill_blank' || (q.passageText && q.passageText.trim().startsWith('[table]'))));
+  return { questions: tableQs, firstIndex: start };
 }
 
-// ── Table question component ──
-const TableQuestionGroup = memo(function TableQuestionGroup({
-  questions, answers, attemptId, onSave,
-}: {
-  questions: any[]; answers: Record<string, string>; attemptId?: number; onSave: (qid: number, val: string) => void;
-}) {
-  if (!questions.length) return null;
-  const firstQ = questions[0]!;
-  const table = parseTableData(firstQ.passageText || '');
-  if (!table) return null;
-
-  // Map questions to table cells by questionIndex
-  const qMap = new Map(questions.map(q => [q.questionIndex, q]));
-
-  return (
-    <div className="py-4 border-b border-slate-100 overflow-x-auto">
-      <table className="w-full text-sm border-collapse table-auto">
-        <thead>
-          <tr className="bg-slate-100">
-            {table.headers.map((h, i) => (
-              <th key={i} className="border border-slate-300 px-3 py-2 text-left font-medium text-slate-700 whitespace-nowrap">{h || ' '}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {table.rows.map((row, ri) => (
-            <tr key={ri}>
-              {row.map((cell, ci) => {
-                if (/^_{2,}$/.test(cell) || /^\.{3,}$/.test(cell)) {
-                  const flatBlankIndex = table.rows.slice(0, ri).reduce((sum, r) => sum + r.filter(c => /^_{2,}$/.test(c) || /^\.{3,}$/.test(c)).length, 0)
-                    + row.slice(0, ci).filter(c => /^_{2,}$/.test(c) || /^\.{3,}$/.test(c)).length;
-                  const targetIndex = firstQ.questionIndex + flatBlankIndex;
-                  const q = qMap.get(targetIndex);
-                  if (q) {
-                    return (
-                      <td key={ci} className="border border-slate-300 px-3 py-2 whitespace-nowrap">
-                        <BlankInput qid={q.id} initial={answers[q.id] || ''} attemptId={attemptId} onSave={onSave} />
-                      </td>
-                    );
-                  }
-                  return <td key={ci} className="border border-slate-300 px-3 py-2 text-slate-400">____</td>;
-                }
-                return <td key={ci} className="border border-slate-300 px-3 py-2 text-slate-700 whitespace-nowrap">{cell}</td>;
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-});
+function isNoteMode(instructions: string) { return /\{Q\d+\}/.test(instructions); }
 
 // ── Single question block ──
-const QuestionBlock = memo(function QuestionBlock({
-  q, ans, attemptId, onSave,
-}: {
-  q: any; ans: string; attemptId?: number; onSave: (qid: number, val: string) => void;
-}) {
-  // Skip questions that are part of a table group (rendered separately)
-  if (q.passageText && q.passageText.trim().startsWith('[table]')) return null;
+const QuestionBlock = memo(function QB({ q, ans, attemptId, onSave }: { q: any; ans: string; attemptId?: number; onSave: (qid: number, val: string) => void }) {
+  if (q.questionType === 'fill_blank') return <FillBlank q={q} ans={ans} attemptId={attemptId} onSave={onSave} />;
 
   let options: string[] = [];
   if (q.options) { try { options = JSON.parse(q.options); } catch {} }
 
   return (
-    <div className={q.questionType === 'fill_blank' ? 'py-1' : 'py-2.5 border-b border-slate-100 last:border-0'}>
-      {q.questionType !== 'fill_blank' && (
-        <div className="text-xs text-slate-400 mb-1">第 {q.questionIndex} 题</div>
-      )}
-      {q.questionText && q.questionType !== 'fill_blank' && (
-        <p className={`text-sm text-slate-800 mb-3 ${q.questionType === 'multiple_choice' || q.questionType === 'true_false' ? 'font-bold' : ''}`}>{q.questionText}</p>
-      )}
-      {q.questionText && q.questionType === 'fill_blank' && (
-        <p className="text-sm text-slate-800 leading-8">
-          {renderFillBlank(q.questionText, q.id, ans, String(q.questionIndex), attemptId, onSave)}
-        </p>
-      )}
-      {q.questionType === 'fill_blank' && !q.questionText && (
-        <div className="text-sm text-slate-800 leading-8">
-          <span className="inline-flex items-center gap-1">
-            <b className="text-xs text-slate-600">{q.questionIndex}</b>
-            <BlankInput qid={q.id} initial={ans} attemptId={attemptId} onSave={onSave} />
-          </span>
+    <div className="py-2.5 border-b border-slate-100 last:border-0">
+      <div className="text-xs text-slate-400 mb-1">第 {q.questionIndex} 题</div>
+      {q.questionText && <p className="text-sm font-bold text-slate-800 mb-3">{q.questionText}</p>}
+      {q.questionType === 'multiple_choice' && options.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {options.map((opt, i) => (
+            <label key={i} className={`flex items-start gap-2 p-2.5 rounded border cursor-pointer text-sm ${ans===opt?'border-primary-400 bg-primary-50':'border-slate-200 hover:bg-slate-50'}`}>
+              <input type="radio" name={`q-${q.id}`} checked={ans===opt} onChange={()=>onSave(q.id,opt)} className="mt-0.5 flex-shrink-0" />
+              <span className="text-slate-800">{opt}</span>
+            </label>
+          ))}
         </div>
       )}
-      {q.questionType === 'multiple_choice' && options.length > 0 && (() => {
-        const avgLen = options.reduce((s, o) => s + o.length, 0) / options.length;
-        const isInline = avgLen < 40;
-        return (
-          <div className={isInline ? 'flex flex-wrap gap-1.5' : 'space-y-1.5'}>
-            {options.map((opt, i) => (
-              <label key={i} className={`flex items-center gap-1.5 rounded-lg border cursor-pointer text-xs transition-colors ${
-                ans === opt ? 'border-primary-400 bg-primary-50' : 'border-slate-200 hover:bg-slate-50'
-              } ${isInline ? 'px-2.5 py-1' : 'p-2.5 text-sm'}`}>
-                <input type="radio" name={`q-${q.id}`} checked={ans === opt} onChange={() => onSave(q.id, opt)} className="mt-0.5" />
-                <span className="whitespace-nowrap">{opt}</span>
-              </label>
-            ))}
-          </div>
-        );
-      })()}
       {q.questionType === 'true_false' && (
         <div className="flex gap-2">
-          {['TRUE', 'FALSE', 'NOT GIVEN'].map((o) => (
-            <button key={o} onClick={() => onSave(q.id, o)} className={`px-4 py-1.5 rounded border text-xs font-medium ${ans === o ? 'bg-primary-600 text-white border-primary-600' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}>{o}</button>
+          {['TRUE','FALSE','NOT GIVEN'].map(o => (
+            <button key={o} onClick={()=>onSave(q.id,o)} className={`px-4 py-1.5 rounded border text-xs font-medium ${ans===o?'bg-primary-600 text-white border-primary-600':'border-slate-300 text-slate-600 hover:bg-slate-50'}`}>{o}</button>
           ))}
         </div>
       )}
@@ -165,96 +76,63 @@ const QuestionBlock = memo(function QuestionBlock({
   );
 });
 
-// ── Note-style rendering ──
-function renderNotes(instructions: string, questions: any[], answers: Record<string,string>, attemptId?: number, onSave?: (qid:number,v:string)=>void) {
-  const qMap = new Map(questions.map(q => [q.questionIndex, q]));
-  const lines = instructions.split('\n');
-  return lines.map((line, li) => {
-    if (!line.trim()) return <div key={`nl-${li}`} className="h-2" />;
-    if (line.trim().startsWith('## ')) {
-      return <p key={`nl-${li}`} className="font-bold text-slate-800 mt-3 mb-1">{line.trim().slice(3)}</p>;
-    }
-    if (!/\{Q\d+\}/.test(line)) return <p key={`nl-${li}`} className="text-slate-700">{line.trim()}</p>;
-
-    // Pre-process: replace "N{QX}" pattern with blank placeholder
-    const processed = line.replace(/(\d+)\{Q(\d+)\}/g, '|||BLANK|$1|$2|||');
-    const parts = processed.split(/(\|\|\|BLANK\|\d+\|\d+\|\|\|)/);
-    return (
-      <p key={`nl-${li}`} className="leading-8">
-        {parts.map((part, pi) => {
-          const bm = part.match(/^\|\|\|BLANK\|(\d+)\|(\d+)\|\|\|$/);
-          if (bm) {
-            const label = bm[1]!;
-            const qi = parseInt(bm[2]!);
-            const q = qMap.get(qi);
-            return (
-              <span key={`nb-${li}-${pi}`} className="inline-flex items-center gap-0.5 mx-0.5">
-                <b className="text-xs text-slate-700">{label}</b>
-                {q ? <BlankInput qid={q.id} initial={answers[q.id]||''} attemptId={attemptId} onSave={onSave!} /> : <span className="border-b-2 border-slate-400 px-1 ml-0.5">______</span>}
-              </span>
-            );
-          }
-          return <span key={`nb-${li}-${pi}`}>{part}</span>;
-        })}
-      </p>
-    );
-  });
-}
-
-function isNoteMode(instructions: string): boolean {
-  return /\{Q\d+\}/.test(instructions);
-}
-
-// ── Find table groups in question list ──
-function groupTableQuestions(questions: any[]): { tableQuestions: any[]; firstIndex: number } | null {
-  const first = questions.find(q => q.passageText && q.passageText.trim().startsWith('[table]'));
-  if (!first) return null;
-  const startIdx = first.questionIndex;
-  // Collect all consecutive questions from this section that belong to the table
-  const tableQs = questions.filter(q => q.questionIndex >= startIdx &&
-    (!q.passageText || q.passageText.trim().startsWith('[table]') || q.passageText === first.passageText || q.questionType === 'fill_blank'));
-  return { tableQuestions: tableQs, firstIndex: startIdx };
-}
-
-// ── Questions panel ──
+// ── Main panel ──
 export const QuestionsPanel = memo(function QuestionsPanel({
   section, answers, attemptId, onSave, fullWidth,
 }: {
   section: { title: string; sectionIndex?: number; instructions?: string | null; questions: any[] } | undefined;
-  answers: Record<string, string>;
-  attemptId?: number;
-  onSave: (qid: number, val: string) => void;
-  fullWidth?: boolean;
+  answers: Record<string, string>; attemptId?: number; onSave: (qid: number, val: string) => void; fullWidth?: boolean;
 }) {
   if (!section) return null;
-
-  const secInstructions = section.instructions || '';
-  const tableGroup = groupTableQuestions(section.questions);
-  const tableQuestionIds = new Set(tableGroup?.tableQuestions.map(q => q.id) || []);
+  const inst = section.instructions || '';
+  const matching = getMatchingGroup(section.questions);
+  const matchingIds = new Set(matching?.ids || []);
+  const mcGroups = getMultiChoiceGroups(section.questions, matchingIds);
+  const mcAllIds = new Set<number>(); mcGroups.forEach(g => g.ids.forEach(id => mcAllIds.add(id)));
+  const mcFirstIds = new Set<number>(); mcGroups.forEach(g => mcFirstIds.add(g.firstId));
+  const table = getTableGroup(section.questions);
+  const tableIds = new Set(table?.questions.map(q => q.id) || []);
+  const noteMode = isNoteMode(inst);
   const hl = useTextHighlight((section as any).sectionIndex ?? 0);
+
+  // Sub-headings from instructions
+  const hLines = inst.split('\n').slice(1);
+  const headingMap = new Map<number,string>();
+  hLines.forEach(l => { const m = l.match(/^##\s*Q(\d+)\s+(.+)/); if (m) headingMap.set(parseInt(m[1]!), m[2]!); });
 
   return (
     <div className={`${fullWidth ? 'w-full' : 'w-1/2'} overflow-y-auto p-6`} onMouseUp={hl.handleMouseUp}>
       <div className="border-2 border-slate-800 rounded-lg p-5 bg-white">
-        <h2 className="text-lg font-bold text-slate-800 mb-2">{section.title}</h2>
-        {secInstructions && (
-          <p className="text-xs font-medium text-slate-500 mb-4 border-b pb-2">{secInstructions.split('\n')[0]}</p>
-        )}
+        <h2 className="text-lg font-bold text-slate-800 mb-2">{fullWidth ? `Part ${(section as any).sectionIndex ?? ''}` : section.title}</h2>
+        {inst && !noteMode && <p className="text-xs font-medium text-slate-500 mb-4 border-b pb-2">{inst.split('\n')[0]}</p>}
 
-        {/* Render table questions as a group */}
-        {tableGroup && (
-          <TableQuestionGroup
-            questions={tableGroup.tableQuestions}
-            answers={answers}
-            attemptId={attemptId}
-            onSave={onSave}
-          />
-        )}
+        {/* Note mode */}
+        {noteMode && <NoteGroup instructions={inst} questions={section.questions} answers={answers} attemptId={attemptId} onSave={onSave} />}
 
-        {/* Render individual questions */}
-        {section.questions.filter(q => !tableQuestionIds.has(q.id)).map((q) => (
-          <QuestionBlock key={q.id} q={q} ans={answers[q.id] || ''} attemptId={attemptId} onSave={onSave} />
-        ))}
+        {/* Regular rendering */}
+        {!noteMode && section.questions.map((q, idx) => {
+          // Matching
+          if (matchingIds.has(q.id)) {
+            if (q.id === matching!.ids[0]) return <MatchingGroup key="mg" items={matching!.items} options={matching!.options} answers={answers} onSave={onSave} />;
+            return null;
+          }
+          // Table
+          if (tableIds.has(q.id)) {
+            if (q.id === table!.questions[0]!.id) return <TableGroup key="tg" questions={table!.questions} answers={answers} attemptId={attemptId} onSave={onSave} title={headingMap.get(q.questionIndex)} />;
+            return null;
+          }
+          // Multi-choice group (skip non-first)
+          if (mcAllIds.has(q.id) && !mcFirstIds.has(q.id)) return null;
+          // Multi-choice group (first)
+          if (mcFirstIds.has(q.id)) {
+            const g = mcGroups.find(g => g.firstId === q.id)!;
+            const heading = headingMap.get(q.questionIndex);
+            return <span key={`mg-${g.firstId}`}>{heading && <p className="font-bold text-slate-800 mt-3 mb-1 text-sm">{heading}</p>}<MultiChoiceGroup indices={g.indices} options={g.options} answers={answers} questionIds={g.ids} onSave={onSave} questionText={q.questionText} /></span>;
+          }
+          // Sub-heading
+          const heading = headingMap.get(q.questionIndex);
+          return <span key={q.id}>{heading && <p className="font-bold text-slate-800 mt-3 mb-1 text-sm">{heading}</p>}<QuestionBlock q={q} ans={answers[q.id]||''} attemptId={attemptId} onSave={onSave} /></span>;
+        })}
       </div>
       {hl.selectionUI}
       {hl.noteModalUI}

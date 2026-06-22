@@ -186,7 +186,7 @@ export default function IeltsListeningPage() {
               idx === currentSection ? 'bg-primary-600 text-white' : 'border border-slate-300 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            {s.title}
+            Part {idx + 1}
           </button>
         ))}
       </div>
