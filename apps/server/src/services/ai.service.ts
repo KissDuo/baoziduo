@@ -12,6 +12,38 @@ interface WordAnnotationResult {
 
 export class AiService {
   /**
+   * Translate text from English to Chinese using DeepSeek.
+   */
+  async translateText(text: string): Promise<string> {
+    const prompt = `Translate the following English text to Chinese. Return ONLY the Chinese translation, no extra text:\n\n${text}`;
+
+    const response = await fetch(DEEPSEEK_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.deepseek.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: 'You are a professional English-to-Chinese translator. Return only the translation, no explanations.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 2048,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`DeepSeek API error ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json() as any;
+    return data.choices?.[0]?.message?.content?.trim() || '';
+  }
+
+  /**
    * Call DeepSeek to annotate a word with pronunciation, meaning, and examples.
    */
   async annotateWord(word: string): Promise<WordAnnotationResult> {

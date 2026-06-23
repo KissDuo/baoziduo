@@ -10,7 +10,7 @@ interface WordPopupProps {
   onClose: () => void;
   onAddToVocabulary: () => void;
   onRemoveFromVocabulary: () => void;
-  position?: { x: number; y: number };
+  position?: { x: number; y: number; useBottom?: boolean };
   isMobile: boolean;
   loading?: boolean;
 }
@@ -50,10 +50,12 @@ export function WordPopup({
     }
     return (
       <div
-        className="fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 w-[440px]"
-        style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
+        className="fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 w-[440px] min-h-[220px]"
+        style={position ? (position.useBottom ? { left: `${position.x}px`, bottom: `${position.y}px` } : { left: `${position.x}px`, top: `${position.y}px` }) : undefined}
       >
-        {loadingContent}
+        <div className="flex items-center justify-center h-[180px]">
+          {loadingContent}
+        </div>
       </div>
     );
   }
@@ -82,7 +84,7 @@ export function WordPopup({
       </div>
 
       {/* Part of speech + translation */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2">
         {word.partOfSpeech && (
           <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded">
             {word.partOfSpeech}
@@ -90,6 +92,15 @@ export function WordPopup({
         )}
         <span className="text-base font-medium text-slate-800">{word.translation}</span>
       </div>
+
+      {/* Tags */}
+      {word.tags && word.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {word.tags.map(tag => (
+            <span key={tag} className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{tag}</span>
+          ))}
+        </div>
+      )}
 
       {/* Examples from AI */}
       {word.examples && word.examples.length > 0 && (
@@ -103,17 +114,11 @@ export function WordPopup({
         </div>
       )}
 
-      {/* Fallback: single example */}
-      {(!word.examples || word.examples.length === 0) && word.exampleSentence && (
-        <div className="bg-slate-50 rounded-lg p-2.5 mb-3">
-          <p className="text-sm text-slate-700 italic leading-relaxed">{word.exampleSentence}</p>
-        </div>
-      )}
 
       {/* Placeholder */}
       {word.placeholder && (
         <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-2.5 py-1.5 mb-3">
-          {word.message || 'AI 生成失败，稍后重试'}
+          {word.message || 'AI generation failed, please retry'}
         </p>
       )}
 
@@ -155,11 +160,14 @@ export function WordPopup({
 
   // ── PC: Fixed viewport-relative popover ──
   return (
-    <div
-      className="fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 w-[440px]"
-      style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
-    >
-      {content}
-    </div>
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div
+        className="fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 w-[440px] min-h-[220px]"
+        style={position ? (position.useBottom ? { left: `${position.x}px`, bottom: `${position.y}px` } : { left: `${position.x}px`, top: `${position.y}px` }) : undefined}
+      >
+        {content}
+      </div>
+    </>
   );
 }

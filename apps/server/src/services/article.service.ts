@@ -131,7 +131,6 @@ export class ArticleService {
         summary: article.summary,
         difficultyLevel: article.difficultyLevel,
         wordCount: article.wordCount,
-        estimatedMinutes: article.estimatedMinutes,
         isMembershipOnly: article.isMembershipOnly,
         coverImage: article.coverImage,
         publishDate: article.publishDate?.toISOString() ?? null,
@@ -220,7 +219,6 @@ export class ArticleService {
       content: article.content,
       difficultyLevel: article.difficultyLevel,
       wordCount: article.wordCount,
-      estimatedMinutes: article.estimatedMinutes,
       isMembershipOnly: article.isMembershipOnly,
       coverImage: article.coverImage,
       publishDate: article.publishDate?.toISOString() ?? null,
@@ -274,30 +272,33 @@ export class ArticleService {
 
     // Check if word is in user's vocabulary
     let inVocabulary = false;
+    let tags: string[] = [];
     if (userId && annotation) {
       const vocab = await prisma.userVocabulary.findUnique({
         where: { userId_wordAnnotationId: { userId, wordAnnotationId: annotation.id } },
       });
       inVocabulary = !!vocab;
     }
-
     if (annotation) {
       // Parse examplesJson if present
       let examples = null;
       if ((annotation as any).examplesJson) {
         try { examples = JSON.parse((annotation as any).examplesJson); } catch { /* ignore */ }
       }
+      // Get tags
+      const tagRecords = await prisma.wordAnnotationTag.findMany({
+        where: { wordAnnotationId: annotation.id },
+        include: { tag: true },
+      });
+      tags = tagRecords.map(t => t.tag.name);
       return {
         word: annotation.word,
-        phonetic: annotation.phonetic,
-        phoneticUk: (annotation as any).phoneticUk || annotation.phonetic || null,
-        phoneticUs: (annotation as any).phoneticUs || annotation.phonetic || null,
+        phoneticUk: (annotation as any).phoneticUk || null,
+        phoneticUs: (annotation as any).phoneticUs || null,
         translation: annotation.translation,
         partOfSpeech: annotation.partOfSpeech,
-        definitionEn: annotation.definitionEn,
-        exampleSentence: annotation.exampleSentence,
         examples,
-        aiAnalysis: annotation.aiAnalysis,
+        tags,
         inVocabulary,
         placeholder: false,
       };
@@ -330,15 +331,12 @@ export class ArticleService {
       });
       return {
         word,
-        phonetic: null,
         phoneticUk: null,
         phoneticUs: null,
         translation: '[Pending]',
         partOfSpeech: null,
-        definitionEn: null,
-        exampleSentence: null,
         examples: null,
-        aiAnalysis: null,
+        tags: [],
         inVocabulary: false,
         placeholder: true,
         message: 'AI annotation failed, will retry later.',
@@ -347,43 +345,34 @@ export class ArticleService {
 
     // Save AI result to database
     const examplesJson = JSON.stringify(aiResult.examples);
-    const exampleSentence = aiResult.examples?.[0]
-      ? `${aiResult.examples[0].en} (${aiResult.examples[0].zh})`
-      : null;
 
     await prisma.wordAnnotation.upsert({
       where: { word },
       create: {
         word,
-        phonetic: aiResult.phoneticUk,
         phoneticUk: aiResult.phoneticUk,
         phoneticUs: aiResult.phoneticUs,
         partOfSpeech: aiResult.partOfSpeech,
         translation: aiResult.translation,
-        exampleSentence,
         examplesJson,
       } as any,
       update: {
-        phonetic: aiResult.phoneticUk,
         phoneticUk: aiResult.phoneticUk,
         phoneticUs: aiResult.phoneticUs,
         partOfSpeech: aiResult.partOfSpeech,
         translation: aiResult.translation,
-        exampleSentence,
         examplesJson,
       } as any,
     });
 
     return {
       word,
-      phonetic: aiResult.phoneticUk,
       phoneticUk: aiResult.phoneticUk,
       phoneticUs: aiResult.phoneticUs,
       translation: aiResult.translation,
       partOfSpeech: aiResult.partOfSpeech,
-      definitionEn: null,
-      exampleSentence,
       examples: aiResult.examples,
+      tags: [],
       aiAnalysis: null,
       inVocabulary: false,
       placeholder: false,
@@ -507,12 +496,28 @@ export class ArticleService {
       quotaRemaining = 0;
     }
 
-    return {
-      paragraphId: paragraph.id,
-      translation: '[Translation pending...]',
-      isCached: false,
-      quotaRemaining,
-    };
+    // Translate via AI and cache
+    try {
+      const translation = await aiService.translateText(paragraph.contentEn);
+      await prisma.articleParagraph.update({
+        where: { id: paragraph.id },
+        data: { contentZh: translation },
+      });
+      return {
+        paragraphId: paragraph.id,
+        translation,
+        isCached: false,
+        quotaRemaining,
+      };
+    } catch (err: any) {
+      console.error(`[Translate] Failed for paragraph ${paragraph.id}:`, err.message);
+      return {
+        paragraphId: paragraph.id,
+        translation: '[Translation failed, please try again]',
+        isCached: false,
+        quotaRemaining,
+      };
+    }
   }
 }
 

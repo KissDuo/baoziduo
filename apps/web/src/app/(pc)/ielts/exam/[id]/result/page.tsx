@@ -42,7 +42,7 @@ export default function IeltsResultPage() {
         <div className="text-6xl font-extrabold text-primary-600 mb-2">{result.ieltsBand}</div>
         <p className="text-slate-500 text-lg">IELTS Band Score</p>
         <p className="text-sm text-slate-400 mt-1">
-          {result.totalScore} / {result.maxScore} 正确
+          {result.totalScore} / {result.maxScore} correct
         </p>
       </div>
 
@@ -57,7 +57,7 @@ export default function IeltsResultPage() {
               <div>
                 <h3 className="font-semibold text-slate-800">{s.sectionTitle}</h3>
                 <p className="text-sm text-slate-500">
-                  {s.correctCount}/{s.totalCount} 正确 · {s.score}/{s.maxScore} 分
+                  {s.correctCount}/{s.totalCount} correct · {s.score}/{s.maxScore} points
                 </p>
               </div>
               <span className="text-slate-400">{expandedSection === idx ? '▲' : '▼'}</span>
@@ -69,7 +69,7 @@ export default function IeltsResultPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs text-slate-400">第{q.questionIndex}题</span>
+                          <span className="text-xs text-slate-400">Q{q.questionIndex}</span>
                           <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${q.isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                             {q.isCorrect ? '✓' : '✗'}
                           </span>
@@ -79,11 +79,11 @@ export default function IeltsResultPage() {
                         )}
                         <div className="flex gap-4 text-sm">
                           <span className={q.isCorrect ? 'text-green-600' : 'text-red-600'}>
-                            你的答案: {q.userAnswer || '(未作答)'}
+                            Your answer: {q.userAnswer || '(Not answered)'}
                           </span>
                           {!q.isCorrect && (
                             <span className="text-green-600">
-                              正确答案: {q.correctAnswer}
+                              Correct answer: {q.correctAnswer}
                             </span>
                           )}
                         </div>
@@ -99,7 +99,7 @@ export default function IeltsResultPage() {
 
       <div className="text-center">
         <Link href="/ielts" className="text-primary-600 hover:underline text-sm">
-          ← 返回考试列表
+          ← Back to exam list
         </Link>
       </div>
     </div>

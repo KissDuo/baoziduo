@@ -242,7 +242,7 @@ export default function MobileArticleReaderPage({ slug }: { slug: string }) {
       } catch {
         setTranslations((prev) => {
           const next = new Map(prev);
-          next.set(paragraphId, { text: '翻译失败，请稍后重试', loading: false });
+          next.set(paragraphId, { text: 'Translation failed, please retry', loading: false });
           return next;
         });
       }
@@ -302,7 +302,7 @@ export default function MobileArticleReaderPage({ slug }: { slug: string }) {
     );
   }
 
-  const level = article.difficultyLevel as 'beginner' | 'intermediate' | 'advanced';
+  const level = article.difficultyLevel as 'short' | 'medium' | 'long';
 
   return (
     <div>
@@ -365,7 +365,7 @@ export default function MobileArticleReaderPage({ slug }: { slug: string }) {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-600 leading-relaxed">
-                    {translations.get(para.id)?.text || para.contentZh || '暂无翻译'}
+                    {translations.get(para.id)?.text || para.contentZh || 'No translation yet'}
                   </p>
                 )}
               </div>

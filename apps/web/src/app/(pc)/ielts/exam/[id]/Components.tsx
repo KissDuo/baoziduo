@@ -63,7 +63,7 @@ export function FillBlank({ q, ans, attemptId, onSave }: {
       );
     }
     const parts = q.questionText.split(/(_{2,}|\.{3,})/);
-    const hasBlank = parts.some(p => /^_{2,}$/.test(p) || /^\.{3,}$/.test(p));
+    const hasBlank = parts.some((p: string) => /^_{2,}$/.test(p) || /^\.{3,}$/.test(p));
     return (
       <p className="py-1 text-sm text-slate-800 leading-8">
         {parts.map((part: string, i: number) => {
@@ -210,7 +210,6 @@ export const MultiChoiceGroup = memo(function MultiChoiceGroup({
 }) {
   return (
     <div className="py-3 border-b border-slate-100">
-      <div className="text-xs text-slate-400 mb-1">第 {indices.join(', ')} 题（选择 {indices.length} 项）</div>
       {questionText && <p className="text-sm font-bold text-slate-800 mb-3">{questionText}</p>}
       <div className="grid grid-cols-1 gap-2">
         {options.map((opt, oi) => {
@@ -261,7 +260,7 @@ export const SummaryCompletion = memo(function SummaryCompletion({
         {parts.map((part: string, pi: number) => {
           const m = part.match(/\((\d+)\)\s*(_{2,})/);
           if (m) {
-            const qi = parseInt(m[1]);
+            const qi = parseInt(m[1]!);
             const q = qMap.get(qi);
             if (q) {
               return (
@@ -293,14 +292,13 @@ export const MatchingGroup = memo(function MatchingGroup({
 
   return (
     <div className="py-3 border-b border-slate-100">
-      <div className="text-xs text-slate-400 mb-1">第 {items[0]!.qi}-{items[items.length-1]!.qi} 题（将右侧选项拖入左侧虚线框）</div>
       {hint && <div className="text-xs text-amber-600 font-medium mb-2 italic">{hint}</div>}
       <div className="flex gap-4 justify-start min-w-0">
         <div className="space-y-2.5 min-w-0 flex-1">
           {items.map((item) => {
             const selected = answers[item.qid] || '';
             return (
-              <div key={item.qid} className="flex items-center gap-2 text-sm">
+              <div key={item.qid} className="flex items-start gap-2 text-sm">
                 <span className="text-slate-500 shrink-0 w-5 text-right text-xs">{item.qi}</span>
                 <span className="text-slate-700">{item.text}</span>
                 <div
@@ -315,7 +313,7 @@ export const MatchingGroup = memo(function MatchingGroup({
           })}
         </div>
         <div className="w-64 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-shrink-0">
-          <p className="text-xs font-medium text-slate-500 mb-2">拖动选项到左侧虚线框</p>
+          <p className="text-xs font-medium text-slate-500 mb-2">Drag options into the boxes</p>
           <div className="space-y-1">
             {options.map((opt, oi) => {
               const used = items.some(it => answers[it.qid] === opt);
@@ -344,7 +342,6 @@ export const SingleChoice = memo(function SingleChoice({ q, ans, onSave }: {
   if (q.options) { try { options = JSON.parse(q.options); } catch {} }
   return (
     <div className="py-2.5 border-b border-slate-100 last:border-0">
-      <div className="text-xs text-slate-400 mb-1">第 {q.questionIndex} 题</div>
       {q.questionText && <p className="text-sm font-bold text-slate-800 mb-3">{q.questionText}</p>}
       {options.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
@@ -368,7 +365,6 @@ export const TrueFalse = memo(function TrueFalse({ q, ans, onSave }: {
 }) {
   return (
     <div className="py-2.5 border-b border-slate-100 last:border-0">
-      <div className="text-xs text-slate-400 mb-1">第 {q.questionIndex} 题</div>
       {q.questionText && <p className="text-sm font-bold text-slate-800 mb-3">{q.questionText}</p>}
       <div className="flex gap-2">
         {['TRUE','FALSE','NOT GIVEN'].map(o => (

@@ -4,20 +4,13 @@ import { AppError } from '../middleware/errorHandler.js';
 function formatWordAnnotation(wa: any) {
   let examples = null;
   if (wa.examplesJson) { try { examples = JSON.parse(wa.examplesJson); } catch {} }
-  let levels = null;
-  if (wa.levels) { try { levels = JSON.parse(wa.levels); } catch { levels = wa.levels; } }
   return {
     word: wa.word,
-    phonetic: wa.phonetic,
-    phoneticUk: wa.phoneticUk || wa.phonetic || null,
-    phoneticUs: wa.phoneticUs || wa.phonetic || null,
+    phoneticUk: wa.phoneticUk || null,
+    phoneticUs: wa.phoneticUs || null,
     translation: wa.translation,
     partOfSpeech: wa.partOfSpeech,
-    definitionEn: wa.definitionEn,
-    exampleSentence: wa.exampleSentence,
-    aiAnalysis: wa.aiAnalysis,
     examples,
-    levels,
   };
 }
 
@@ -134,6 +127,127 @@ export class VocabularyService {
     await prisma.userVocabulary.delete({ where: { id: vocabId } });
 
     return { ok: true };
+  }
+
+  // ── List Vocabulary Books ──
+  async listBooks() {
+    const books = await prisma.vocabularyBook.findMany({
+      where: { isPublished: true },
+      orderBy: { sortOrder: 'asc' },
+      select: {
+        id: true, name: true, slug: true, description: true, category: true,
+        totalWords: true, isMembershipOnly: true,
+      },
+    });
+    return books;
+  }
+
+  // ── Get Words for Study ──
+  async getBookWords(slug: string, userId?: number) {
+    const book = await prisma.vocabularyBook.findUnique({ where: { slug } });
+    if (!book) throw new AppError(404, 'Book not found', 'NOT_FOUND');
+
+    const words = await prisma.vocabularyWord.findMany({
+      where: { bookId: book.id },
+      orderBy: { wordIndex: 'asc' },
+      include: { wordAnnotation: true },
+    });
+
+    // Get user progress if authenticated
+    let userProgress: any = null;
+    if (userId) {
+      userProgress = await prisma.vocabularyBookProgress.findUnique({
+        where: { userId_bookId: { userId, bookId: book.id } },
+      });
+    }
+
+    return {
+      book: { id: book.id, name: book.name, slug: book.slug, totalWords: book.totalWords },
+      words: words.map(w => ({
+        id: w.id,
+        wordIndex: w.wordIndex,
+        word: w.word,
+        chapter: w.chapter,
+        phoneticUk: w.wordAnnotation?.phoneticUk || null,
+        phoneticUs: w.wordAnnotation?.phoneticUs || null,
+        partOfSpeech: w.partOfSpeech || w.wordAnnotation?.partOfSpeech || null,
+        translation: w.translation || w.wordAnnotation?.translation || '',
+        examples: (() => { try { return w.wordAnnotation?.examplesJson ? JSON.parse(w.wordAnnotation.examplesJson) : null; } catch { return null; } })(),
+      })),
+      progress: userProgress ? {
+        learnedCount: userProgress.learnedCount,
+        reviewingCount: userProgress.reviewingCount,
+        masteredCount: userProgress.masteredCount,
+      } : null,
+    };
+  }
+
+  // ── Update Study Progress (simple spaced repetition) ──
+  async updateStudyProgress(userId: number, slug: string, results: { wordId: number; known: boolean }[]) {
+    const book = await prisma.vocabularyBook.findUnique({ where: { slug } });
+    if (!book) throw new AppError(404, 'Book not found', 'NOT_FOUND');
+
+    let learned = 0, reviewing = 0, mastered = 0;
+
+    for (const r of results) {
+      const vocabWord = await prisma.vocabularyWord.findUnique({ where: { id: r.wordId } });
+      if (!vocabWord || vocabWord.bookId !== book.id) continue;
+
+      // Link word to WordAnnotation if not already
+      if (!vocabWord.wordAnnotationId) {
+        const ann = await prisma.wordAnnotation.upsert({
+          where: { word: vocabWord.word.toLowerCase() },
+          create: { word: vocabWord.word.toLowerCase(), translation: vocabWord.translation || '[Pending]' },
+          update: {},
+        });
+        await prisma.vocabularyWord.update({ where: { id: vocabWord.id }, data: { wordAnnotationId: ann.id } });
+      }
+
+      const annId = vocabWord.wordAnnotationId || (await prisma.wordAnnotation.findUnique({ where: { word: vocabWord.word.toLowerCase() } }))?.id;
+      if (!annId) continue;
+
+      // Upsert UserVocabulary with spaced repetition
+      const existing = await prisma.userVocabulary.findUnique({
+        where: { userId_wordAnnotationId: { userId, wordAnnotationId: annId } },
+      });
+
+      const intervals = [1, 3, 7, 30]; // masteryLevel 0→1→2→3→4→5(mastered)
+      if (r.known) {
+        const newLevel = Math.min(5, (existing?.masteryLevel ?? 0) + 1);
+        const intervalDays = newLevel >= 5 ? null : intervals[Math.min(newLevel - 1, intervals.length - 1)] ?? 30;
+        const nextReview = intervalDays ? new Date(Date.now() + intervalDays * 86400000) : null;
+
+        await prisma.userVocabulary.upsert({
+          where: { userId_wordAnnotationId: { userId, wordAnnotationId: annId } },
+          create: { userId, wordAnnotationId: annId, masteryLevel: newLevel, nextReviewAt: nextReview, reviewCount: 1 },
+          update: { masteryLevel: newLevel, nextReviewAt: nextReview, reviewCount: { increment: 1 }, lastReviewedAt: new Date() },
+        });
+
+        if (newLevel >= 5) mastered++; else reviewing++;
+      } else {
+        // Reset to level 0, review tomorrow
+        await prisma.userVocabulary.upsert({
+          where: { userId_wordAnnotationId: { userId, wordAnnotationId: annId } },
+          create: { userId, wordAnnotationId: annId, masteryLevel: 0, nextReviewAt: new Date(Date.now() + 86400000), reviewCount: 1 },
+          update: { masteryLevel: 0, nextReviewAt: new Date(Date.now() + 86400000), reviewCount: { increment: 1 }, lastReviewedAt: new Date() },
+        });
+        learned++;
+      }
+    }
+
+    // Update book progress
+    await prisma.vocabularyBookProgress.upsert({
+      where: { userId_bookId: { userId, bookId: book.id } },
+      create: { userId, bookId: book.id, learnedCount: learned, reviewingCount: reviewing, masteredCount: mastered, lastStudiedAt: new Date() },
+      update: {
+        learnedCount: { increment: learned },
+        reviewingCount: reviewing > 0 ? { increment: reviewing } : undefined,
+        masteredCount: { increment: mastered },
+        lastStudiedAt: new Date(),
+      },
+    });
+
+    return { learned, reviewing, mastered };
   }
 }
 

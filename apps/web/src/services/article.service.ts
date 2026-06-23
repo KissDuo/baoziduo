@@ -35,10 +35,8 @@ export interface WordAnnotationResponse {
   phoneticUs: string | null;
   translation: string;
   partOfSpeech: string | null;
-  definitionEn: string | null;
-  exampleSentence: string | null;
   examples: WordExample[] | null;
-  aiAnalysis: string | null;
+  tags?: string[];
   inVocabulary: boolean;
   placeholder?: boolean;
   message?: string;

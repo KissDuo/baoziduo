@@ -7,10 +7,10 @@ import type { ArticleListItem } from '@english/shared';
 import type { PaginatedResponse } from '@/services/article.service';
 
 const DIFFICULTY_OPTIONS = [
-  { value: undefined, label: '全部' },
-  { value: 'beginner', label: '初级' },
-  { value: 'intermediate', label: '中级' },
-  { value: 'advanced', label: '高级' },
+  { value: undefined, label: 'All' },
+  { value: 'short', label: 'Short (<1000 words)' },
+  { value: 'medium', label: 'Medium (1000-2000)' },
+  { value: 'long', label: 'Long (>2000 words)' },
 ] as const;
 
 export default function PCArticleListPage() {

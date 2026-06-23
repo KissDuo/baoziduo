@@ -6,10 +6,10 @@ import { articleService } from '@/services/article.service';
 import type { ArticleListItem } from '@english/shared';
 
 const DIFFICULTY_OPTIONS = [
-  { value: undefined, label: '全部' },
-  { value: 'beginner', label: '初级' },
-  { value: 'intermediate', label: '中级' },
-  { value: 'advanced', label: '高级' },
+  { value: undefined, label: 'All' },
+  { value: 'short', label: 'Short' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'long', label: 'Long' },
 ] as const;
 
 const PAGE_SIZE = 10;

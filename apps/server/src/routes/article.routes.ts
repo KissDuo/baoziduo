@@ -9,7 +9,7 @@ const router = Router();
 
 // ── Query schema for article list ──
 const listArticlesQuerySchema = paginationSchema.extend({
-  difficultyLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  difficultyLevel: z.enum(['short', 'medium', 'long']).optional(),
 });
 
 // ── Params schemas ──

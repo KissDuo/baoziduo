@@ -11,7 +11,7 @@ import type { WordAnnotationResponse } from '@/services/article.service';
 
 interface WordClickState {
   word: WordAnnotationResponse | null;
-  position: { x: number; y: number };
+  position: { x: number; y: number; useBottom?: boolean };
   inVocabulary: boolean;
 }
 
@@ -133,28 +133,29 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
 
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     const popupW = 456; // 440px + 16px margin
-    const popupH = 400; // estimated max height
+    const popupMinH = 240; // min-height of popup
     // Horizontal: clamp to viewport
     let x = rect.left;
     if (x + popupW > window.innerWidth - 16) {
       x = window.innerWidth - popupW - 16;
     }
     if (x < 16) x = 16;
-    // Vertical: prefer below the word, fallback to above
+    // Vertical: prefer below the word. If not enough space, anchor popup bottom to word top (grows upward)
     let y = rect.bottom + 8;
-    if (y + popupH > window.innerHeight - 16) {
-      // Not enough space below, position above the word
-      y = rect.top - popupH - 8;
-      if (y < 16) y = 16;
+    let useBottom = false;
+    if (y + popupMinH > window.innerHeight - 16) {
+      // Position above: anchor bottom edge to word's top edge
+      y = window.innerHeight - rect.top + 8;
+      useBottom = true;
     }
 
-    setSelectedWord({ word: null, position: { x, y }, inVocabulary: inVocabSet.has(word) });
+    setSelectedWord({ word: null, position: { x, y, useBottom }, inVocabulary: inVocabSet.has(word) });
     setWordLoading(true);
 
     try {
       const result = await articleService.getWordAnnotation(slug, rawWord);
       if (mountedRef.current) {
-        setSelectedWord({ word: result, position: { x, y }, inVocabulary: result.inVocabulary || inVocabSet.has(word) });
+        setSelectedWord({ word: result, position: { x, y, useBottom }, inVocabulary: result.inVocabulary || inVocabSet.has(word) });
       }
     } catch {
       // keep loading state
@@ -201,13 +202,13 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
     if (!phraseSelection) return;
     const phrase = phraseSelection.text;
     const pos = phraseSelection;
-    setSelectedWord({ word: null, position: { x: pos.x, y: pos.y }, inVocabulary: false });
+    setSelectedWord({ word: null, position: { x: pos.x, y: pos.y, useBottom: false }, inVocabulary: false });
     setPhraseSelection(null);
     setWordLoading(true);
     try {
       const result = await articleService.getWordAnnotation(slug, phrase);
       if (mountedRef.current) {
-        setSelectedWord({ word: result, position: { x: pos.x, y: pos.y }, inVocabulary: false });
+        setSelectedWord({ word: result, position: { x: pos.x, y: pos.y, useBottom: false }, inVocabulary: false });
       }
     } catch { /* ignore */ } finally {
       if (mountedRef.current) setWordLoading(false);
@@ -266,7 +267,7 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
       } catch {
         setTranslations((prev) => {
           const next = new Map(prev);
-          next.set(paragraphId, { text: '翻译失败，请稍后重试', loading: false });
+          next.set(paragraphId, { text: 'Translation failed, please retry', loading: false });
           return next;
         });
       }
@@ -329,7 +330,7 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
     );
   }
 
-  const level = article.difficultyLevel as 'beginner' | 'intermediate' | 'advanced';
+  const level = article.difficultyLevel as 'short' | 'medium' | 'long';
 
   return (
     <div className="relative">
@@ -355,9 +356,8 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
             {article.titleZh && <p className="text-lg text-slate-500 mb-4">{article.titleZh}</p>}
             <div className="flex items-center gap-4 text-sm text-slate-500 flex-wrap">
               <DifficultyBadge level={level} />
-              {article.source && <span>来源：{article.source}</span>}
-              <span>{article.wordCount} 词</span>
-              <span>约 {article.estimatedMinutes} 分钟</span>
+              {article.source && <span>Source: {article.source}</span>}
+              <span>{article.wordCount} words</span>
               {article.publishDate && (
                 <span>{new Date(article.publishDate).toLocaleDateString('zh-CN')}</span>
               )}
@@ -403,11 +403,11 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
                     {translations.get(para.id)?.loading ? (
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         <Loader2 size={14} className="animate-spin" />
-                        翻译中...
+                        Translating...
                       </div>
                     ) : (
                       <p className="text-sm text-slate-600 leading-relaxed">
-                        {translations.get(para.id)?.text || para.contentZh || '暂无翻译'}
+                        {translations.get(para.id)?.text || para.contentZh || 'No translation yet'}
                       </p>
                     )}
                   </div>

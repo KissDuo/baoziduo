@@ -17,8 +17,6 @@ export const vocabularyWordSchema = z.object({
   phonetic: z.string().nullable(),
   partOfSpeech: z.string().nullable(),
   translation: z.string(),
-  definitionEn: z.string().nullable(),
-  exampleSentence: z.string().nullable(),
   wordIndex: z.number(),
 });
 

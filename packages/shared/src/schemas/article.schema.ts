@@ -13,9 +13,8 @@ export const articleListItemSchema = z.object({
   slug: z.string(),
   source: z.string().nullable(),
   summary: z.string().nullable(),
-  difficultyLevel: z.enum(['beginner', 'intermediate', 'advanced']),
+  difficultyLevel: z.enum(['short', 'medium', 'long']),
   wordCount: z.number(),
-  estimatedMinutes: z.number(),
   isMembershipOnly: z.boolean(),
   coverImage: z.string().nullable(),
   publishDate: z.string().nullable(),
@@ -48,11 +47,7 @@ export const wordAnnotationSchema = z.object({
   phoneticUs: z.string().nullable(),
   translation: z.string(),
   partOfSpeech: z.string().nullable(),
-  definitionEn: z.string().nullable(),
-  exampleSentence: z.string().nullable(),
   examples: z.array(wordExampleSchema).nullable(),
-  aiAnalysis: z.string().nullable(),
-  levels: z.string().nullable(),
 });
 
 export const userVocabularySchema = z.object({

@@ -148,9 +148,8 @@ model Article {
   source            String?   @db.VarChar(255)
   summary           String?   @db.Text
   content           String    @db.LongText
-  difficultyLevel   String    @default("intermediate") @db.VarChar(20)
+  difficultyLevel   String    @default("short") @db.VarChar(20) // short(<1000), medium(1000-2000), long(>2000)
   wordCount         Int       @default(0)
-  estimatedMinutes  Int       @default(5)
   coverImage        String?   @db.VarChar(500)
   publishDate       DateTime?
   isMembershipOnly  Boolean   @default(false)
@@ -181,20 +180,32 @@ model ArticleParagraph {
 model WordAnnotation {
   id              Int       @id @default(autoincrement())
   word            String    @unique @db.VarChar(255)
-  phonetic        String?   @db.VarChar(255)
   phoneticUk      String?   @db.VarChar(255)
   phoneticUs      String?   @db.VarChar(255)
   partOfSpeech    String?   @db.VarChar(50)
   translation     String    @db.VarChar(500)
-  definitionEn    String?   @db.Text
-  exampleSentence String?   @db.Text
   examplesJson    String?   @db.Text
-  aiAnalysis      String?   @db.Text
-  levels          String?   @db.VarChar(500)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   userVocabulary  UserVocabulary[]
+  tags            WordAnnotationTag[]
+  vocabularyWords VocabularyWord[]
+}
+
+model WordTag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique @db.VarChar(100)
+  words WordAnnotationTag[]
+}
+
+model WordAnnotationTag {
+  id                Int            @id @default(autoincrement())
+  wordAnnotationId  Int
+  wordAnnotation    WordAnnotation @relation(fields: [wordAnnotationId], references: [id], onDelete: Cascade)
+  tagId             Int
+  tag               WordTag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@unique([wordAnnotationId, tagId])
 }
 
 model UserVocabulary {
@@ -256,19 +267,20 @@ model VocabularyBook {
 }
 
 model VocabularyWord {
-  id              Int       @id @default(autoincrement())
-  bookId          Int
-  book            VocabularyBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  word            String    @db.VarChar(255)
-  phonetic        String?   @db.VarChar(255)
-  partOfSpeech    String?   @db.VarChar(50)
-  translation     String    @db.VarChar(500)
-  definitionEn    String?   @db.Text
-  exampleSentence String?   @db.Text
-  wordIndex       Int
-  createdAt       DateTime  @default(now())
+  id                Int       @id @default(autoincrement())
+  bookId            Int
+  book              VocabularyBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  wordAnnotationId  Int?
+  wordAnnotation    WordAnnotation? @relation(fields: [wordAnnotationId], references: [id])
+  word              String    @db.VarChar(255)
+  partOfSpeech      String?   @db.VarChar(50)
+  translation       String    @db.VarChar(500)
+  chapter           String?   @db.VarChar(255)
+  wordIndex         Int
+  createdAt         DateTime  @default(now())
 
   @@index([bookId, wordIndex])
+  @@index([bookId, chapter])
 }
 
 model VocabularyBookProgress {

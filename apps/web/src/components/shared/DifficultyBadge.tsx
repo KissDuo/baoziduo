@@ -1,20 +1,20 @@
 'use client';
 
 interface DifficultyBadgeProps {
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: 'short' | 'medium' | 'long';
   className?: string;
 }
 
 const LABELS: Record<string, string> = {
-  beginner: '初级',
-  intermediate: '中级',
-  advanced: '高级',
+  short: '短篇',
+  medium: '中篇',
+  long: '长篇',
 };
 
 const STYLES: Record<string, string> = {
-  beginner: 'bg-green-100 text-green-700',
-  intermediate: 'bg-amber-100 text-amber-700',
-  advanced: 'bg-red-100 text-red-700',
+  short: 'bg-green-100 text-green-700',
+  medium: 'bg-amber-100 text-amber-700',
+  long: 'bg-red-100 text-red-700',
 };
 
 export function DifficultyBadge({ level, className = '' }: DifficultyBadgeProps) {

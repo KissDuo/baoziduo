@@ -12,7 +12,6 @@ interface ArticleCardProps {
     summary: string | null;
     difficultyLevel: string;
     wordCount: number;
-    estimatedMinutes: number;
     coverImage: string | null;
     source: string | null;
     publishDate: string | null;
@@ -26,7 +25,7 @@ interface ArticleCardProps {
 
 export function ArticleCard({ article, userProgress, compact = false }: ArticleCardProps) {
   const href = `/articles/${article.slug}`;
-  const level = article.difficultyLevel as 'beginner' | 'intermediate' | 'advanced';
+  const level = article.difficultyLevel as 'short' | 'medium' | 'long';
 
   if (compact) {
     // ── Compact (Mobile) layout ──
@@ -38,19 +37,18 @@ export function ArticleCard({ article, userProgress, compact = false }: ArticleC
               <DifficultyBadge level={level} />
               {userProgress && !userProgress.isCompleted && (
                 <span className="text-xs text-primary-600 font-medium">
-                  已读 {userProgress.scrollPercent}%
+                  Read {userProgress.scrollPercent}%
                 </span>
               )}
               {userProgress?.isCompleted && (
-                <span className="text-xs text-green-600 font-medium">✓ 已读完</span>
+                <span className="text-xs text-green-600 font-medium">✓ Read</span>
               )}
             </div>
             <h3 className="font-semibold text-slate-900 line-clamp-2 mb-1">{article.title}</h3>
             {article.titleZh && <p className="text-sm text-slate-500 line-clamp-1 mb-1">{article.titleZh}</p>}
             <p className="text-sm text-slate-500 line-clamp-1 mb-2">{article.summary}</p>
             <div className="flex items-center gap-3 text-xs text-slate-400">
-              <span>{article.wordCount} 词</span>
-              <span>{article.estimatedMinutes} 分钟</span>
+              <span>{article.wordCount} words</span>
             </div>
           </div>
         </div>
@@ -76,7 +74,7 @@ export function ArticleCard({ article, userProgress, compact = false }: ArticleC
             <DifficultyBadge level={level} />
             {userProgress?.isCompleted && (
               <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
-                ✓ 已读完
+                ✓ Read
               </span>
             )}
           </div>
@@ -86,8 +84,7 @@ export function ArticleCard({ article, userProgress, compact = false }: ArticleC
           {article.titleZh && <p className="text-sm text-slate-500 line-clamp-1 mb-2">{article.titleZh}</p>}
           <p className="text-sm text-slate-500 line-clamp-2 mb-3 flex-1">{article.summary}</p>
           <div className="flex items-center gap-4 text-xs text-slate-400 pt-3 border-t border-slate-100">
-            <span>{article.wordCount} 词</span>
-            <span>约 {article.estimatedMinutes} 分钟</span>
+            <span>{article.wordCount} words</span>
             {article.source && <span className="truncate">{article.source}</span>}
           </div>
         </div>

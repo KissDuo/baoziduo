@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ieltsService } from '@/services/ielts.service';
 import { QuestionsPanel } from './QuestionsPanel';
@@ -201,41 +201,143 @@ export default function IeltsExamPage() {
     return (highlights[currentSection] || []).find((h) => h.text === text)?.note;
   };
 
-  // ── Render passage with highlights ──
+  // ── Render passage with paragraph formatting, line-break fix & highlights ──
   const renderPassage = () => {
     const raw = section?.instructions || '';
     const secHighlights = highlights[currentSection] || [];
-    if (secHighlights.length === 0) return raw;
 
-    // Build a regex from all highlighted texts
-    const escaped = secHighlights.map((h) => h.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const regex = new RegExp(`(${escaped.join('|')})`, 'g');
-    const parts = raw.split(regex);
+    // Split into paragraphs by 2+ newlines
+    const rawParagraphs = raw.split(/\n{2,}/);
 
-    return parts.map((part, i) => {
-      const hl = secHighlights.find((h) => h.text === part);
-      if (hl) {
-        return (
-          <span key={i}>
-            <mark className={hl.color}>{part}</mark>
-            {hl.note && (
-              <span
-                className="inline-flex items-center justify-center w-5 h-5 ml-0.5 bg-primary-100 text-primary-600 rounded-full cursor-pointer text-xs align-middle hover:bg-primary-200"
-                onClick={(e) => { e.stopPropagation(); setViewNote({ text: part, note: hl.note! }); }}
-                title="查看笔记"
-              >📝</span>
-            )}
-          </span>
-        );
+    // Find boundary: first "Questions X-Y" or "Test X" paragraph ends the passage
+    let passageEnd = rawParagraphs.length;
+    for (let i = 0; i < rawParagraphs.length; i++) {
+      const t = rawParagraphs[i]!.trim();
+      if (/^(Questions\s+\d+|Test\s+\d+$)/.test(t)) { passageEnd = i; break; }
+    }
+
+    // Filter out purely empty paragraphs (artifacts from boilerplate removal)
+    const passageParas = rawParagraphs.slice(0, passageEnd).filter(p => p.trim());
+
+    // Helper: join broken PDF lines into flowing text (handle \r\n and \n)
+    const joinLines = (text: string) => text.replace(/\r?\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
+
+    // Helper: apply highlight marks to text
+    const highlightText = (text: string): React.ReactNode => {
+      if (secHighlights.length === 0) return text;
+      const escaped = secHighlights.map((h) => h.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const regex = new RegExp(`(${escaped.join('|')})`, 'g');
+      const parts = text.split(regex);
+      if (parts.length === 1) return text;
+      return parts.map((part, i) => {
+        const hl = secHighlights.find((h) => h.text === part);
+        if (hl) {
+          return (
+            <span key={i}>
+              <mark className={hl.color}>{part}</mark>
+              {hl.note && (
+                <span
+                  className="inline-flex items-center justify-center w-5 h-5 ml-0.5 bg-primary-100 text-primary-600 rounded-full cursor-pointer text-xs align-middle hover:bg-primary-200"
+                  onClick={(e) => { e.stopPropagation(); setViewNote({ text: part, note: hl.note! }); }}
+                  title="View note"
+                >📝</span>
+              )}
+            </span>
+          );
+        }
+        return <React.Fragment key={i}>{part}</React.Fragment>;
+      });
+    };
+
+    // Flatten paragraphs into blocks, splitting at section markers (A-Z) within paragraphs
+    type Block = { type: 'text' | 'marker'; content: string };
+    const blocks: Block[] = [];
+    for (const para of passageParas) {
+      const lines = para.split('\n');
+      let textBuf: string[] = [];
+
+      for (let li = 0; li < lines.length; li++) {
+        const t = lines[li]!.trim();
+
+        // Inline marker: "[A-Z] body text..." (letter + 1+ spaces + body)
+        const inline = t.match(/^([A-Z])\s+(.+)$/);
+        // Standalone: just "A-Z" on its own line
+        const single = /^[A-Z]$/.test(t);
+
+        if (inline || single) {
+          const letter = inline ? inline[1]! : t;
+          const bodyLen = inline ? inline[2]!.length : 0;
+          // Section marker = standalone letter OR inline letter with substantial body text (>=30 chars)
+          const isSectionMarker = single || bodyLen >= 30;
+
+          // Is this part of a list of adjacent single-letter lines?
+          const prevSingle = li > 0 && /^[A-Z]$/.test(lines[li-1]!.trim());
+          const nextSingle = li < lines.length - 1 && /^[A-Z]$/.test(lines[li+1]!.trim());
+          const inList = (prevSingle || nextSingle) && single; // only standalone letters can be in a list
+
+          if (isSectionMarker && !inList) {
+            if (textBuf.length > 0) { blocks.push({ type: 'text', content: textBuf.join('\n') }); textBuf = []; }
+            blocks.push({ type: 'marker', content: letter });
+            if (inline) textBuf.push(inline[2]!);
+            continue;
+          }
+        }
+
+        textBuf.push(lines[li]!);
       }
-      return part;
-    });
+      if (textBuf.length > 0) { blocks.push({ type: 'text', content: textBuf.join('\n') }); }
+    }
+
+    // Filter out empty text blocks
+    const nonEmptyBlocks = blocks.filter(b => b.type !== 'text' || b.content.trim());
+
+    // Find the first text block index (this is always the title)
+    const firstTextIdx = nonEmptyBlocks.findIndex(b => b.type === 'text');
+
+    return (
+      <>
+        {nonEmptyBlocks.map((block, bi) => {
+          if (block.type === 'marker') {
+            return <p key={bi} className="font-bold text-lg text-slate-900 mb-1 mt-4">{block.content}</p>;
+          }
+
+          const trimmed = block.content.trim();
+          if (!trimmed) return null;
+
+          // First text block = title (+ optional subtitle if short enough)
+          if (bi === firstTextIdx) {
+            const titleLines = trimmed.split('\n').map(l => l.trim()).filter(Boolean);
+            const title = titleLines[0] || '';
+            const rest = titleLines.slice(1).join(' ').trim();
+            const restWords = rest ? rest.split(/\s+/).filter(Boolean).length : 0;
+            // Subtitle: 1-25 words after title (typically a short description, then blank line)
+            const isSubtitle = restWords > 0 && restWords <= 25;
+            return (
+              <div key={bi} className="mb-4">
+                <p className="font-bold text-base text-slate-900">{highlightText(title)}</p>
+                {isSubtitle && (
+                  <p className="text-sm text-slate-700 mt-1 italic">
+                    {highlightText(joinLines(rest))}
+                  </p>
+                )}
+                {!isSubtitle && restWords > 25 && (
+                  <p className="mb-3 mt-1">{highlightText(joinLines(rest))}</p>
+                )}
+              </div>
+            );
+          }
+
+          // Normal paragraph — join broken PDF lines into flowing text
+          return <p key={bi} className="mb-3">{highlightText(joinLines(trimmed))}</p>;
+        })}
+      </>
+    );
   };
 
   const formatTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" /><span className="ml-3 text-slate-500">加载考试...</span></div>;
-  if (error || !exam) return <div className="text-center py-16 text-red-500">{error || '未找到考试'}</div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" /><span className="ml-3 text-slate-500">Loading exam...</span></div>;
+  if (error || !exam) return <div className="text-center py-16 text-red-500">{error || 'Exam not found'}</div>;
 
   return (
     <div className="fixed inset-0 top-16 bg-white flex flex-col z-40">
@@ -243,9 +345,9 @@ export default function IeltsExamPage() {
       <div className="bg-slate-900 text-white px-6 h-12 flex items-center justify-between flex-shrink-0">
         <h1 className="text-sm font-medium truncate">{exam.title}</h1>
         <div className="flex items-center gap-5 text-sm">
-          <span className="text-slate-400">{answeredCount}/{totalQuestions} 已答</span>
+          <span className="text-slate-400">{answeredCount}/{totalQuestions} answered</span>
           <span className={`font-mono font-bold ${timeLeft < 300 ? 'text-red-400' : 'text-white'}`}>{formatTime(timeLeft)}</span>
-          <button onClick={() => setShowSubmitModal(true)} className="bg-primary-600 hover:bg-primary-700 px-5 py-1 rounded text-sm font-medium">提交</button>
+          <button onClick={() => setShowSubmitModal(true)} className="bg-primary-600 hover:bg-primary-700 px-5 py-1 rounded text-sm font-medium">Submit</button>
         </div>
       </div>
 
@@ -254,7 +356,7 @@ export default function IeltsExamPage() {
         left={
           <div className="h-full overflow-y-auto p-6 bg-slate-50 relative" ref={passageRef} onMouseUp={handlePassageMouseUp}>
             <h2 className="text-base font-bold text-slate-800 mb-3">{section?.title}</h2>
-            <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-line break-words">
+            <div className="text-sm leading-relaxed text-slate-700 break-words">
               {renderPassage()}
             </div>
           </div>
@@ -284,15 +386,15 @@ export default function IeltsExamPage() {
         <div className="fixed z-50 bg-white rounded-lg shadow-xl border border-slate-200 py-1 min-w-[120px]" style={{ left: selMenu.x, top: selMenu.y }}>
           {isHighlighted(selMenu.text) ? (
             <button className="w-full text-left px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50" onClick={() => { removeHighlight(selMenu.text); setSelMenu(null); }}>
-              ✕ 取消高亮
+              ✕ Remove highlight
             </button>
           ) : (
             <>
               <button className="w-full text-left px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50" onClick={() => { addHighlight(selMenu.text); setSelMenu(null); }}>
-                🖍 高亮
+                🖍 Highlight
               </button>
               <button className="w-full text-left px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50" onClick={() => { setNoteModal({ text: selMenu.text }); setNoteText(''); setSelMenu(null); }}>
-                📝 笔记
+                📝 Note
               </button>
             </>
           )}
@@ -303,16 +405,16 @@ export default function IeltsExamPage() {
       {noteModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="font-bold mb-2">添加笔记</h3>
-            <p className="text-xs text-slate-500 mb-3">选中文本: &ldquo;{noteModal.text.slice(0, 50)}{noteModal.text.length > 50 ? '...' : ''}&rdquo;</p>
+            <h3 className="font-bold mb-2">Add Note</h3>
+            <p className="text-xs text-slate-500 mb-3">Selected: &ldquo;{noteModal.text.slice(0, 50)}{noteModal.text.length > 50 ? '...' : ''}&rdquo;</p>
             <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)}
               className="w-full border rounded-lg p-3 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="输入笔记内容..." />
+              placeholder="Enter your note..." />
             <div className="flex gap-3 mt-4">
-              <button onClick={() => setNoteModal(null)} className="flex-1 py-2 border rounded-lg text-sm">取消</button>
+              <button onClick={() => setNoteModal(null)} className="flex-1 py-2 border rounded-lg text-sm">Cancel</button>
               <button onClick={() => { if (noteText.trim()) { addHighlight(noteModal.text, noteText.trim()); setNoteModal(null); } }}
                 className="flex-1 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">
-                保存笔记
+                Save Note
               </button>
             </div>
           </div>
@@ -323,10 +425,10 @@ export default function IeltsExamPage() {
       {viewNote && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="font-bold mb-2">笔记</h3>
-            <p className="text-xs text-slate-500 mb-3">原文: &ldquo;{viewNote.text.slice(0, 80)}{viewNote.text.length > 80 ? '...' : ''}&rdquo;</p>
+            <h3 className="font-bold mb-2">Note</h3>
+            <p className="text-xs text-slate-500 mb-3">Source: &ldquo;{viewNote.text.slice(0, 80)}{viewNote.text.length > 80 ? '...' : ''}&rdquo;</p>
             <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">{viewNote.note}</div>
-            <button onClick={() => setViewNote(null)} className="mt-4 w-full py-2 border rounded-lg text-sm">关闭</button>
+            <button onClick={() => setViewNote(null)} className="mt-4 w-full py-2 border rounded-lg text-sm">Close</button>
           </div>
         </div>
       )}
@@ -335,12 +437,12 @@ export default function IeltsExamPage() {
       {showSubmitModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
-            <h3 className="text-lg font-bold mb-2">确认提交</h3>
-            <p className="text-sm text-slate-600 mb-1">你已回答 {answeredCount} / {totalQuestions} 题</p>
-            {answeredCount < totalQuestions && <p className="text-sm text-amber-600 mb-4">⚠️ 还有 {totalQuestions - answeredCount} 题未作答</p>}
+            <h3 className="text-lg font-bold mb-2">Confirm Submit</h3>
+            <p className="text-sm text-slate-600 mb-1">You have answered {answeredCount} / {totalQuestions} questions</p>
+            {answeredCount < totalQuestions && <p className="text-sm text-amber-600 mb-4">⚠️ {totalQuestions - answeredCount} question(s) remaining</p>}
             <div className="flex gap-3">
-              <button onClick={() => setShowSubmitModal(false)} className="flex-1 py-2 border rounded-lg text-sm">继续答题</button>
-              <button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50">{submitting ? '提交中...' : '确认提交'}</button>
+              <button onClick={() => setShowSubmitModal(false)} className="flex-1 py-2 border rounded-lg text-sm">Continue</button>
+              <button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50">{submitting ? 'Submitting...' : 'Confirm'}</button>
             </div>
           </div>
         </div>

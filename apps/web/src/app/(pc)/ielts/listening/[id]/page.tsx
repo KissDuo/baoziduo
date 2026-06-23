@@ -97,8 +97,8 @@ export default function IeltsListeningPage() {
 
   const formatTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" /><span className="ml-3 text-slate-500">加载中...</span></div>;
-  if (error || !exam) return <div className="text-center py-16 text-red-500">{error || '未找到考试'}</div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" /><span className="ml-3 text-slate-500">Loading...</span></div>;
+  if (error || !exam) return <div className="text-center py-16 text-red-500">{error || 'Exam not found'}</div>;
 
   return (
     <div className="fixed inset-0 top-16 bg-white flex flex-col z-40">
@@ -106,8 +106,8 @@ export default function IeltsListeningPage() {
       <div className="bg-slate-900 text-white px-6 h-12 flex items-center justify-between flex-shrink-0">
         <h1 className="text-sm font-medium truncate">{exam.title}</h1>
         <div className="flex items-center gap-5 text-sm">
-          <span className="text-slate-400">{answeredCount}/{totalQuestions} 已答</span>
-          <button onClick={() => setShowSubmitModal(true)} className="bg-primary-600 hover:bg-primary-700 px-5 py-1 rounded text-sm font-medium">提交</button>
+          <span className="text-slate-400">{answeredCount}/{totalQuestions} answered</span>
+          <button onClick={() => setShowSubmitModal(true)} className="bg-primary-600 hover:bg-primary-700 px-5 py-1 rounded text-sm font-medium">Submit</button>
         </div>
       </div>
 
@@ -195,12 +195,12 @@ export default function IeltsListeningPage() {
       {showSubmitModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
-            <h3 className="text-lg font-bold mb-2">确认提交</h3>
-            <p className="text-sm text-slate-600 mb-1">你已回答 {answeredCount} / {totalQuestions} 题</p>
-            {answeredCount < totalQuestions && <p className="text-sm text-amber-600 mb-4">⚠️ 还有 {totalQuestions - answeredCount} 题未作答</p>}
+            <h3 className="text-lg font-bold mb-2">Confirm Submit</h3>
+            <p className="text-sm text-slate-600 mb-1">You have answered {answeredCount} / {totalQuestions} questions</p>
+            {answeredCount < totalQuestions && <p className="text-sm text-amber-600 mb-4">⚠️ {totalQuestions - answeredCount} question(s) remaining</p>}
             <div className="flex gap-3">
-              <button onClick={() => setShowSubmitModal(false)} className="flex-1 py-2 border rounded-lg text-sm">继续答题</button>
-              <button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50">{submitting ? '提交中...' : '确认提交'}</button>
+              <button onClick={() => setShowSubmitModal(false)} className="flex-1 py-2 border rounded-lg text-sm">Continue</button>
+              <button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50">{submitting ? 'Submitting...' : 'Confirm'}</button>
             </div>
           </div>
         </div>

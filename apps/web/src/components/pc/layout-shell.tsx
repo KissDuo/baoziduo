@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { href: '/articles', key: 'nav.articles', match: '/articles' },
   { href: '/ielts', key: 'nav.ielts', match: '/ielts' },
   { href: '/videos', key: 'nav.videos', match: '/videos' },
+  { href: '/vocabulary', key: 'nav.vocabulary', match: '/vocabulary' },
 ];
 
 interface LayoutUser {

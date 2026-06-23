@@ -31,6 +31,37 @@ export class VocabularyController {
       next(err);
     }
   }
+
+  async listBooks(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const books = await vocabularyService.listBooks();
+      res.json(books);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getBookWords(req: Request, res: Response, next: NextFunction) {
+    try {
+      const slug = req.params.slug as string;
+      const userId = req.user?.id;
+      const result = await vocabularyService.getBookWords(slug, userId);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async updateStudyProgress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const slug = req.params.slug as string;
+      const { results } = req.body;
+      const result = await vocabularyService.updateStudyProgress(req.user!.id, slug, results);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const vocabularyController = new VocabularyController();
