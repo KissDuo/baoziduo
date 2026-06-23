@@ -49,10 +49,20 @@ function formatUserResponse(user: any) {
 }
 
 export class AuthController {
+  async sendEmailCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      const result = await authService.sendEmailCode(email);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async registerByEmail(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password, nickname } = req.body;
-      const result = await authService.registerByEmail(email, password, nickname);
+      const { email, password, code, nickname } = req.body;
+      const result = await authService.registerByEmail(email, password, code, nickname);
       setTokenCookies(res, result.accessToken, result.refreshToken);
       res.status(201).json({ user: formatUserResponse(result.user) });
     } catch (err) {

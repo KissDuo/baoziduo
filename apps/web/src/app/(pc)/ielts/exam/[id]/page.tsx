@@ -9,6 +9,37 @@ import type { IeltsExamDetail, IeltsAttempt } from '@/services/ielts.service';
 interface HighlightSpan { text: string; color: string; note?: string }
 interface SelectionMenu { text: string; x: number; y: number }
 
+// Resizable split panel with draggable divider
+function ResizableSplit({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
+  const [split, setSplit] = useState(50);
+  const dragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!dragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplit(Math.min(70, Math.max(30, pct)));
+    };
+    const handleUp = () => { dragging.current = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; };
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+    return () => { document.removeEventListener('mousemove', handleMove); document.removeEventListener('mouseup', handleUp); };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="flex flex-1 overflow-hidden">
+      <div className="overflow-y-auto" style={{ width: split + '%', minWidth: 0 }}>{left}</div>
+      <div
+        className="w-1.5 bg-slate-200 hover:bg-primary-400 cursor-col-resize flex-shrink-0 transition-colors active:bg-primary-500"
+        onMouseDown={() => { dragging.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; }}
+      />
+      <div className="overflow-y-auto" style={{ width: (100 - split) + '%', minWidth: 0 }}>{right}</div>
+    </div>
+  );
+}
+
 // Isolated blank input — uses ref, zero re-renders from parent
 function BlankInput({ qid, initial, attemptId, onSave }: {
   qid: number; initial: string; attemptId?: number; onSave: (qid: number, val: string) => void;
@@ -219,23 +250,24 @@ export default function IeltsExamPage() {
       </div>
 
       {/* ── Main split ── */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left: Passage */}
-        <div className="w-1/2 border-r overflow-y-auto p-6 bg-slate-50 relative" ref={passageRef} onMouseUp={handlePassageMouseUp}>
-          <h2 className="text-base font-bold text-slate-800 mb-3">{section?.title}</h2>
-          <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
-            {renderPassage()}
+      <ResizableSplit
+        left={
+          <div className="h-full overflow-y-auto p-6 bg-slate-50 relative" ref={passageRef} onMouseUp={handlePassageMouseUp}>
+            <h2 className="text-base font-bold text-slate-800 mb-3">{section?.title}</h2>
+            <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-line break-words">
+              {renderPassage()}
+            </div>
           </div>
-        </div>
-
-        {/* Right: Questions (memoized — timer won't affect inputs) */}
-        <QuestionsPanel
-          section={section}
-          answers={answers}
-          attemptId={attempt?.id}
-          onSave={saveAnswer}
-        />
-      </div>
+        }
+        right={
+          <QuestionsPanel
+            section={section}
+            answers={answers}
+            attemptId={attempt?.id}
+            onSave={saveAnswer}
+          />
+        }
+      />
 
       {/* ── Bottom: Section tabs ── */}
       <div className="border-t bg-white px-6 py-3 flex items-center justify-center gap-3 flex-shrink-0">

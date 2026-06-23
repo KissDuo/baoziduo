@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-primary-600">
-            EnglishHub
+            宝子多EN
           </Link>
         </div>
         <div className="bg-white rounded-xl shadow-sm border p-6">

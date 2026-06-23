@@ -36,7 +36,7 @@ export default function PCHomePage({ user }: { user?: LayoutUser | null }) {
 
       <section className="grid md:grid-cols-3 gap-8">
         <FeatureCard icon="📰" title={t('home.f1_title')} description={t('home.f1_desc')} />
-        <FeatureCard icon="📚" title={t('home.f2_title')} description={t('home.f2_desc')} />
+        <FeatureCard icon="🎬" title={t('home.f4_title')} description={t('home.f4_desc')} />
         <FeatureCard icon="🎧" title={t('home.f3_title')} description={t('home.f3_desc')} />
       </section>
     </div>

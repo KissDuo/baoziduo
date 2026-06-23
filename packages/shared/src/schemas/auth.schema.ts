@@ -4,7 +4,12 @@ import { z } from 'zod';
 export const registerEmailSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  nickname: z.string().min(1).max(100).optional(),
+  code: z.string().length(6, 'Verification code must be 6 digits'),
+  nickname: z.string().min(1, 'Nickname is required').max(100),
+});
+
+export const sendEmailCodeSchema = z.object({
+  email: z.string().email('Invalid email address'),
 });
 
 export const registerSmsSchema = z.object({

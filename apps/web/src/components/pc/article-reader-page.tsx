@@ -349,9 +349,10 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
         <article className="flex-1 min-w-0 max-w-3xl" onMouseUp={handleMouseUp}>
           {/* Article header */}
           <header className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-4 leading-tight">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2 leading-tight">
               {article.title}
             </h1>
+            {article.titleZh && <p className="text-lg text-slate-500 mb-4">{article.titleZh}</p>}
             <div className="flex items-center gap-4 text-sm text-slate-500 flex-wrap">
               <DifficultyBadge level={level} />
               {article.source && <span>来源：{article.source}</span>}

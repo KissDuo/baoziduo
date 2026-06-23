@@ -67,6 +67,17 @@ model SmsCode {
   @@index([phone, code])
 }
 
+model EmailCode {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(255)
+  code      String   @db.VarChar(10)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, code])
+}
+
 // ========================
 // AI USAGE QUOTAS
 // ========================
@@ -132,6 +143,7 @@ model Payment {
 model Article {
   id                Int       @id @default(autoincrement())
   title             String    @db.VarChar(500)
+  titleZh           String?   @db.VarChar(500)
   slug              String    @unique @db.VarChar(500)
   source            String?   @db.VarChar(255)
   summary           String?   @db.Text
@@ -339,6 +351,7 @@ model IELTSQuestion {
   questionText      String?          @db.Text
   options           String?          @db.Text
   correctAnswer     String           @db.Text
+  acceptableAnswers String?          @db.Text
   score             Decimal          @default(1.0) @db.Decimal(5, 2)
   answerExplanation String?          @db.Text
   passageText       String?          @db.LongText

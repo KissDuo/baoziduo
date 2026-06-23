@@ -1,11 +1,42 @@
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
+import { sendVerificationEmail } from '../utils/email.js';
 import prisma from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 export class AuthService {
+  // ── Send Email Verification Code ──
+  async sendEmailCode(email: string) {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await prisma.emailCode.create({
+      data: {
+        email,
+        code,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min
+      },
+    });
+
+    await sendVerificationEmail(email, code);
+
+    return { ok: true };
+  }
+
   // ── Email Registration ──
-  async registerByEmail(email: string, password: string, nickname?: string) {
+  async registerByEmail(email: string, password: string, code: string, nickname?: string) {
+    // Verify code first
+    const emailCode = await prisma.emailCode.findFirst({
+      where: { email, code, used: false },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!emailCode || emailCode.expiresAt < new Date()) {
+      throw new AppError(401, 'Invalid or expired verification code', 'INVALID_CODE');
+    }
+
+    // Mark code as used
+    await prisma.emailCode.update({ where: { id: emailCode.id }, data: { used: true } });
+
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new AppError(409, 'Email already registered', 'EMAIL_EXISTS');

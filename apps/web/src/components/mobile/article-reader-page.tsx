@@ -316,7 +316,8 @@ export default function MobileArticleReaderPage({ slug }: { slug: string }) {
       </Link>
 
       {/* Article header */}
-      <h1 className="text-xl font-bold text-slate-900 mb-3 leading-snug">{article.title}</h1>
+      <h1 className="text-xl font-bold text-slate-900 mb-1 leading-snug">{article.title}</h1>
+      {article.titleZh && <p className="text-sm text-slate-500 mb-3">{article.titleZh}</p>}
       <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap mb-4">
         <DifficultyBadge level={level} />
         {article.source && <span>{article.source}</span>}

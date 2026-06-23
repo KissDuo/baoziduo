@@ -2,17 +2,27 @@
 
 import { memo } from 'react';
 import { useTextHighlight } from '../../useTextHighlight';
-import { SingleChoice, TrueFalse, FillBlank, TableGroup, MultiChoiceGroup, MatchingGroup, NoteGroup } from './Components';
+import { SingleChoice, TrueFalse, FillBlank, TableGroup, MultiChoiceGroup, MatchingGroup, NoteGroup, SummaryCompletion } from './Components';
 
 // ── Group detection helpers ──
-function getMatchingGroup(qs: any[]) {
-  const first = qs.find((q: any) => q.questionType === 'matching');
-  if (!first) return null;
-  let opts: string[] = [];
-  try { opts = JSON.parse(first.options); } catch { return null; }
-  const group = qs.filter((q: any) => q.questionType === 'matching' && q.options === first.options);
-  if (group.length < 2) return null;
-  return { ids: group.map((g:any)=>g.id), items: group.map((g:any)=>({qid:g.id,qi:g.questionIndex,text:g.questionText||''})), options:opts };
+function getMatchingGroups(qs: any[]) {
+  const groups: { ids: number[]; items: {qid:number; qi:number; text:string}[]; options: string[] }[] = [];
+  const seen = new Set<number>();
+  for (const q of qs) {
+    if (q.questionType !== 'matching' || seen.has(q.id) || !q.options) continue;
+    let opts: string[] = [];
+    try { opts = JSON.parse(q.options); } catch { continue; }
+    const group = qs.filter((g: any) => g.questionType === 'matching' && g.options === q.options);
+    if (group.length >= 2) {
+      groups.push({
+        ids: group.map((g:any) => g.id),
+        items: group.map((g:any) => ({ qid: g.id, qi: g.questionIndex, text: g.questionText || '' })),
+        options: opts,
+      });
+      group.forEach((g: any) => seen.add(g.id));
+    }
+  }
+  return groups;
 }
 
 function getMultiChoiceGroups(qs: any[], exclude: Set<number>) {
@@ -30,6 +40,17 @@ function getMultiChoiceGroups(qs: any[], exclude: Set<number>) {
     }
   }
   return groups;
+}
+
+function getSummaryGroup(qs: any[]) {
+  // Find fill_blank questions whose passageText starts with ## (not [table])
+  const first = qs.find((q: any) => q.passageText && q.passageText.trim().match(/^##\s/));
+  if (!first) return null;
+  const start = first.questionIndex;
+  // Collect consecutive fill_blank Qs starting from the summary
+  const group = qs.filter((q: any) => q.questionIndex >= start && q.questionType === 'fill_blank');
+  if (group.length < 2) return null;
+  return { questions: group, firstIndex: start };
 }
 
 function getTableGroup(qs: any[]) {
@@ -61,11 +82,16 @@ export const QuestionsPanel = memo(function QuestionsPanel({
 }) {
   if (!section) return null;
   const inst = section.instructions || '';
-  const matching = getMatchingGroup(section.questions);
-  const matchingIds = new Set(matching?.ids || []);
+  const matchingGroups = getMatchingGroups(section.questions);
+  const matchingIds = new Set<number>();
+  matchingGroups.forEach(g => g.ids.forEach(id => matchingIds.add(id)));
+  const matchingFirstIds = new Set<number>();
+  matchingGroups.forEach(g => matchingFirstIds.add(g.ids[0]!));
   const mcGroups = getMultiChoiceGroups(section.questions, matchingIds);
   const mcAllIds = new Set<number>(); mcGroups.forEach(g => g.ids.forEach(id => mcAllIds.add(id)));
   const mcFirstIds = new Set<number>(); mcGroups.forEach(g => mcFirstIds.add(g.firstId));
+  const summary = getSummaryGroup(section.questions);
+  const summaryIds = new Set(summary?.questions.map(q => q.id) || []);
   const table = getTableGroup(section.questions);
   const tableIds = new Set(table?.questions.map(q => q.id) || []);
   const noteMode = isNoteMode(inst);
@@ -77,7 +103,7 @@ export const QuestionsPanel = memo(function QuestionsPanel({
   hLines.forEach(l => { const m = l.match(/^##\s*Q(\d+)\s+(.+)/); if (m) headingMap.set(parseInt(m[1]!), m[2]!); });
 
   return (
-    <div className={`${fullWidth ? 'w-full' : 'w-1/2'} overflow-y-auto p-6`} onMouseUp={hl.handleMouseUp}>
+    <div className={`${fullWidth ? 'w-full' : ''} overflow-y-auto p-6 break-words`} onMouseUp={hl.handleMouseUp}>
       <div className="border-2 border-slate-800 rounded-lg p-5 bg-white">
         <h2 className="text-lg font-bold text-slate-800 mb-2">{fullWidth ? `Part ${(section as any).sectionIndex ?? ''}` : section.title}</h2>
         {inst && !noteMode && <p className="text-xs font-medium text-slate-500 mb-4 border-b pb-2">{inst.split('\n')[0]}</p>}
@@ -87,9 +113,18 @@ export const QuestionsPanel = memo(function QuestionsPanel({
 
         {/* Regular rendering */}
         {!noteMode && section.questions.map((q, idx) => {
-          // Matching
-          if (matchingIds.has(q.id)) {
-            if (q.id === matching!.ids[0]) return <MatchingGroup key="mg" items={matching!.items} options={matching!.options} answers={answers} onSave={onSave} />;
+          // Matching (skip non-first in each group)
+          if (matchingIds.has(q.id) && !matchingFirstIds.has(q.id)) return null;
+          // Matching (first of each group)
+          if (matchingFirstIds.has(q.id)) {
+            const g = matchingGroups.find(g => g.ids[0] === q.id)!;
+            const nbMatch = inst.match(/NB[^.]*\./g);
+            const hint = nbMatch ? nbMatch[nbMatch.length - 1] : undefined;
+            return <MatchingGroup key={`mg-${g.ids[0]}`} items={g.items} options={g.options} answers={answers} onSave={onSave} hint={hint} />;
+          }
+          // Summary completion (fill_blank paragraph)
+          if (summaryIds.has(q.id)) {
+            if (q.id === summary!.questions[0]!.id) return <SummaryCompletion key="sc" questions={summary!.questions} answers={answers} attemptId={attemptId} onSave={onSave} />;
             return null;
           }
           // Table

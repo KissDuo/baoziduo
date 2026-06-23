@@ -24,41 +24,89 @@ export function BlankInput({ qid, initial, attemptId, onSave }: {
 // ═══════════════════════════════════════════
 // FillBlank — 基础填空题 (Q1-6 那种)
 // ═══════════════════════════════════════════
+// ── Text formatter: handles \n → <br>, **text** → <strong> ──
+function RichText({ text }: { text: string }) {
+  const lines = text.split('\n');
+  return (
+    <>
+      {lines.map((line, li) => (
+        <span key={li}>
+          {li > 0 && <br />}
+          {line.split(/(\*\*[^*]+\*\*)/).map((seg, si) => {
+            if (/^\*\*[^*]+\*\*$/.test(seg)) {
+              return <strong key={si} className="font-bold text-slate-900">{seg.slice(2, -2)}</strong>;
+            }
+            return <span key={si}>{seg}</span>;
+          })}
+        </span>
+      ))}
+    </>
+  );
+}
+
 export function FillBlank({ q, ans, attemptId, onSave }: {
   q: any; ans: string; attemptId?: number; onSave: (qid: number, val: string) => void;
 }) {
-  if (!q.questionText) {
+  // Check for passageText with ## Title (renders bordered box)
+  const boxTitle = q.passageText?.match(/^##\s*(.+)/m)?.[1];
+  const boxHint = q.passageText?.replace(/^##\s*.+\n?/m, '').trim();
+
+  const renderInput = () => {
+    if (!q.questionText) {
+      return (
+        <div className="py-1 text-sm text-slate-800 leading-8">
+          <span className="inline-flex items-center gap-1">
+            <b className="text-xs text-slate-600">{q.questionIndex}</b>
+            <BlankInput qid={q.id} initial={ans} attemptId={attemptId} onSave={onSave} />
+          </span>
+        </div>
+      );
+    }
+    const parts = q.questionText.split(/(_{2,}|\.{3,})/);
+    const hasBlank = parts.some(p => /^_{2,}$/.test(p) || /^\.{3,}$/.test(p));
     return (
-      <div className="py-1 text-sm text-slate-800 leading-8">
-        <span className="inline-flex items-center gap-1">
-          <b className="text-xs text-slate-600">{q.questionIndex}</b>
-          <BlankInput qid={q.id} initial={ans} attemptId={attemptId} onSave={onSave} />
-        </span>
+      <p className="py-1 text-sm text-slate-800 leading-8">
+        {parts.map((part: string, i: number) => {
+          if (/^_{2,}$/.test(part) || /^\.{3,}$/.test(part)) {
+            return (
+              <span key={i} className="inline-flex items-center gap-0.5 mx-0.5">
+                <b className="text-xs text-slate-600">{q.questionIndex}</b>
+                <BlankInput qid={q.id} initial={ans} attemptId={attemptId} onSave={onSave} />
+              </span>
+            );
+          }
+          return <RichText key={i} text={part} />;
+        })}
+        {!hasBlank && (
+          <span className="inline-flex items-center gap-0.5 ml-1">
+            <b className="text-xs text-slate-600">{q.questionIndex}</b>
+            <BlankInput qid={q.id} initial={ans} attemptId={attemptId} onSave={onSave} />
+          </span>
+        )}
+      </p>
+    );
+  };
+
+  if (boxTitle) {
+    return (
+      <div className="my-3">
+        <p className="font-bold text-slate-800 text-sm mb-1">{boxTitle}</p>
+        {boxHint && <p className="text-xs text-slate-500 mb-2">{boxHint}</p>}
+        <div className="border-2 border-slate-300 rounded-lg p-4">
+          {renderInput()}
+        </div>
       </div>
     );
   }
-  const parts = q.questionText.split(/(_{2,}|\.{3,})/);
-  return (
-    <p className="py-1 text-sm text-slate-800 leading-8">
-      {parts.map((part: string, i: number) => {
-        if (/^_{2,}$/.test(part) || /^\.{3,}$/.test(part)) {
-          return (
-            <span key={i} className="inline-flex items-center gap-0.5 mx-0.5">
-              <b className="text-xs text-slate-600">{q.questionIndex}</b>
-              <BlankInput qid={q.id} initial={ans} attemptId={attemptId} onSave={onSave} />
-            </span>
-          );
-        }
-        return <span key={i}>{part}</span>;
-      })}
-    </p>
-  );
+
+  return renderInput();
 }
 
 // ═══════════════════════════════════════════
 // TableGroup — 表格填空题
 // ═══════════════════════════════════════════
 function hasBlank(cell: string) { return /_{2,}/.test(cell) || /\.{3,}/.test(cell); }
+function countBlanks(cell: string) { const m = cell.match(/(_{2,}|\.{3,})/g); return m ? m.length : 0; }
 
 function parseTable(text: string) {
   // Normalize: ensure every line that starts with | also ends with |
@@ -110,35 +158,35 @@ export const TableGroup = memo(function TableGroup({
         </tr></thead>
         <tbody>
           {rowsTrimmed.map((row, ri) => {
-            // Count all blanks in prior rows for flat index
+            // Count all blank markers in prior rows for flat index
             const priorBlanks = rowsTrimmed.slice(0, ri).reduce((s, r) =>
-              s + r.filter(c => hasBlank(c)).length, 0);
+              s + r.reduce((sum, c) => sum + countBlanks(c), 0), 0);
             return (
               <tr key={ri}>
                 {row.map((cell, ci) => {
                   if (hasBlank(cell)) {
-                    // Count blanks before this cell in the current row
-                    const blanksBefore = row.slice(0, ci).filter(c => hasBlank(c)).length;
-                    const flatIdx = priorBlanks + blanksBefore;
-                    const q = qMap.get(first.questionIndex + flatIdx);
-                    if (q) {
-                      // Split cell text on underscores/dots, render text + BlankInput inline
-                      const parts = cell.split(/(_{2,}|\.{3,})/);
-                      return (
-                        <td key={`q-${q.id}`} className="border border-slate-300 px-3 py-2 text-slate-700">
-                          {parts.map((part: string, pi: number) => {
-                            if (/^_{2,}$/.test(part) || /^\.{3,}$/.test(part)) {
+                    // Each blank in the cell maps to sequential questions
+                    const blanksBefore = row.slice(0, ci).reduce((s, c) => s + countBlanks(c), 0);
+                    let blankIdx = -1;
+                    const parts = cell.split(/(_{2,}|\.{3,})/);
+                    return (
+                      <td key={`c-${ri}-${ci}`} className="border border-slate-300 px-3 py-2 text-slate-700">
+                        {parts.map((part: string, pi: number) => {
+                          if (/^_{2,}$/.test(part) || /^\.{3,}$/.test(part)) {
+                            blankIdx++;
+                            const q = qMap.get(first.questionIndex + priorBlanks + blanksBefore + blankIdx);
+                            if (q) {
                               return <span key={pi} className="inline-flex items-center gap-0.5 align-baseline">
                                 <b className="text-xs text-slate-600">{q.questionIndex}</b>
                                 <BlankInput qid={q.id} initial={answers[q.id] || ''} attemptId={attemptId} onSave={onSave} />
                               </span>;
                             }
-                            return <span key={pi}>{part}</span>;
-                          })}
-                        </td>
-                      );
-                    }
-                    return <td key={`e-${ri}-${ci}`} className="border border-slate-300 px-3 py-2 text-slate-400">____</td>;
+                            return <span key={pi} className="text-slate-400">____</span>;
+                          }
+                          return <span key={pi}>{part}</span>;
+                        })}
+                      </td>
+                    );
                   }
                   return <td key={`c-${ri}-${ci}`} className="border border-slate-300 px-3 py-2 text-slate-700">{cell}</td>;
                 })}
@@ -183,33 +231,85 @@ export const MultiChoiceGroup = memo(function MultiChoiceGroup({
 });
 
 // ═══════════════════════════════════════════
+// SummaryCompletion — 阅读填空段落（整段框起来，空在段落中）
+// ═══════════════════════════════════════════
+export const SummaryCompletion = memo(function SummaryCompletion({
+  questions, answers, attemptId, onSave,
+}: {
+  questions: any[]; answers: Record<string,string>; attemptId?: number; onSave: (qid:number,v:string)=>void;
+}) {
+  if (!questions.length) return null;
+  const first = questions[0];
+  const raw = first.passageText || '';
+  const lines = raw.split('\n');
+  const title = lines[0]?.replace(/^##\s*/, '') || '';
+  const hint = lines[1] || '';
+  // Paragraph text starts after the blank line
+  const paraStart = raw.indexOf('\n\n') >= 0 ? raw.indexOf('\n\n') + 2 : lines.slice(2).join('\n');
+  const paraText = paraStart > 1 ? raw.substring(paraStart) : raw;
+
+  const qMap = new Map(questions.map(q => [q.questionIndex, q]));
+
+  // Split paragraph on (QN) ______ markers
+  const parts = paraText.split(/(\(\d+\)\s*_{2,})/);
+
+  return (
+    <div className="my-3">
+      {title && <p className="font-bold text-slate-800 text-sm mb-1">{title}</p>}
+      {hint && <p className="text-xs text-slate-500 mb-2">{hint}</p>}
+      <div className="border-2 border-slate-300 rounded-lg p-4 text-sm text-slate-800 leading-8">
+        {parts.map((part: string, pi: number) => {
+          const m = part.match(/\((\d+)\)\s*(_{2,})/);
+          if (m) {
+            const qi = parseInt(m[1]);
+            const q = qMap.get(qi);
+            if (q) {
+              return (
+                <span key={pi} className="inline-flex items-center gap-0.5 align-baseline">
+                  <b className="text-xs text-slate-600">{qi}</b>
+                  <BlankInput qid={q.id} initial={answers[q.id] || ''} attemptId={attemptId} onSave={onSave} />
+                </span>
+              );
+            }
+            return <span key={pi} className="text-slate-400">______</span>;
+          }
+          return <span key={pi}>{part}</span>;
+        })}
+      </div>
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════
 // MatchingGroup — 拖拽匹配
 // ═══════════════════════════════════════════
 export const MatchingGroup = memo(function MatchingGroup({
-  items, options, answers, onSave,
+  items, options, answers, onSave, hint,
 }: {
-  items: {qid:number; qi:number; text:string}[]; options: string[]; answers: Record<string,string>; onSave: (qid:number,v:string)=>void;
+  items: {qid:number; qi:number; text:string}[]; options: string[]; answers: Record<string,string>; onSave: (qid:number,v:string)=>void; hint?: string;
 }) {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const [dragging, setDragging] = useState<string | null>(null);
 
   return (
     <div className="py-3 border-b border-slate-100">
-      <div className="text-xs text-slate-400 mb-2">第 {items[0]!.qi}-{items[items.length-1]!.qi} 题（将右侧选项拖入左侧虚线框）</div>
-      <div className="flex gap-6 justify-start">
-        <div className="space-y-2">
+      <div className="text-xs text-slate-400 mb-1">第 {items[0]!.qi}-{items[items.length-1]!.qi} 题（将右侧选项拖入左侧虚线框）</div>
+      {hint && <div className="text-xs text-amber-600 font-medium mb-2 italic">{hint}</div>}
+      <div className="flex gap-4 justify-start min-w-0">
+        <div className="space-y-2.5 min-w-0 flex-1">
           {items.map((item) => {
             const selected = answers[item.qid] || '';
             return (
               <div key={item.qid} className="flex items-center gap-2 text-sm">
-                <span className="text-slate-700 whitespace-nowrap">{item.qi}. {item.text}</span>
+                <span className="text-slate-500 shrink-0 w-5 text-right text-xs">{item.qi}</span>
+                <span className="text-slate-700">{item.text}</span>
                 <div
                   onDrop={(e) => { e.preventDefault(); if (dragging) { onSave(item.qid, dragging); setDragging(null); } }}
                   onDragOver={(e) => e.preventDefault()}
-                  className={`border-2 border-dashed rounded px-3 py-1 text-center text-sm min-w-[60px] transition-colors ${
-                    selected ? 'border-primary-400 bg-primary-50' : 'border-slate-300'
+                  className={`border-2 border-dashed rounded px-3 py-0.5 text-center text-sm min-w-[70px] flex-shrink-0 transition-colors ${
+                    selected ? 'border-primary-400 bg-primary-50 text-primary-700' : 'border-slate-300 text-slate-400'
                   } ${dragging ? 'border-primary-500 bg-primary-100' : ''}`}
-                >{selected || '_____'}</div>
+                >{selected || '______'}</div>
               </div>
             );
           })}

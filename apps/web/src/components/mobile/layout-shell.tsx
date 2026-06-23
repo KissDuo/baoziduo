@@ -16,15 +16,16 @@ export function MobileLayoutShell({ children, user }: { children: React.ReactNod
   const navItems = [
     { href: '/', match: '/', label: lang === 'zh' ? '首页' : 'Home', icon: '🏠' },
     { href: '/articles', match: '/articles', label: t('nav.articles'), icon: '📰' },
-    { href: user ? '/vocabulary' : '/login', match: user ? '/vocabulary' : '/login', label: user ? (lang === 'zh' ? '我的' : 'Me') : t('nav.login'), icon: '👤' },
     { href: '/ielts', match: '/ielts', label: t('nav.ielts'), icon: '✈️' },
+    { href: '/videos', match: '/videos', label: t('nav.videos'), icon: '🎬' },
+    { href: user ? '/vocabulary' : '/login', match: user ? '/vocabulary' : '/login', label: user ? (lang === 'zh' ? '我的' : 'Me') : t('nav.login'), icon: '👤' },
   ];
 
   return (
     <div className="mobile-layout">
       <header className="border-b bg-white sticky top-0 z-50 px-4 h-14 flex items-center justify-between">
         <Link href="/" className="text-lg font-bold text-primary-600">
-          EnglishHub
+          宝子多EN
         </Link>
         <div className="flex items-center gap-2">
           <button

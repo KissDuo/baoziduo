@@ -125,6 +125,7 @@ export class ArticleService {
       return {
         id: article.id,
         title: article.title,
+        titleZh: article.titleZh,
         slug: article.slug,
         source: article.source,
         summary: article.summary,
@@ -212,6 +213,7 @@ export class ArticleService {
     const result: any = {
       id: article.id,
       title: article.title,
+      titleZh: article.titleZh,
       slug: article.slug,
       source: article.source,
       summary: article.summary,

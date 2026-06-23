@@ -7,6 +7,7 @@ import { useLang } from '@/lib/i18n';
 const NAV_LINKS = [
   { href: '/articles', key: 'nav.articles', match: '/articles' },
   { href: '/ielts', key: 'nav.ielts', match: '/ielts' },
+  { href: '/videos', key: 'nav.videos', match: '/videos' },
 ];
 
 interface LayoutUser {
@@ -24,7 +25,7 @@ export function PCLayoutShell({ children, user }: { children: React.ReactNode; u
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/" className="text-xl font-bold text-primary-600">
-              EnglishHub
+              宝子多EN
             </Link>
             <nav className="flex items-center gap-6">
               {NAV_LINKS.map((link) => {
@@ -105,7 +106,7 @@ export function PCLayoutShell({ children, user }: { children: React.ReactNode; u
       </main>
 
       <footer className="border-t py-8 text-center text-sm text-slate-500">
-        <p>&copy; {new Date().getFullYear()} EnglishHub. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} 宝子多EN. All rights reserved.</p>
       </footer>
     </div>
   );

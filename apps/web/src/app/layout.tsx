@@ -7,7 +7,7 @@ import type { Lang } from '@/lib/i18n';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'EnglishHub - Master English',
+  title: '宝子多EN - 英语学习平台',
   description: 'Learn English with articles, vocabulary, and IELTS mock exams',
 };
 

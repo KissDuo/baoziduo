@@ -1,21 +1,29 @@
 import { NextRequest, NextResponse, userAgent } from 'next/server';
 
-// Routes that should NOT be device-redirected
-const EXCLUDED_PATHS = [
-  '/api',
-  '/_next',
-  '/login',
-  '/register',
-  '/static',
-  '/favicon.ico',
-];
+const PUBLIC_PATHS = ['/login', '/register', '/api', '/_next', '/static', '/favicon.ico'];
+
+const PROTECTED_PATHS = ['/articles', '/videos', '/ielts', '/vocabulary'];
+
+function isProtected(pathname: string) {
+  return PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip excluded paths
-  if (EXCLUDED_PATHS.some((p) => pathname.startsWith(p))) {
+  // Skip public paths
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
+  }
+
+  // Auth check for protected routes
+  if (isProtected(pathname)) {
+    const hasToken = request.cookies.get('access_token') || request.cookies.get('refresh_token');
+    if (!hasToken) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname + request.nextUrl.search);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   const { device } = userAgent(request);
@@ -29,16 +37,14 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
 
-  // Set viewport cookie for layouts to consume
   response.cookies.set('viewport', viewport, {
     path: '/',
-    maxAge: 60 * 60 * 24, // 1 day
+    maxAge: 60 * 60 * 24,
     sameSite: 'lax',
   });
 
   response.headers.set('x-viewport', viewport);
 
-  // Set default language cookie if not present
   if (!request.cookies.get('lang')) {
     response.cookies.set('lang', 'zh', {
       path: '/',

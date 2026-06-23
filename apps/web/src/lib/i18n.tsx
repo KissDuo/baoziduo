@@ -7,6 +7,7 @@ export type Lang = 'zh' | 'en';
 // ── Translation dictionaries ──
 const zh: Record<string, string> = {
   'nav.articles': '外刊',
+  'nav.videos': '视频',
   'nav.vocabulary': '词汇',
   'nav.ielts': '雅思',
   'nav.login': '登录',
@@ -28,6 +29,8 @@ const zh: Record<string, string> = {
   'home.f2_desc': '基于间隔重复算法的生词本，支持 CET-4、CET-6、IELTS、TOEFL 等词书。',
   'home.f3_title': '雅思模拟考试',
   'home.f3_desc': '真实还原雅思官方考试界面，听力+阅读全真模拟，自动计时和评分。',
+  'home.f4_title': '视频学习',
+  'home.f4_desc': '粘贴 YouTube/B站 链接，AI 自动抓取字幕并翻译，播放时同步高亮当前句子。',
 
   'login.title': '登录',
   'login.email_tab': '邮箱登录',
@@ -91,6 +94,7 @@ const zh: Record<string, string> = {
 
 const en: Record<string, string> = {
   'nav.articles': 'Journals',
+  'nav.videos': 'Videos',
   'nav.vocabulary': 'Vocabulary',
   'nav.ielts': 'IELTS',
   'nav.login': 'Login',
@@ -99,7 +103,7 @@ const en: Record<string, string> = {
   'nav.my_vocab': 'My Vocabulary',
   'nav.lang_tip': '中文',
 
-  'home.title': 'Master English, ',
+  'home.title': '宝子多EN, ',
   'home.title_hl': 'One Day at a Time',
   'home.subtitle': 'Read foreign journals, build vocabulary, and ace the IELTS — all in one place.',
   'home.cta_logged': 'Start Reading',
@@ -112,6 +116,8 @@ const en: Record<string, string> = {
   'home.f2_desc': 'Spaced repetition algorithm. Study by CET-4, CET-6, IELTS, TOEFL books.',
   'home.f3_title': 'IELTS Mock Exams',
   'home.f3_desc': 'Realistic IELTS exam interface. Listening + Reading with auto-timing and scoring.',
+  'home.f4_title': 'Video Learning',
+  'home.f4_desc': 'Paste YouTube/Bilibili links. AI fetches subtitles, translates them, and highlights the current sentence during playback.',
 
   'login.title': 'Login',
   'login.email_tab': 'Email',

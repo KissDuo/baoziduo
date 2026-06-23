@@ -9,6 +9,7 @@ const articleProgressBriefSchema = z.object({
 export const articleListItemSchema = z.object({
   id: z.number(),
   title: z.string(),
+  titleZh: z.string().nullable(),
   slug: z.string(),
   source: z.string().nullable(),
   summary: z.string().nullable(),

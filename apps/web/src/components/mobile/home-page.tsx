@@ -27,7 +27,7 @@ export default function MobileHomePage({ user }: { user?: LayoutUser | null }) {
 
       <section className="space-y-4">
         <MobileFeatureCard icon="📰" title={t('home.f1_title')} description={t('home.f1_desc')} href="/articles" />
-        <MobileFeatureCard icon="📚" title={t('home.f2_title')} description={t('home.f2_desc')} href="/vocabulary" />
+        <MobileFeatureCard icon="🎬" title={t('home.f4_title')} description={t('home.f4_desc')} href="/videos" />
         <MobileFeatureCard icon="👤" title={t('nav.my_vocab')} description={t('popup.add_vocab')} href="/vocabulary" />
       </section>
     </div>

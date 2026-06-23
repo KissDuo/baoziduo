@@ -6,11 +6,15 @@ import {
   loginEmailSchema,
   sendSmsCodeSchema,
   loginSmsVerifySchema,
+  sendEmailCodeSchema,
 } from '@english/shared';
 
 const router = Router();
 
 // Email auth
+router.post('/email/send-code', validate(sendEmailCodeSchema), (req, res, next) =>
+  authController.sendEmailCode(req, res, next)
+);
 router.post('/register/email', validate(registerEmailSchema), (req, res, next) =>
   authController.registerByEmail(req, res, next)
 );

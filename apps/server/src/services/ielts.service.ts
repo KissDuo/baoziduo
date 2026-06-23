@@ -170,7 +170,7 @@ export class IeltsService {
         where: { id: attempt.examId },
         include: {
           sections: {
-            include: { questions: { select: { id: true, correctAnswer: true, score: true } } },
+            include: { questions: { select: { id: true, correctAnswer: true, acceptableAnswers: true, score: true } } },
           },
         },
       }),
@@ -183,7 +183,15 @@ export class IeltsService {
     for (const section of exam!.sections) {
       for (const q of section.questions) {
         const userAnswer = answerMap.get(q.id) || '';
-        const isCorrect = userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+        const normalizedUser = userAnswer.trim().toLowerCase();
+        // Check against primary answer and any acceptable alternatives
+        let isCorrect = normalizedUser === q.correctAnswer.trim().toLowerCase();
+        if (!isCorrect && q.acceptableAnswers) {
+          try {
+            const alternatives: string[] = JSON.parse(q.acceptableAnswers);
+            isCorrect = alternatives.some(a => normalizedUser === a.trim().toLowerCase());
+          } catch {}
+        }
         const scoreEarned = isCorrect ? Number(q.score) : 0;
         totalScore += scoreEarned;
 
