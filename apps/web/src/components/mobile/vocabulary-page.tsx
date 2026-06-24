@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { X, BookOpen, List } from 'lucide-react';
+import { useLang } from '@/lib/i18n';
 import { articleService } from '@/services/article.service';
 import { vocabStudyService, type VocabBook } from '@/services/vocabulary.service';
 import type { UserVocabulary } from '@english/shared';
@@ -10,11 +11,13 @@ import type { UserVocabulary } from '@english/shared';
 const PAGE_SIZE = 20;
 
 export default function MobileVocabularyPage() {
+  const { t } = useLang();
   const [tab, setTab] = useState<'study' | 'mywords'>('study');
 
   return (
     <div className="px-4 py-6">
-      <h1 className="text-xl font-bold text-slate-900 mb-4">Vocabulary</h1>
+      <h1 className="text-xl font-bold text-slate-900 mb-1">{t('vocab.title')}</h1>
+      <p className="text-xs text-slate-400 mb-3">{t('vocab.overlap_hint')}</p>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
@@ -34,6 +37,7 @@ export default function MobileVocabularyPage() {
 }
 
 function MobileStudyTab() {
+  const { t } = useLang();
   const [books, setBooks] = useState<VocabBook[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +58,7 @@ function MobileStudyTab() {
             <span className="text-xs text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">{book.category}</span>
           </div>
           {book.description && <p className="text-sm text-slate-500 mb-2">{book.description}</p>}
-          <span className="text-xs text-slate-400">{book.totalWords} words</span>
+          <span className="text-xs text-slate-400">{t('vocab.words_count', { n: book.totalWords })}</span>
         </Link>
       ))}
     </div>

@@ -7,6 +7,11 @@ import { paginationSchema, addVocabularySchema } from '@english/shared';
 
 const router = Router();
 
+// ── Search schema ──
+const searchQuerySchema = z.object({
+  q: z.string().min(1).max(100),
+});
+
 // ── Params schema ──
 const vocabIdSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -41,6 +46,11 @@ router.delete('/:id', authenticate, validateParams(vocabIdSchema), (req, res, ne
 );
 
 // ── Study routes ──
+
+// GET /api/v1/vocabulary/search?q=word — Search word in dictionary
+router.get('/search', optionalAuth, validateQuery(searchQuerySchema), (req, res, next) =>
+  vocabularyController.searchWord(req, res, next),
+);
 
 // GET /api/v1/vocabulary/books — List vocabulary books
 router.get('/books', optionalAuth, (req, res, next) =>

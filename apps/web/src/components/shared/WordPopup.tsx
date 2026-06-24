@@ -4,6 +4,7 @@ import { X, BookmarkPlus, BookmarkCheck, Loader2 } from 'lucide-react';
 import type { WordAnnotationResponse } from '@/services/article.service';
 import { useLang } from '@/lib/i18n';
 
+
 interface WordPopupProps {
   word: WordAnnotationResponse | null;
   inVocabulary: boolean;
@@ -102,12 +103,34 @@ export function WordPopup({
         </div>
       )}
 
+      {/* Derived word forms */}
+      {(word as any).derivedForms && (word as any).derivedForms.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs text-slate-400 mb-1.5">Word Forms</p>
+          <div className="flex flex-wrap gap-1.5">
+            {(word as any).derivedForms.map((f: any) => (
+              <span key={f.word} className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-lg">
+                <span className="font-medium">{f.word}</span>
+                {f.partOfSpeech && <span className="text-slate-400 ml-1">({f.partOfSpeech}.)</span>}
+                <span className="text-slate-500 ml-1">{f.translation}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Examples from AI */}
       {word.examples && word.examples.length > 0 && (
         <div className="space-y-2 mb-3">
           {word.examples.map((ex, i) => (
             <div key={i} className="bg-slate-50 rounded-lg p-2.5">
-              <p className="text-sm text-slate-700 leading-relaxed">{ex.en}</p>
+              <p className="text-sm text-slate-700 leading-relaxed">
+                {ex.en.split(new RegExp(`(${word.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')).map((part: any, j: number) =>
+                  part.toLowerCase() === word.word.toLowerCase()
+                    ? <strong key={j} className="text-blue-600 font-bold">{part}</strong>
+                    : part
+                )}
+              </p>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">{ex.zh}</p>
             </div>
           ))}

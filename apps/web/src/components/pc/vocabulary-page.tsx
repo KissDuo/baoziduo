@@ -16,7 +16,8 @@ export default function PCVocabularyPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">{t('vocab.title')}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('vocab.title')}</h1>
+      <p className="text-xs text-slate-400 mb-5">{t('vocab.overlap_hint')}</p>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-6 w-fit">
@@ -37,6 +38,7 @@ export default function PCVocabularyPage() {
 
 // ── Study Tab: Word Books ──
 function StudyTab() {
+  const { t } = useLang();
   const [books, setBooks] = useState<VocabBook[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -66,7 +68,7 @@ function StudyTab() {
           </div>
           {book.description && <p className="text-sm text-slate-500 mb-3">{book.description}</p>}
           <div className="flex items-center gap-4 text-xs text-slate-400">
-            <span>{book.totalWords} words</span>
+            <span>{t('vocab.words_count', { n: book.totalWords })}</span>
           </div>
         </Link>
       ))}

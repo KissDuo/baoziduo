@@ -86,7 +86,10 @@ const zh: Record<string, string> = {
   'vocab.mastered': '已掌握',
   'vocab.reviewing': '复习中',
   'vocab.learning': '学习中',
+  'vocab.words_count': '{n}词',
+  'vocab.overlap_hint': '六级包含四级词汇，四级包含高考词汇；词库间重叠部分自动共享数据',
   'vocab.random': '随机',
+  'nav.search': '搜索单词...',
   'vocab.retry': '重拼',
 
   'article.back': '返回文章列表',
@@ -194,7 +197,10 @@ const en: Record<string, string> = {
   'vocab.mastered': 'Mastered',
   'vocab.reviewing': 'Reviewing',
   'vocab.learning': 'Learning',
+  'vocab.words_count': '{n} words',
+  'vocab.overlap_hint': 'CET-6 includes CET-4 vocabulary, CET-4 includes Gaokao vocabulary. Overlapping words share data automatically.',
   'vocab.random': 'Random',
+  'nav.search': 'Search word...',
   'vocab.retry': 'Retry',
 
   'article.back': '← Back to Articles',

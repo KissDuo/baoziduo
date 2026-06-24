@@ -10,6 +10,7 @@ interface AIResult {
   partOfSpeech: string;
   translation: string;
   examples: { en: string; zh: string }[];
+  forms?: { noun?: string; verb?: string; adj?: string; adv?: string; pastTense?: string; pastParticiple?: string; thirdPerson?: string; plural?: string };
 }
 
 async function enrichWord(word: string): Promise<AIResult | null> {
@@ -24,7 +25,17 @@ async function enrichWord(word: string): Promise<AIResult | null> {
     {"en": "English example sentence 1", "zh": "Chinese translation 1"},
     {"en": "English example sentence 2", "zh": "Chinese translation 2"},
     {"en": "English example sentence 3", "zh": "Chinese translation 3"}
-  ]
+  ],
+  "forms": {
+    "noun": "noun form of this word, or null",
+    "verb": "verb form of this word, or null",
+    "adj": "adjective form of this word, or null",
+    "adv": "adverb form of this word, or null",
+    "pastTense": "past tense if a verb, or null",
+    "pastParticiple": "past participle if a verb, or null",
+    "thirdPerson": "third person singular form, or null",
+    "plural": "plural form, or null"
+  }
 }`;
 
   try {
@@ -67,17 +78,30 @@ async function enrichWord(word: string): Promise<AIResult | null> {
 }
 
 async function main() {
-  const book = await p.vocabularyBook.findUnique({ where: { slug: 'ielts-vocab-real' } });
-  if (!book) { console.error('Book not found'); return; }
+  const arg = process.argv[2] || 'ielts-vocab-real';
 
-  // Get words that need enrichment (no phonetic, or partOfSpeech is null)
-  const words = await p.vocabularyWord.findMany({
-    where: { bookId: book.id },
-    orderBy: { wordIndex: 'asc' },
-    select: { id: true, word: true, partOfSpeech: true, phonetic: true, translation: true },
-  });
+  let words: any[];
+  let label: string;
 
-  console.log(`Processing ${words.length} words...`);
+  if (arg === 'all') {
+    // Process ALL WordAnnotations directly (not via VocabularyWord)
+    const annotations = await p.wordAnnotation.findMany({
+      orderBy: { id: 'asc' },
+    });
+    words = annotations.map(a => ({ id: a.id, word: a.word, partOfSpeech: a.partOfSpeech, translation: a.translation, wordAnnotation: a }));
+    label = `all ${annotations.length} WordAnnotations`;
+  } else {
+    const book = await p.vocabularyBook.findUnique({ where: { slug: arg } });
+    if (!book) { console.error(`Book not found: ${arg}`); return; }
+    words = await p.vocabularyWord.findMany({
+      where: { bookId: book.id },
+      orderBy: { wordIndex: 'asc' },
+      include: { wordAnnotation: { select: { phoneticUk: true } } },
+    });
+    label = `${words.length} words from ${book.name}`;
+  }
+
+  console.log(`Processing ${label}...`);
 
   let done = 0;
   let success = 0;
@@ -88,7 +112,7 @@ async function main() {
     if (targetIds) {
       if (!targetIds.includes(w.id)) { done++; continue; }
     } else {
-      if (w.phonetic && w.partOfSpeech && w.translation.length > 2 && !w.translation.startsWith('.')) {
+      if (w.wordAnnotation?.phoneticUk && w.partOfSpeech && w.translation.length > 2 && !w.translation.startsWith('.')) {
         done++;
         continue;
       }
@@ -98,20 +122,8 @@ async function main() {
     const ai = await enrichWord(w.word);
 
     if (ai) {
-      // Strip slashes from phonetics
-      const cleanUk = ai.phoneticUk.replace(/^\/|\/$/g, '');
-      const cleanUs = ai.phoneticUs.replace(/^\/|\/$/g, '');
-      await p.vocabularyWord.update({
-        where: { id: w.id },
-        data: {
-          partOfSpeech: ai.partOfSpeech,
-          translation: ai.translation,
-          exampleSentence: ai.examples[0] ? `${ai.examples[0].en}\n${ai.examples[0].zh}` : null,
-        },
-      });
-
-      // Upsert WordAnnotation with full data
-      await p.wordAnnotation.upsert({
+      // Update WordAnnotation with full data
+      const ann = await p.wordAnnotation.upsert({
         where: { word: w.word },
         create: {
           word: w.word,
@@ -120,6 +132,8 @@ async function main() {
           partOfSpeech: ai.partOfSpeech,
           translation: ai.translation,
           examplesJson: JSON.stringify(ai.examples),
+          ...(ai.forms?.thirdPerson && { thirdPersonSingular: ai.forms.thirdPerson }),
+          ...(ai.forms?.plural && { plural: ai.forms.plural }),
         },
         update: {
           phoneticUk: ai.phoneticUk,
@@ -127,13 +141,48 @@ async function main() {
           partOfSpeech: ai.partOfSpeech,
           translation: ai.translation,
           examplesJson: JSON.stringify(ai.examples),
+          ...(ai.forms?.thirdPerson && { thirdPersonSingular: ai.forms.thirdPerson }),
+          ...(ai.forms?.plural && { plural: ai.forms.plural }),
         },
       });
 
-      // Link word to annotation
-      const ann = await p.wordAnnotation.findUnique({ where: { word: w.word } });
-      if (ann) {
-        await p.vocabularyWord.update({ where: { id: w.id }, data: { wordAnnotationId: ann.id } });
+      // Update VocabularyWord if processing a book
+      if (arg !== 'all') {
+        await p.vocabularyWord.update({ where: { id: w.id }, data: { partOfSpeech: ai.partOfSpeech, translation: ai.translation, wordAnnotationId: ann.id } });
+      }
+
+      // Process word forms
+      if (ai.forms) {
+        const formFields = ['noun', 'verb', 'adj', 'adv', 'pastTense', 'pastParticiple'] as const;
+        const formUpdates: Record<string, number | null> = {};
+        for (const field of formFields) {
+          const formWord = ai.forms[field as keyof typeof ai.forms];
+          if (!formWord || formWord.toLowerCase() === w.word.toLowerCase()) continue;
+          const formAnn = await p.wordAnnotation.upsert({
+            where: { word: formWord.toLowerCase() },
+            create: { word: formWord.toLowerCase(), translation: '[Pending]' },
+            update: {},
+          });
+          if (!formAnn.phoneticUk) {
+            try {
+              const formAI = await enrichWord(formWord.toLowerCase());
+              if (formAI) {
+                await p.wordAnnotation.update({
+                  where: { id: formAnn.id },
+                  data: { phoneticUk: formAI.phoneticUk.replace(/^\/|\/$/g, ''), phoneticUs: formAI.phoneticUs.replace(/^\/|\/$/g, ''), partOfSpeech: formAI.partOfSpeech, translation: formAI.translation, examplesJson: JSON.stringify(formAI.examples) },
+                });
+              }
+            } catch { /* skip */ }
+          }
+          const tags = await p.wordAnnotationTag.findMany({ where: { wordAnnotationId: ann.id } });
+          for (const t of tags) {
+            await p.wordAnnotationTag.upsert({ where: { wordAnnotationId_tagId: { wordAnnotationId: formAnn.id, tagId: t.tagId } }, create: { wordAnnotationId: formAnn.id, tagId: t.tagId }, update: {} });
+          }
+          formUpdates[field + 'Id'] = formAnn.id;
+        }
+        if (Object.keys(formUpdates).length > 0) {
+          await p.wordAnnotation.update({ where: { id: ann.id }, data: formUpdates as any });
+        }
       }
 
       success++;

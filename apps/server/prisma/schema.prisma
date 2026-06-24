@@ -184,9 +184,32 @@ model WordAnnotation {
   phoneticUs      String?   @db.VarChar(255)
   partOfSpeech    String?   @db.VarChar(50)
   translation     String    @db.VarChar(500)
-  examplesJson    String?   @db.Text
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  examplesJson       String?   @db.Text
+  // Word form associations (self-referencing)
+  nounId             Int?
+  noun               WordAnnotation?   @relation("NounForm", fields: [nounId], references: [id])
+  verbId             Int?
+  verb               WordAnnotation?   @relation("VerbForm", fields: [verbId], references: [id])
+  adjId              Int?
+  adj                WordAnnotation?   @relation("AdjForm", fields: [adjId], references: [id])
+  advId              Int?
+  adv                WordAnnotation?   @relation("AdvForm", fields: [advId], references: [id])
+  pastTenseId        Int?
+  pastTense          WordAnnotation?   @relation("PastTenseForm", fields: [pastTenseId], references: [id])
+  pastParticipleId   Int?
+  pastParticiple     WordAnnotation?   @relation("PastParticipleForm", fields: [pastParticipleId], references: [id])
+  thirdPersonSingular String?          @db.VarChar(100)  // 第三人称单数, e.g. "fishes"
+  plural              String?          @db.VarChar(100)  // 复数形式, e.g. "fish"
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Reverse relations
+  nounOf             WordAnnotation[]  @relation("NounForm")
+  verbOf             WordAnnotation[]  @relation("VerbForm")
+  adjOf              WordAnnotation[]  @relation("AdjForm")
+  advOf              WordAnnotation[]  @relation("AdvForm")
+  pastTenseOf        WordAnnotation[]  @relation("PastTenseForm")
+  pastParticipleOf   WordAnnotation[]  @relation("PastParticipleForm")
 
   userVocabulary  UserVocabulary[]
   tags            WordAnnotationTag[]

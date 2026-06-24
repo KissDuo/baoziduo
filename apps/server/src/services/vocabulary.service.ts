@@ -249,6 +249,72 @@ export class VocabularyService {
 
     return { learned, reviewing, mastered };
   }
+
+  // ── Search Word in Dictionary ──
+  async searchWord(query: string) {
+    const q = query.toLowerCase().trim();
+
+    // Try exact/starts-with match first
+    let annotations = await prisma.wordAnnotation.findMany({
+      where: { word: { startsWith: q } },
+      take: 10,
+      orderBy: { word: 'asc' },
+      include: { tags: { include: { tag: true } } },
+    });
+
+    // If no results, try stripping common suffixes to find root word
+    if (annotations.length === 0) {
+      const suffixes = ['tion', 'sion', 'ness', 'ment', 'ity', 'ly', 'able', 'ible', 'ful', 'less', 'ous', 'ive', 'al', 'er', 'est', 'ed', 'ing'];
+      for (const suffix of suffixes) {
+        if (q.endsWith(suffix) && q.length > suffix.length + 2) {
+          const root = q.slice(0, -suffix.length);
+          annotations = await prisma.wordAnnotation.findMany({
+            where: { word: { startsWith: root } },
+            take: 10,
+            orderBy: { word: 'asc' },
+            include: { tags: { include: { tag: true } } },
+          });
+          if (annotations.length > 0) break;
+        }
+      }
+    }
+
+    // Also try removing trailing 's' (plural/third-person)
+    if (annotations.length === 0 && q.endsWith('s') && q.length > 3) {
+      annotations = await prisma.wordAnnotation.findMany({
+        where: { word: { startsWith: q.slice(0, -1) } },
+        take: 10,
+        orderBy: { word: 'asc' },
+        include: { tags: { include: { tag: true } } },
+      });
+    }
+
+    // Read derived forms from association fields
+    const results = await Promise.all(annotations.map(async a => {
+      let examples = null;
+      try { if (a.examplesJson) examples = JSON.parse(a.examplesJson); } catch {}
+      // Load associated forms via self-referencing fields
+      const formIds = [a.nounId, a.verbId, a.adjId, a.advId, a.pastTenseId, a.pastParticipleId].filter(Boolean);
+      const formWords = formIds.length > 0
+        ? await prisma.wordAnnotation.findMany({ where: { id: { in: formIds as number[] } }, select: { word: true, partOfSpeech: true, translation: true } })
+        : [];
+      const derivedForms = formWords.map(f => ({ word: f.word, partOfSpeech: f.partOfSpeech, translation: f.translation }));
+      return {
+        word: a.word,
+        phoneticUk: a.phoneticUk,
+        phoneticUs: a.phoneticUs,
+        translation: a.translation,
+        partOfSpeech: a.partOfSpeech,
+        examples,
+        tags: a.tags.map(t => t.tag.name),
+        thirdPersonSingular: a.thirdPersonSingular || undefined,
+        plural: a.plural || undefined,
+        derivedForms: derivedForms.length > 0 ? derivedForms : undefined,
+      };
+    }));
+
+    return results;
+  }
 }
 
 export const vocabularyService = new VocabularyService();

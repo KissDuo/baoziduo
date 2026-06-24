@@ -62,6 +62,16 @@ export class VocabularyController {
       next(err);
     }
   }
+
+  async searchWord(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { q } = req.query as any;
+      const result = await vocabularyService.searchWord(q as string);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const vocabularyController = new VocabularyController();

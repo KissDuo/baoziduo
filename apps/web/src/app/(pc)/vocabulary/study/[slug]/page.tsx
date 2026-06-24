@@ -81,7 +81,12 @@ function FlashcardMode({ words, onComplete }: { words: VocabWord[]; onComplete: 
               <div className="space-y-2 text-left">
                 {word.examples.slice(0, 3).map((ex, i) => (
                   <div key={i} className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-sm text-slate-700">{ex.en}</p>
+                    <p className="text-sm text-slate-700">
+                      {ex.en.split(new RegExp(`(${word.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')).map((part: string, j: number) =>
+                        part.toLowerCase() === word.word.toLowerCase()
+                          ? <strong key={j} className="text-blue-600 font-bold">{part}</strong> : part
+                      )}
+                    </p>
                     <p className="text-xs text-slate-400 mt-1">{ex.zh}</p>
                   </div>
                 ))}
@@ -401,7 +406,7 @@ export default function VocabStudyPage() {
           className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${randomMode ? 'bg-primary-600 text-white shadow-md shadow-primary-200 scale-105' : 'bg-slate-100 text-slate-500 hover:text-slate-700'}`}>
           🔀 {t('vocab.random')}
         </button>
-        <span className="text-xs text-slate-400">{filteredWords.length} words</span>
+        <span className="text-xs text-slate-400">{t('vocab.words_count', { n: filteredWords.length })}</span>
       </div>
 
       {/* Progress info */}
