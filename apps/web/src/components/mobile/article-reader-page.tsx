@@ -1,4 +1,5 @@
 'use client';
+import { useLang } from '@/lib/i18n';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -149,7 +150,7 @@ export default function MobileArticleReaderPage({ slug }: { slug: string }) {
       setInVocabSet((prev) => new Set(prev).add(selectedWord.word!.word.toLowerCase()));
       setSelectedWord((prev) => prev ? { ...prev, inVocabulary: true } : null);
     } catch (err: any) {
-      alert(err.message || '添加生词失败，请先登录');
+      alert(err.message || t('article.vocab_failed'));
     }
   };
 
@@ -170,7 +171,7 @@ export default function MobileArticleReaderPage({ slug }: { slug: string }) {
       });
       setSelectedWord((prev) => prev ? { ...prev, inVocabulary: false } : null);
     } catch (err: any) {
-      alert(err.message || '移除生词失败');
+      alert(err.message || t('article.vocab_remove_failed'));
     }
   };
 

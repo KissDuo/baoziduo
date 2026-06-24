@@ -44,8 +44,14 @@ export function ArticleCard({ article, userProgress, compact = false }: ArticleC
                 <span className="text-xs text-green-600 font-medium">✓ Read</span>
               )}
             </div>
-            <h3 className="font-semibold text-slate-900 line-clamp-2 mb-1">{article.title}</h3>
-            {article.titleZh && <p className="text-sm text-slate-500 line-clamp-1 mb-1">{article.titleZh}</p>}
+            {article.titleZh ? (
+              <>
+                <h3 className="font-bold text-slate-900 text-base line-clamp-2 mb-0.5">{article.titleZh}</h3>
+                <p className="text-sm text-slate-400 line-clamp-1 mb-1">{article.title}</p>
+              </>
+            ) : (
+              <h3 className="font-semibold text-slate-900 line-clamp-2 mb-1">{article.title}</h3>
+            )}
             <p className="text-sm text-slate-500 line-clamp-1 mb-2">{article.summary}</p>
             <div className="flex items-center gap-3 text-xs text-slate-400">
               <span>{article.wordCount} words</span>
@@ -78,10 +84,14 @@ export function ArticleCard({ article, userProgress, compact = false }: ArticleC
               </span>
             )}
           </div>
-          <h3 className="font-semibold text-slate-900 line-clamp-2 mb-1 leading-snug">
-            {article.title}
-          </h3>
-          {article.titleZh && <p className="text-sm text-slate-500 line-clamp-1 mb-2">{article.titleZh}</p>}
+          {article.titleZh ? (
+            <>
+              <h3 className="font-bold text-slate-900 text-lg line-clamp-2 mb-0.5 leading-snug">{article.titleZh}</h3>
+              <p className="text-sm text-slate-400 line-clamp-1 mb-2">{article.title}</p>
+            </>
+          ) : (
+            <h3 className="font-semibold text-slate-900 line-clamp-2 mb-1 leading-snug">{article.title}</h3>
+          )}
           <p className="text-sm text-slate-500 line-clamp-2 mb-3 flex-1">{article.summary}</p>
           <div className="flex items-center gap-4 text-xs text-slate-400 pt-3 border-t border-slate-100">
             <span>{article.wordCount} words</span>

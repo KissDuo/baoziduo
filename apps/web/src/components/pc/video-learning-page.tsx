@@ -1,4 +1,5 @@
 'use client';
+import { useLang } from '@/lib/i18n';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { videoService, type TranscriptSegment, type VideoPlatform } from '@/services/video.service';
@@ -7,6 +8,7 @@ import { TranscriptPanel } from '@/components/shared/TranscriptPanel';
 type ProgressStage = 'idle' | 'fetching' | 'translating';
 
 export default function PcVideoLearningPage() {
+  const { t } = useLang();
   const [url, setUrl] = useState('');
   const [videoId, setVideoId] = useState<string | null>(null);
   const [platform, setPlatform] = useState<VideoPlatform | null>(null);
@@ -50,7 +52,7 @@ export default function PcVideoLearningPage() {
       setProgress(100);
     } catch (err: any) {
       clearInterval(progressTimerRef.current);
-      setError(err.message || '加载失败');
+      setError(err.message || t('video.load_failed'));
     } finally {
       setTimeout(() => {
         setLoading(false);
@@ -95,7 +97,7 @@ export default function PcVideoLearningPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">视频学习</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">{t('video.title')}</h1>
 
       {/* URL input */}
       <form onSubmit={handleSubmit} className="flex gap-3 mb-6">
@@ -111,7 +113,7 @@ export default function PcVideoLearningPage() {
           disabled={loading}
           className="bg-primary-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors whitespace-nowrap"
         >
-          {loading ? '处理中...' : '开始学习'}
+          {loading ? t('video.processing') : t('video.start')}
         </button>
       </form>
 
@@ -124,7 +126,7 @@ export default function PcVideoLearningPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-slate-600">
-              {stage === 'fetching' ? '正在从 YouTube 获取字幕...' : '正在 AI 翻译字幕...'}
+              {stage === 'fetching' ? t('video.fetching') : t('video.translating')}
             </span>
             <span className="text-xs text-slate-400">{progress}%</span>
           </div>
@@ -136,8 +138,8 @@ export default function PcVideoLearningPage() {
           </div>
           <p className="text-xs text-slate-400 mt-2">
             {stage === 'fetching'
-              ? '连接 YouTube 获取英文字幕...'
-              : `共 ${segments.length || '?'} 句，DeepSeek 批量翻译中...`}
+              ? t('video.fetching')
+              : t('video.progress', {n: segments.length || '?'})}
           </p>
         </div>
       )}
@@ -183,8 +185,8 @@ export default function PcVideoLearningPage() {
       {/* Empty state */}
       {!videoId && !loading && (
         <div className="text-center py-16 text-slate-400">
-          <p className="text-lg">粘贴 YouTube 链接开始学习</p>
-          <p className="text-sm mt-2">支持 youtube.com/watch、youtu.be、shorts 格式</p>
+          <p className="text-lg">{t('video.empty_hint')}</p>
+          <p className="text-sm mt-2">{t('video.empty_desc')}</p>
         </div>
       )}
     </div>

@@ -62,6 +62,8 @@ export function WordPopup({
   }
 
   // ── Full content ──
+  const forms = (word as any).forms;
+  const hasForms = forms && (forms.verb || forms.noun || forms.adj || forms.adv || forms.pastTense || forms.pastParticiple);
   const content = (
     <>
       {/* Word header */}
@@ -103,18 +105,69 @@ export function WordPopup({
         </div>
       )}
 
-      {/* Derived word forms */}
-      {(word as any).derivedForms && (word as any).derivedForms.length > 0 && (
+      {/* Noun-specific: plural form */}
+      {word.plural && (
         <div className="mb-3">
-          <p className="text-xs text-slate-400 mb-1.5">Word Forms</p>
-          <div className="flex flex-wrap gap-1.5">
-            {(word as any).derivedForms.map((f: any) => (
-              <span key={f.word} className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-lg">
-                <span className="font-medium">{f.word}</span>
-                {f.partOfSpeech && <span className="text-slate-400 ml-1">({f.partOfSpeech}.)</span>}
-                <span className="text-slate-500 ml-1">{f.translation}</span>
-              </span>
-            ))}
+          <p className="text-xs text-slate-400 mb-1">{t('popup.plural')}</p>
+          <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-medium">{word.plural}</span>
+        </div>
+      )}
+
+      {/* Verb-specific: 3rd-person singular */}
+      {word.thirdPersonSingular && (
+        <div className="mb-3">
+          <p className="text-xs text-slate-400 mb-1">{t('popup.third_singular')}</p>
+          <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-medium">{word.thirdPersonSingular}</span>
+        </div>
+      )}
+
+      {/* Word Forms (categorized) */}
+      {hasForms && (
+        <div className="mb-3">
+          <p className="text-xs text-slate-400 mb-1.5">{t('popup.forms_title')}</p>
+          <div className="space-y-1">
+            {forms.verb && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.verb')}</span>
+                <span className="font-medium text-slate-700">{forms.verb.word}</span>
+                <span className="text-slate-500">{forms.verb.translation}</span>
+              </div>
+            )}
+            {forms.noun && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.noun')}</span>
+                <span className="font-medium text-slate-700">{forms.noun.word}</span>
+                <span className="text-slate-500">{forms.noun.translation}</span>
+              </div>
+            )}
+            {forms.adj && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.adj')}</span>
+                <span className="font-medium text-slate-700">{forms.adj.word}</span>
+                <span className="text-slate-500">{forms.adj.translation}</span>
+              </div>
+            )}
+            {forms.adv && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.adv')}</span>
+                <span className="font-medium text-slate-700">{forms.adv.word}</span>
+                <span className="text-slate-500">{forms.adv.translation}</span>
+              </div>
+            )}
+            {forms.pastTense && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.past')}</span>
+                <span className="font-medium text-slate-700">{forms.pastTense.word}</span>
+                <span className="text-slate-500">{forms.pastTense.translation}</span>
+              </div>
+            )}
+            {forms.pastParticiple && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.past_participle')}</span>
+                <span className="font-medium text-slate-700">{forms.pastParticiple.word}</span>
+                <span className="text-slate-500">{forms.pastParticiple.translation}</span>
+              </div>
+            )}
           </div>
         </div>
       )}

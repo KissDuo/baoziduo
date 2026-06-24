@@ -1,20 +1,22 @@
 'use client';
+import { useLang, tFn } from '@/lib/i18n';
 
 import { useState, useEffect, useCallback } from 'react';
 import { ArticleCard } from '@/components/shared/ArticleCard';
 import { articleService } from '@/services/article.service';
 import type { ArticleListItem } from '@english/shared';
 
-const DIFFICULTY_OPTIONS = [
-  { value: undefined, label: 'All' },
-  { value: 'short', label: 'Short' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'long', label: 'Long' },
-] as const;
+function useDifficultyOptions() { const { t } = useLang(); return [
+  { value: undefined, label: t('vocab.filter_all') },
+  { value: 'short', label: t('difficulty.short') },
+  { value: 'medium', label: t('difficulty.medium') },
+  { value: 'long', label: t('difficulty.long') },
+] as const; }
 
 const PAGE_SIZE = 10;
 
 export default function MobileArticleListPage() {
+  const { t } = useLang();
   const [articles, setArticles] = useState<ArticleListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export default function MobileArticleListPage() {
       setHasMore(pageNum < result.totalPages);
       setPage(pageNum);
     } catch (err: any) {
-      setError(err.message || '加载文章失败');
+      setError(err.message || t('article.load_fail'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -65,13 +67,13 @@ export default function MobileArticleListPage() {
     <div>
       {/* Header */}
       <div className="mb-4">
-        <h1 className="text-xl font-bold text-slate-900">外刊阅读</h1>
-        <p className="text-sm text-slate-500 mt-0.5">原汁原味的英文外刊</p>
+        <h1 className="text-xl font-bold text-slate-900">{t('articles.title')}</h1>
+        <p className="text-sm text-slate-400 font-medium mt-0.5">{tFn('en')('articles.title')}</p>
       </div>
 
       {/* Horizontal scroll filter chips */}
       <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1 -mx-4 px-4">
-        {DIFFICULTY_OPTIONS.map((opt) => (
+        {useDifficultyOptions().map((opt) => (
           <button
             key={opt.value ?? 'all'}
             onClick={() => handleDifficultyChange(opt.value)}
@@ -94,7 +96,7 @@ export default function MobileArticleListPage() {
             onClick={() => fetchArticles(1, true)}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm"
           >
-            重试
+            {t('common.retry_label')}
           </button>
         </div>
       )}
@@ -121,7 +123,7 @@ export default function MobileArticleListPage() {
           {articles.length === 0 ? (
             <div className="text-center py-12">
               <span className="text-5xl block mb-3">📭</span>
-              <p className="text-slate-500">暂无文章</p>
+              <p className="text-slate-500">{t('articles.empty')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -144,13 +146,13 @@ export default function MobileArticleListPage() {
                 disabled={loadingMore}
                 className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-full text-sm font-medium hover:bg-slate-200 disabled:opacity-50 transition-colors"
               >
-                {loadingMore ? '加载中...' : '加载更多'}
+                {loadingMore ? t('article.loading_more') : t('article.load_more')}
               </button>
             </div>
           )}
 
           {!hasMore && articles.length > 0 && (
-            <p className="text-center text-xs text-slate-400 mt-6 mb-4">— 已加载全部 —</p>
+            <p className="text-center text-xs text-slate-400 mt-6 mb-4">{t('article.all_loaded')}</p>
           )}
         </>
       )}

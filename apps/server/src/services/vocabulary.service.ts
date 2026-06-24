@@ -289,16 +289,26 @@ export class VocabularyService {
       });
     }
 
-    // Read derived forms from association fields
+    // Load books, derived forms, and form texts for all annotations
     const results = await Promise.all(annotations.map(async a => {
       let examples = null;
       try { if (a.examplesJson) examples = JSON.parse(a.examplesJson); } catch {}
-      // Load associated forms via self-referencing fields
-      const formIds = [a.nounId, a.verbId, a.adjId, a.advId, a.pastTenseId, a.pastParticipleId].filter(Boolean);
-      const formWords = formIds.length > 0
-        ? await prisma.wordAnnotation.findMany({ where: { id: { in: formIds as number[] } }, select: { word: true, partOfSpeech: true, translation: true } })
-        : [];
-      const derivedForms = formWords.map(f => ({ word: f.word, partOfSpeech: f.partOfSpeech, translation: f.translation }));
+
+      // Books this word appears in
+      const vocabWords = await prisma.vocabularyWord.findMany({
+        where: { wordAnnotationId: a.id },
+        include: { book: { select: { name: true, slug: true, category: true } } },
+      });
+      const books = vocabWords.map(v => v.book);
+
+      // Load associated forms via self-referencing fields (categorized)
+      const noun = a.nounId ? await prisma.wordAnnotation.findUnique({ where: { id: a.nounId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const verb = a.verbId ? await prisma.wordAnnotation.findUnique({ where: { id: a.verbId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const adj = a.adjId ? await prisma.wordAnnotation.findUnique({ where: { id: a.adjId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const adv = a.advId ? await prisma.wordAnnotation.findUnique({ where: { id: a.advId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const pastTense = a.pastTenseId ? await prisma.wordAnnotation.findUnique({ where: { id: a.pastTenseId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const pastParticiple = a.pastParticipleId ? await prisma.wordAnnotation.findUnique({ where: { id: a.pastParticipleId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+
       return {
         word: a.word,
         phoneticUk: a.phoneticUk,
@@ -309,7 +319,11 @@ export class VocabularyService {
         tags: a.tags.map(t => t.tag.name),
         thirdPersonSingular: a.thirdPersonSingular || undefined,
         plural: a.plural || undefined,
-        derivedForms: derivedForms.length > 0 ? derivedForms : undefined,
+        books: books.length > 0 ? books : undefined,
+        forms: {
+          noun, verb, adj, adv,
+          pastTense, pastParticiple,
+        },
       };
     }));
 

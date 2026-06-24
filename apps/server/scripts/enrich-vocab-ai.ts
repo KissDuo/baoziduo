@@ -112,9 +112,18 @@ async function main() {
     if (targetIds) {
       if (!targetIds.includes(w.id)) { done++; continue; }
     } else {
-      if (w.wordAnnotation?.phoneticUk && w.partOfSpeech && w.translation.length > 2 && !w.translation.startsWith('.')) {
-        done++;
-        continue;
+      const ann = w.wordAnnotation;
+      if (ann?.phoneticUk && w.partOfSpeech && w.translation.length > 2 && !w.translation.startsWith('.')) {
+        // In 'all' mode, also check if thirdPersonSingular or plural are missing (added later to schema)
+        if (arg === 'all') {
+          const pos = (w.partOfSpeech || '').toLowerCase();
+          const needsThird = pos.includes('v') && !ann.thirdPersonSingular;  // verb missing third-person singular
+          const needsPlural = pos.includes('n') && !ann.plural;              // noun missing plural
+          if (!needsThird && !needsPlural) { done++; continue; }
+        } else {
+          done++;
+          continue;
+        }
       }
     }
 
@@ -155,6 +164,15 @@ async function main() {
       if (ai.forms) {
         const formFields = ['noun', 'verb', 'adj', 'adv', 'pastTense', 'pastParticiple'] as const;
         const formUpdates: Record<string, number | null> = {};
+        // Reverse link: when A links to form B, also link B back to A
+        const reverseField: Record<string, string> = {
+          noun: 'verbId',         // noun form's verb is the current word
+          verb: 'nounId',         // verb form's noun is the current word
+          adj: 'advId',           // adj form's adverb is the current word
+          adv: 'adjId',           // adv form's adjective is the current word
+          pastTense: 'verbId',    // past tense form's verb is the current word
+          pastParticiple: 'verbId', // past participle form's verb is the current word
+        };
         for (const field of formFields) {
           const formWord = ai.forms[field as keyof typeof ai.forms];
           if (!formWord || formWord.toLowerCase() === w.word.toLowerCase()) continue;
@@ -179,6 +197,11 @@ async function main() {
             await p.wordAnnotationTag.upsert({ where: { wordAnnotationId_tagId: { wordAnnotationId: formAnn.id, tagId: t.tagId } }, create: { wordAnnotationId: formAnn.id, tagId: t.tagId }, update: {} });
           }
           formUpdates[field + 'Id'] = formAnn.id;
+          // Set reverse link: form word points back to current word
+          const revField = reverseField[field];
+          if (revField && !(formAnn as any)[revField]) {
+            await p.wordAnnotation.update({ where: { id: formAnn.id }, data: { [revField]: ann.id } });
+          }
         }
         if (Object.keys(formUpdates).length > 0) {
           await p.wordAnnotation.update({ where: { id: ann.id }, data: formUpdates as any });

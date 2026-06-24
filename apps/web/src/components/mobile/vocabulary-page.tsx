@@ -54,8 +54,8 @@ function MobileStudyTab() {
         <Link key={book.id} href={`/vocabulary/study/${book.slug}`}
           className="block bg-white rounded-xl border border-slate-200 p-4 hover:border-primary-300 transition-colors">
           <div className="flex items-start justify-between mb-1">
-            <h3 className="font-semibold text-slate-900">{book.name}</h3>
-            <span className="text-xs text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">{book.category}</span>
+            <h3 className="font-semibold text-slate-900">{t(`vocab.book.${book.slug}`) !== `vocab.book.${book.slug}` ? t(`vocab.book.${book.slug}`) : book.name}</h3>
+            <span className="text-xs text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">{t(`vocab.category.${book.category}`) !== `vocab.category.${book.category}` ? t(`vocab.category.${book.category}`) : book.category}</span>
           </div>
           {book.description && <p className="text-sm text-slate-500 mb-2">{book.description}</p>}
           <span className="text-xs text-slate-400">{t('vocab.words_count', { n: book.totalWords })}</span>

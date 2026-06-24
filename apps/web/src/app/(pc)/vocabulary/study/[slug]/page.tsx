@@ -359,7 +359,7 @@ export default function VocabStudyPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <Link href="/vocabulary" className="text-sm text-slate-400 hover:text-primary-600 transition-colors">← {t('vocab.title')}</Link>
-          <h1 className="text-lg font-bold text-slate-900 mt-1">{data.book.name}</h1>
+          <h1 className="text-lg font-bold text-slate-900 mt-1">{t(`vocab.book.${data.book.slug}`) !== `vocab.book.${data.book.slug}` ? t(`vocab.book.${data.book.slug}`) : data.book.name}</h1>
         </div>
         {/* Mode toggle */}
         <div className="flex bg-slate-100 rounded-lg p-1">

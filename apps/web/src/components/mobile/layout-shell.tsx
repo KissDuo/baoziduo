@@ -14,11 +14,11 @@ export function MobileLayoutShell({ children, user }: { children: React.ReactNod
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/', match: '/', label: lang === 'zh' ? '首页' : 'Home', icon: '🏠' },
+    { href: '/', match: '/', label: t('mobile.home'), icon: '🏠' },
     { href: '/articles', match: '/articles', label: t('nav.articles'), icon: '📰' },
     { href: '/ielts', match: '/ielts', label: t('nav.ielts'), icon: '✈️' },
     { href: '/videos', match: '/videos', label: t('nav.videos'), icon: '🎬' },
-    { href: user ? '/vocabulary' : '/login', match: user ? '/vocabulary' : '/login', label: user ? (lang === 'zh' ? '我的' : 'Me') : t('nav.login'), icon: '👤' },
+    { href: user ? '/vocabulary' : '/login', match: user ? '/vocabulary' : '/login', label: user ? t('mobile.me') : t('nav.login'), icon: '👤' },
   ];
 
   return (

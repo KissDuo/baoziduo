@@ -1,4 +1,5 @@
 'use client';
+import { useLang, tFn } from '@/lib/i18n';
 
 import { useState, useEffect, useCallback } from 'react';
 import { ArticleCard } from '@/components/shared/ArticleCard';
@@ -6,14 +7,15 @@ import { articleService } from '@/services/article.service';
 import type { ArticleListItem } from '@english/shared';
 import type { PaginatedResponse } from '@/services/article.service';
 
-const DIFFICULTY_OPTIONS = [
-  { value: undefined, label: 'All' },
-  { value: 'short', label: 'Short (<1000 words)' },
-  { value: 'medium', label: 'Medium (1000-2000)' },
-  { value: 'long', label: 'Long (>2000 words)' },
-] as const;
+function useDifficultyOptions() { const { t } = useLang(); return [
+  { value: undefined, label: t('vocab.filter_all') },
+  { value: 'short', label: t('difficulty.short') },
+  { value: 'medium', label: t('difficulty.medium') },
+  { value: 'long', label: t('difficulty.long') },
+] as const; }
 
 export default function PCArticleListPage() {
+  const { t } = useLang();
   const [articles, setArticles] = useState<ArticleListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,13 +50,13 @@ export default function PCArticleListPage() {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">外刊阅读</h1>
-        <p className="text-slate-500">通过原汁原味的英文外刊，在真实语境中提升词汇量</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-1">{t('articles.title')}</h1>
+        <p className="text-lg text-slate-400 font-medium">{tFn('en')('articles.title')}</p>
       </div>
 
       {/* Filter tabs */}
       <div className="flex items-center gap-2 mb-8">
-        {DIFFICULTY_OPTIONS.map((opt) => (
+        {useDifficultyOptions().map((opt) => (
           <button
             key={opt.value ?? 'all'}
             onClick={() => handleDifficultyChange(opt.value)}
@@ -77,7 +79,7 @@ export default function PCArticleListPage() {
             onClick={fetchArticles}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
-            重试
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -105,8 +107,8 @@ export default function PCArticleListPage() {
           {articles.length === 0 ? (
             <div className="text-center py-16">
               <span className="text-6xl mb-4 block">📭</span>
-              <p className="text-slate-500 text-lg">暂无文章</p>
-              <p className="text-slate-400 text-sm mt-1">换个难度试试看</p>
+              <p className="text-slate-500 text-lg">{t('articles.empty')}</p>
+              <p className="text-slate-400 text-sm mt-1">{t('articles.empty_hint')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -128,7 +130,7 @@ export default function PCArticleListPage() {
                 disabled={page <= 1}
                 className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                上一页
+                {t('common.prev')}
               </button>
               <span className="text-sm text-slate-500">
                 {page} / {totalPages}
@@ -138,7 +140,7 @@ export default function PCArticleListPage() {
                 disabled={page >= totalPages}
                 className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                下一页
+                {t('common.next')}
               </button>
             </div>
           )}

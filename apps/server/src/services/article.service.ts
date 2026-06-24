@@ -291,6 +291,23 @@ export class ArticleService {
         include: { tag: true },
       });
       tags = tagRecords.map(t => t.tag.name);
+
+      // Get books this word appears in
+      const vocabWords = await prisma.vocabularyWord.findMany({
+        where: { wordAnnotationId: annotation.id },
+        include: { book: { select: { name: true, slug: true, category: true } } },
+      });
+      const books = vocabWords.map(v => v.book);
+
+      // Get form associations
+      const a = annotation as any;
+      const noun = a.nounId ? await prisma.wordAnnotation.findUnique({ where: { id: a.nounId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const verb = a.verbId ? await prisma.wordAnnotation.findUnique({ where: { id: a.verbId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const adj = a.adjId ? await prisma.wordAnnotation.findUnique({ where: { id: a.adjId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const adv = a.advId ? await prisma.wordAnnotation.findUnique({ where: { id: a.advId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const pastTense = a.pastTenseId ? await prisma.wordAnnotation.findUnique({ where: { id: a.pastTenseId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+      const pastParticiple = a.pastParticipleId ? await prisma.wordAnnotation.findUnique({ where: { id: a.pastParticipleId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
+
       return {
         word: annotation.word,
         phoneticUk: (annotation as any).phoneticUk || null,
@@ -301,6 +318,10 @@ export class ArticleService {
         tags,
         inVocabulary,
         placeholder: false,
+        plural: a.plural || undefined,
+        thirdPersonSingular: a.thirdPersonSingular || undefined,
+        books: books.length > 0 ? books : undefined,
+        forms: { noun, verb, adj, adv, pastTense, pastParticiple },
       };
     }
 

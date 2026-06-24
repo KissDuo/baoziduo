@@ -58,9 +58,10 @@ export function PCLayoutShell({ children, user }: { children: React.ReactNode; u
             {/* Language toggle */}
             <button
               onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-              className="text-xs text-slate-400 hover:text-slate-600 border border-slate-200 rounded px-2 py-1 transition-colors"
+              className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded px-2 py-1 transition-colors flex items-center gap-1"
             >
-              {t('nav.lang_tip')}
+              <span>{lang === 'zh' ? '🇨🇳' : '🇬🇧'}</span>
+              <span>{lang === 'zh' ? '中文' : 'English'}</span>
             </button>
 
             {user ? (

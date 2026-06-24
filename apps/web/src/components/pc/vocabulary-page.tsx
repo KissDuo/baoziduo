@@ -63,8 +63,8 @@ function StudyTab() {
         <Link key={book.id} href={`/vocabulary/study/${book.slug}`}
           className="block bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-primary-300 transition-all">
           <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-slate-900 text-lg">{book.name}</h3>
-            <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full uppercase">{book.category}</span>
+            <h3 className="font-semibold text-slate-900 text-lg">{t(`vocab.book.${book.slug}`) !== `vocab.book.${book.slug}` ? t(`vocab.book.${book.slug}`) : book.name}</h3>
+            <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full uppercase">{t(`vocab.category.${book.category}`) !== `vocab.category.${book.category}` ? t(`vocab.category.${book.category}`) : book.category}</span>
           </div>
           {book.description && <p className="text-sm text-slate-500 mb-3">{book.description}</p>}
           <div className="flex items-center gap-4 text-xs text-slate-400">

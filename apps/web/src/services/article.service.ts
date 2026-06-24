@@ -40,6 +40,18 @@ export interface WordAnnotationResponse {
   inVocabulary: boolean;
   placeholder?: boolean;
   message?: string;
+  // Word form associations
+  thirdPersonSingular?: string;
+  plural?: string;
+  books?: { name: string; slug: string; category: string }[];
+  forms?: {
+    noun?: { word: string; translation: string; partOfSpeech: string | null } | null;
+    verb?: { word: string; translation: string; partOfSpeech: string | null } | null;
+    adj?: { word: string; translation: string; partOfSpeech: string | null } | null;
+    adv?: { word: string; translation: string; partOfSpeech: string | null } | null;
+    pastTense?: { word: string; translation: string; partOfSpeech: string | null } | null;
+    pastParticiple?: { word: string; translation: string; partOfSpeech: string | null } | null;
+  };
 }
 
 export const articleService = {

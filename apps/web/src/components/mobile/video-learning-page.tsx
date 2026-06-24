@@ -1,4 +1,5 @@
 'use client';
+import { useLang } from '@/lib/i18n';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { videoService, type TranscriptSegment, type VideoPlatform } from '@/services/video.service';
@@ -7,6 +8,7 @@ import { TranscriptPanel } from '@/components/shared/TranscriptPanel';
 type ProgressStage = 'idle' | 'fetching' | 'translating';
 
 export default function MobileVideoLearningPage() {
+  const { t } = useLang();
   const [url, setUrl] = useState('');
   const [videoId, setVideoId] = useState<string | null>(null);
   const [platform, setPlatform] = useState<VideoPlatform | null>(null);
@@ -45,7 +47,7 @@ export default function MobileVideoLearningPage() {
       setProgress(100);
     } catch (err: any) {
       clearInterval(progressTimerRef.current);
-      setError(err.message || '加载失败');
+      setError(err.message || t('video.load_failed'));
     } finally {
       setTimeout(() => {
         setLoading(false);
@@ -89,7 +91,7 @@ export default function MobileVideoLearningPage() {
 
   return (
     <div className="px-4 py-4 pb-20">
-      <h1 className="text-xl font-bold text-slate-900 mb-4">视频学习</h1>
+      <h1 className="text-xl font-bold text-slate-900 mb-4">{t('video.title')}</h1>
 
       <form onSubmit={handleSubmit} className="mb-4">
         <div className="flex gap-2">
@@ -97,7 +99,7 @@ export default function MobileVideoLearningPage() {
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="粘贴 YouTube 链接..."
+            placeholder={t('video.placeholder')}
             className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <button
@@ -105,7 +107,7 @@ export default function MobileVideoLearningPage() {
             disabled={loading}
             className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 whitespace-nowrap"
           >
-            {loading ? '处理中' : '开始'}
+            {loading ? t('video.processing_short') : t('video.start_btn')}
           </button>
         </div>
       </form>
@@ -117,7 +119,7 @@ export default function MobileVideoLearningPage() {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-sm text-slate-600">
-              {stage === 'fetching' ? '获取字幕中...' : 'AI 翻译中...'}
+              {stage === 'fetching' ? t('video.fetching_short') : t('video.translating_short')}
             </span>
             <span className="text-xs text-slate-400">{progress}%</span>
           </div>
@@ -157,7 +159,7 @@ export default function MobileVideoLearningPage() {
             className="flex items-center gap-2 text-sm text-slate-600 mb-2"
           >
             <span>{showTranscript ? '▼' : '▶'}</span>
-            {showTranscript ? '收起字幕' : '展开字幕'} ({segments.length} 句)
+            {showTranscript ? t('video.toggle_sub') : t('video.toggle_sub_show')} ({t('video.count', {n: segments.length})})
           </button>
 
           {showTranscript && (
@@ -170,7 +172,7 @@ export default function MobileVideoLearningPage() {
 
       {!videoId && !loading && (
         <div className="text-center py-12 text-slate-400">
-          <p>粘贴 YouTube 链接开始学习</p>
+          <p>{t('video.empty_hint')}</p>
         </div>
       )}
     </div>
