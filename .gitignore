@@ -35,3 +35,4 @@ coverage/
 # Turbo
 .turbo/
 *.sql
+.github/workflows/ci.yml
