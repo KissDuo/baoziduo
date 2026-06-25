@@ -57,7 +57,9 @@ function MobileStudyTab() {
             <h3 className="font-semibold text-slate-900">{t(`vocab.book.${book.slug}`) !== `vocab.book.${book.slug}` ? t(`vocab.book.${book.slug}`) : book.name}</h3>
             <span className="text-xs text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">{t(`vocab.category.${book.category}`) !== `vocab.category.${book.category}` ? t(`vocab.category.${book.category}`) : book.category}</span>
           </div>
-          {book.description && <p className="text-sm text-slate-500 mb-2">{book.description}</p>}
+          {(t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` || book.description) && (
+            <p className="text-sm text-slate-500 mb-2">{t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` ? t(`vocab.desc.${book.slug}`) : book.description}</p>
+          )}
           <span className="text-xs text-slate-400">{t('vocab.words_count', { n: book.totalWords })}</span>
         </Link>
       ))}

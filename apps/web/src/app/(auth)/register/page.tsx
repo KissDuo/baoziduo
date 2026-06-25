@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api-client';
+import { useLang } from '@/lib/i18n';
 
 export default function RegisterPage() {
   const { t } = useLang();
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
@@ -42,7 +41,11 @@ export default function RegisterPage() {
       await api.post('/auth/email/send-code', { email });
       startCountdown();
     } catch (err: any) {
-      setError(err.message || t('auth.send_failed'));
+      if (err.code === 'EMAIL_EXISTS') {
+        setError(t('auth.email_exists'));
+      } else {
+        setError(err.message || t('auth.send_failed'));
+      }
     } finally {
       setSending(false);
     }
@@ -58,8 +61,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await api.post('/auth/register/email', { email, password, code, nickname: nickname || undefined });
-      router.push('/');
-      router.refresh();
+      window.location.href = '/';
     } catch (err: any) {
       setError(err.message || t('auth.register_failed'));
     } finally {

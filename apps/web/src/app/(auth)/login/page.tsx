@@ -2,13 +2,12 @@
 import { useLang } from '@/lib/i18n';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api-client';
 
 export default function LoginPage() {
   const { t } = useLang();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
   const [email, setEmail] = useState('');
@@ -22,8 +21,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await api.post('/auth/login/email', { email, password });
-      router.push(redirect);
-      router.refresh();
+      // Use window.location to force full reload, ensuring cookie is picked up
+      window.location.href = redirect;
     } catch (err: any) {
       setError(err.message || t('auth.login_failed'));
     } finally {

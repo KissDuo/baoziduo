@@ -7,6 +7,12 @@ import { AppError } from '../middleware/errorHandler.js';
 export class AuthService {
   // ── Send Email Verification Code ──
   async sendEmailCode(email: string) {
+    // Check if email already registered
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new AppError(409, 'Email already registered', 'EMAIL_EXISTS');
+    }
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     await prisma.emailCode.create({

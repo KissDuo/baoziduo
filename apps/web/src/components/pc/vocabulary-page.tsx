@@ -66,7 +66,9 @@ function StudyTab() {
             <h3 className="font-semibold text-slate-900 text-lg">{t(`vocab.book.${book.slug}`) !== `vocab.book.${book.slug}` ? t(`vocab.book.${book.slug}`) : book.name}</h3>
             <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full uppercase">{t(`vocab.category.${book.category}`) !== `vocab.category.${book.category}` ? t(`vocab.category.${book.category}`) : book.category}</span>
           </div>
-          {book.description && <p className="text-sm text-slate-500 mb-3">{book.description}</p>}
+          {(t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` || book.description) && (
+            <p className="text-sm text-slate-500 mb-3">{t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` ? t(`vocab.desc.${book.slug}`) : book.description}</p>
+          )}
           <div className="flex items-center gap-4 text-xs text-slate-400">
             <span>{t('vocab.words_count', { n: book.totalWords })}</span>
           </div>
