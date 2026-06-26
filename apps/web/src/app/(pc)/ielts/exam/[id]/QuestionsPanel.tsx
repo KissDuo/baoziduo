@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import { useTextHighlight } from '../../useTextHighlight';
-import { SingleChoice, TrueFalse, FillBlank, TableGroup, MultiChoiceGroup, MatchingGroup, NoteGroup, SummaryCompletion } from './Components';
+import { SingleChoice, TrueFalse, FillBlank, FormFillBlank, TableGroup, MultiChoiceGroup, MatchingGroup, SummaryCompletion, FlowchartMatching, NoteModeGroup, MapLabelling } from './Components';
 
 // ── Group detection helpers ──
 function getMatchingGroups(qs: any[]) {
@@ -60,7 +60,29 @@ function getTableGroup(qs: any[]) {
   return { questions: tableQs, firstIndex: start };
 }
 
-function isNoteMode(instructions: string) { return /\{Q\d+\}/.test(instructions); }
+function getNoteGroup(qs: any[]) {
+  const first = qs.find((q: any) => q.passageText && q.passageText.trim().startsWith('[note]'));
+  if (!first) return null;
+  const start = first.questionIndex;
+  // Collect all questions mentioned in the note text via {QX} markers
+  const noteText = first.passageText!;
+  const qiMatches = [...noteText.matchAll(/\{Q(\d+)\}/g)].map(m => parseInt(m[1]!));
+  const noteQs = qs.filter((q: any) => qiMatches.includes(q.questionIndex));
+  return { questions: noteQs, content: noteText, firstIndex: start };
+}
+
+function getMapGroups(qs: any[]) {
+  const groups: { ids: number[]; questions: any[]; options: string[] }[] = [];
+  const seen = new Set<number>();
+  for (const q of qs) {
+    if (seen.has(q.id) || q.questionType !== 'map_labelling') continue;
+    const opts = q.options || '[]';
+    const group = qs.filter((g: any) => g.questionType === 'map_labelling' && (g.options || '[]') === opts && !seen.has(g.id));
+    group.forEach((g: any) => seen.add(g.id));
+    if (group.length >= 1) groups.push({ ids: group.map((g: any) => g.id), questions: group, options: JSON.parse(opts) });
+  }
+  return groups;
+}
 
 // ── Detect sequential groups for individual question types ──
 function getSequentialGroups(qs: any[], exclude: Set<number>): Map<number, number[]> {
@@ -123,10 +145,17 @@ function extractWordLimit(instructions: string, qiStart: number, qiEnd: number):
     if (!rm) continue;
     // Search subsequent lines for word limit pattern
     for (let j = i; j < Math.min(i + 5, lines.length); j++) {
-      const m = lines[j]!.match(/choose\s+(.+?)\s+from\s+the\s+passage/i);
+      // Reading: "Choose ONE WORD from the passage"
+      let m = lines[j]!.match(/choose\s+(.+?)\s+from\s+the\s+passage/i);
+      if (m) return m[1]!.trim().toUpperCase();
+      // Listening: "Write ONE WORD AND/OR A NUMBER for each answer" or "Write ONE WORD ONLY."
+      m = lines[j]!.match(/write\s+(.+?)(?:\s+for\s+each\s+answer)?\.?$/i);
       if (m) return m[1]!.trim().toUpperCase();
     }
   }
+  // Fallback: search entire instructions for "Write X" pattern
+  const writeMatch = instructions.match(/write\s+(.+?)(?:\s+for\s+each\s+answer)?\.?$/im);
+  if (writeMatch) return writeMatch[1]!.trim().toUpperCase();
   return null;
 }
 
@@ -147,15 +176,42 @@ function getStandardHint(questions: any[], sectionIndex: number, qiStart: number
     case 'fill_blank': {
       const raw = first.passageText || '';
       const wordLimit = extractWordLimit(instructions, qiStart, qiEnd);
-      const limitText = wordLimit ? <span>Choose <b>{wordLimit}</b> from the passage for each answer.</span> : null;
+      const isListening = instructions?.toLowerCase().includes('write');
+      const limitText = wordLimit ? (
+        isListening
+          ? <span>Write <b>{wordLimit}</b> for each answer.</span>
+          : <span>Choose <b>{wordLimit}</b> from the passage for each answer.</span>
+      ) : null;
+      if (raw.startsWith('[form]'))
+        return <span>Complete the form below.<br />{limitText}</span>;
       if (raw.startsWith('##'))
         return <span>Complete the summary below.<br />{limitText}</span>;
       if (raw.startsWith('[table]'))
         return <span>Complete the table below.<br />{limitText}</span>;
       return <span>Complete the notes below.<br />{limitText}</span>;
     }
-    case 'multiple_choice':
+    case 'multiple_choice': {
+      // Search instructions for "Choose N letters, A-E" or "Choose TWO letters, A-E" pattern
+      const ctx = findMatchContext(instructions, qiStart, qiEnd);
+      if (ctx) {
+        const m = ctx.match(/choose\s+(\w+)\s+letters?,?\s*([A-Z])-([A-Z])/i);
+        if (m) {
+          const count = m[1]!;  // TWO
+          const startL = m[2]!; // A
+          const endL = m[3]!;  // E
+          return <span>Choose <b>{count}</b> letters, <b>{startL}-{endL}</b>.</span>;
+        }
+      }
+      // Fallback: dynamic from actual options
+      let letters: string[] = [];
+      try { letters = JSON.parse(first.options || '[]'); } catch {}
+      const letterList = letters.map((o: string) => o.trim()[0]).filter(Boolean) as string[];
+      if (letterList.length >= 2) {
+        const last = letterList.pop();
+        return <span>Choose the correct letter, {letterList.map((l, i) => <span key={i}><b>{l}</b>, </span>)}or <b>{last}</b>.</span>;
+      }
       return <span>Choose the correct letter, <b>A</b>, <b>B</b>, <b>C</b> or <b>D</b>.</span>;
+    }
     case 'matching':
       return null;
     default:
@@ -244,6 +300,21 @@ function getParagraphMatchHint(
   );
 }
 
+// ── Listening matching hint (Choose N answers from the box) ──
+function getListeningMatchHint(instructions: string, qiStart: number, qiEnd: number): React.ReactNode | null {
+  const ctx = findMatchContext(instructions, qiStart, qiEnd);
+  if (!ctx) return null;
+  // Match: "Choose FOUR answers from the box and write the correct letter, A-F, next to Questions 25-28."
+  const m = ctx.match(/choose\s+(\w+)\s+answers?\s+from\s+the\s+box\s+and\s+write\s+the\s+correct\s+letter,\s*([A-Z])-([A-Z]),?\s*next\s+to\s+Questions\s+(\d+)[-–](\d+)/i);
+  if (m) {
+    const count = m[1]!;  // FOUR
+    const startLetter = m[2]!; // A
+    const endLetter = m[3]!; // F
+    return <span>Choose <b>{count}</b> answers from the box and write the correct letter, <b>{startLetter}-{endLetter}</b>, next to Questions <b>{qiStart}–{qiEnd}</b>.</span>;
+  }
+  return ctx;
+}
+
 // ── Main panel ──
 export const QuestionsPanel = memo(function QuestionsPanel({
   section, answers, attemptId, onSave, fullWidth,
@@ -265,14 +336,22 @@ export const QuestionsPanel = memo(function QuestionsPanel({
   const summaryIds = new Set(summary?.questions.map(q => q.id) || []);
   const table = getTableGroup(section.questions);
   const tableIds = new Set(table?.questions.map(q => q.id) || []);
+  const note = getNoteGroup(section.questions);
+  const noteIds = new Set(note?.questions.map(q => q.id) || []);
+  const mapGroups = getMapGroups(section.questions);
+  const mapIds = new Set<number>(); mapGroups.forEach(g => g.ids.forEach(id => mapIds.add(id)));
+  const mapFirstIds = new Set<number>(); mapGroups.forEach(g => mapFirstIds.add(g.ids[0]!));
+  // Detect form-style section (listening P1)
+  const hasForm = section.questions.some((q: any) => q.passageText && q.passageText.trim().startsWith('[form]'));
+  const formWordLimit = hasForm ? (extractWordLimit(inst, 1, 40) || 'ONE WORD AND/OR A NUMBER') : null;
+  const formHint = formWordLimit ? <span>Complete the form below.<br/>Write <b>{formWordLimit}</b> for each answer.</span> : null;
   // Sequential groups for individual question types (fill_blank, true_false, single MC)
-  const allGroupedIds = new Set([...matchingIds, ...mcAllIds, ...summaryIds, ...tableIds]);
+  const allGroupedIds = new Set([...matchingIds, ...mcAllIds, ...summaryIds, ...tableIds, ...noteIds, ...mapIds]);
   const seqGroups = getSequentialGroups(section.questions, new Set(allGroupedIds));
   const seqFirstIds = new Set(seqGroups.keys());
   const seqAllIds = new Set<number>();
   seqGroups.forEach(ids => ids.forEach(id => seqAllIds.add(id)));
 
-  const noteMode = isNoteMode(inst);
   const hl = useTextHighlight((section as any).sectionIndex ?? 0);
 
   // Sub-headings from instructions (## QX Title format)
@@ -281,20 +360,66 @@ export const QuestionsPanel = memo(function QuestionsPanel({
   hLines.forEach(l => { const m = l.match(/^##\s*Q(\d+)\s+(.+)/); if (m) headingMap.set(parseInt(m[1]!), m[2]!); });
 
   return (
-    <div className={`${fullWidth ? 'w-full' : ''} overflow-y-auto p-6 break-words`} onMouseUp={hl.handleMouseUp}>
+    <div className={`${fullWidth ? 'w-full' : ''} p-6 break-words`} onMouseUp={hl.handleMouseUp}>
       <div className="border-2 border-slate-800 rounded-lg p-5 bg-white">
 
-        {/* Note mode */}
-        {noteMode && <NoteGroup instructions={inst} questions={section.questions} answers={answers} attemptId={attemptId} onSave={onSave} />}
-
         {/* Regular rendering */}
-        {!noteMode && section.questions.map((q, idx) => {
+        {section.questions.map((q, idx) => {
+          // NoteGroup
+          if (noteIds.has(q.id)) {
+            if (q.id === note!.questions[0]!.id) {
+              const qiVals = note!.questions.map(q => q.questionIndex);
+              const header = qRange(qiVals);
+              const firstLine = inst.split('\n')[0] || '';
+              const wordLimit = extractWordLimit(inst, qiVals[0]!, qiVals[qiVals.length - 1]!);
+              const noteHint = wordLimit ? (
+                <span>Complete the notes below.<br/>Write <b>{wordLimit}</b> for each answer.</span>
+              ) : firstLine;
+              return (
+                <div key="note" className="mb-4">
+                  <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
+                  <p className="text-xs text-slate-600 mb-2">{noteHint}</p>
+                  <NoteModeGroup content={note!.content} questions={note!.questions} answers={answers} attemptId={attemptId} onSave={onSave} />
+                </div>
+              );
+            }
+            return null;
+          }
+          // Map labelling (skip non-first in each group)
+          if (mapIds.has(q.id) && !mapFirstIds.has(q.id)) return null;
+          if (mapFirstIds.has(q.id)) {
+            const g = mapGroups.find(g => g.ids[0] === q.id)!;
+            const qiVals = g.questions.map((mq: any) => mq.questionIndex);
+            const header = qRange(qiVals);
+            return (
+              <div key={`map-${g.ids[0]}`} className="mb-4">
+                <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
+                <p className="text-xs text-slate-600 mb-2">Label the map below. Write the correct letter next to Questions {Math.min(...qiVals)}-{Math.max(...qiVals)}.</p>
+                <MapLabelling questions={g.questions} imageUrl={(section as any).imageUrl} answers={answers} attemptId={attemptId} onSave={onSave} />
+              </div>
+            );
+          }
           // Matching (skip non-first in each group)
           if (matchingIds.has(q.id) && !matchingFirstIds.has(q.id)) return null;
           if (matchingFirstIds.has(q.id)) {
             const g = matchingGroups.find(g => g.ids[0] === q.id)!;
             const qiVals = g.items.map(it => it.qi);
             const header = qRange(qiVals);
+            // Check for flowchart matching
+            const firstItemQid = g.items[0]?.qid;
+            const firstQ = firstItemQid ? section.questions.find((sq: any) => sq.id === firstItemQid) : null;
+            const isFlowchart = firstQ?.passageText?.startsWith('[flowchart]');
+            if (isFlowchart) {
+              const flowQs = g.items.map((it: any) => section.questions.find((sq: any) => sq.id === it.qid)).filter(Boolean);
+              const flowHint = getListeningMatchHint(inst, qiVals[0]!, qiVals[qiVals.length - 1]!) || findMatchContext(inst, qiVals[0]!, qiVals[qiVals.length - 1]!);
+              return (
+                <div key={`mg-${g.ids[0]}`} className="mb-4">
+                  <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
+                  {flowHint && <p className="text-xs text-slate-600 mb-2">{flowHint}</p>}
+                  <FlowchartMatching questions={flowQs} options={g.options} answers={answers} attemptId={attemptId} onSave={onSave} />
+                </div>
+              );
+            }
             const kind = detectMatchKind(inst, qiVals[0]!, qiVals[qiVals.length - 1]!);
             let hint: React.ReactNode = null;
             if (kind === 'sentence') {
@@ -304,12 +429,26 @@ export const QuestionsPanel = memo(function QuestionsPanel({
             } else if (kind === 'paragraph') {
               hint = getParagraphMatchHint(g.options, section.sectionIndex, qiVals[0]!, qiVals[qiVals.length - 1]!, inst);
             } else {
-              hint = findMatchContext(inst, qiVals[0]!, qiVals[qiVals.length - 1]!);
+              // Try listening match hint first ("Choose N answers from the box")
+              const listenHint = getListeningMatchHint(inst, qiVals[0]!, qiVals[qiVals.length - 1]!);
+              hint = listenHint || findMatchContext(inst, qiVals[0]!, qiVals[qiVals.length - 1]!);
             }
+            const stemQ = headingMap.get(qiVals[0]!);
+            // Detect "Write the correct letter, A, B or C next to Questions 15-18" hint
+            const writeLetterHint = (() => {
+              const ctx = findMatchContext(inst, qiVals[0]!, qiVals[qiVals.length - 1]!);
+              if (ctx) {
+                const m = ctx.match(/write\s+the\s+correct\s+letter,?\s*([A-Z](?:,\s*[A-Z])*\s*(?:or\s+[A-Z])?)\s+next\s+to\s+Questions\s+(\d+)[-–](\d+)/i);
+                if (m) return <span>Write the correct letter, <b>{m[1]}</b> next to Questions <b>{m[2]}–{m[3]}</b>.</span>;
+              }
+              return null;
+            })();
             return (
               <div key={`mg-${g.ids[0]}`} className="mb-4">
                 <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
-                {hint && <p className="text-xs text-slate-600 mb-2">{hint}</p>}
+                {stemQ && <p className="text-sm text-slate-800 font-medium mb-2">{stemQ}</p>}
+                {writeLetterHint && <p className="text-xs text-slate-600 mb-2">{writeLetterHint}</p>}
+                {!writeLetterHint && hint && <p className="text-xs text-slate-600 mb-2">{hint}</p>}
                 <MatchingGroup items={g.items} options={g.options} answers={answers} onSave={onSave} />
               </div>
             );
@@ -319,9 +458,11 @@ export const QuestionsPanel = memo(function QuestionsPanel({
             if (q.id === summary!.questions[0]!.id) {
               const qiVals = summary!.questions.map(q => q.questionIndex);
               const header = qRange(qiVals);
+              const sumHint = getStandardHint(summary!.questions, section.sectionIndex || 1, qiVals[0]!, qiVals[qiVals.length - 1]!, inst);
               return (
                 <div key="sc" className="mb-4">
                   <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
+                  {sumHint && <p className="text-xs text-slate-600 mb-2">{sumHint}</p>}
                   <SummaryCompletion questions={summary!.questions} answers={answers} attemptId={attemptId} onSave={onSave} />
                 </div>
               );
@@ -334,9 +475,18 @@ export const QuestionsPanel = memo(function QuestionsPanel({
               const qiVals = table!.questions.map(q => q.questionIndex);
               const header = qRange(qiVals);
               const heading = headingMap.get(q.questionIndex);
+              // Try extract table-specific hint from passageText (second line after [table] Title)
+              const tablePt = table!.questions[0]?.passageText || '';
+              const tablePtLines = tablePt.split('\n');
+              let tblHint: React.ReactNode = null;
+              if (tablePtLines.length > 1 && !tablePtLines[1]!.startsWith('|')) {
+                tblHint = <span className="text-xs text-slate-600">{tablePtLines[1]}</span>;
+              }
+              if (!tblHint) tblHint = formHint || getStandardHint(table!.questions, section.sectionIndex || 1, qiVals[0]!, qiVals[qiVals.length - 1]!, inst);
               return (
                 <div key="tg" className="mb-4">
                   <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
+                  {tblHint && <p className="text-xs text-slate-600 mb-2">{tblHint}</p>}
                   <TableGroup questions={table!.questions} answers={answers} attemptId={attemptId} onSave={onSave} title={heading} />
                 </div>
               );
@@ -368,6 +518,17 @@ export const QuestionsPanel = memo(function QuestionsPanel({
             const qiVals = groupQs.map(gq => gq.questionIndex);
             const header = qRange(qiVals);
             const hint = getStandardHint(groupQs, section.sectionIndex, qiVals[0]!, qiVals[qiVals.length - 1]!, inst);
+            // Check for form-style: first question's passageText starts with ##
+            const formTitle = groupQs[0]?.passageText?.match(/^\[form\]\s*(.+)/)?.[1];
+            if (formTitle && groupQs.every(gq => gq.questionType === 'fill_blank')) {
+              return (
+                <div key={`sg-${q.id}`} className="mb-4">
+                  <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
+                  {hint && <p className="text-xs text-slate-600 mb-2">{hint}</p>}
+                  <FormFillBlank title={formTitle} questions={groupQs} answers={answers} attemptId={attemptId} onSave={onSave} />
+                </div>
+              );
+            }
             return (
               <div key={`sg-${q.id}`} className="mb-4">
                 <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>

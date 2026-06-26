@@ -158,15 +158,8 @@ export default function IeltsListeningPage() {
         />
       </div>
 
-      {/* ── Section image (e.g. map for labelling) ── */}
-      {section?.imageUrl && (
-        <div className="bg-white border-b px-6 py-3 flex-shrink-0">
-          <img src={section.imageUrl} alt={section.title} className="max-w-full max-h-96 object-contain mx-auto" />
-        </div>
-      )}
-
       {/* ── Questions (full width) ── */}
-      <div className="flex-1 overflow-hidden flex">
+      <div className="flex-1 overflow-y-auto flex">
         <QuestionsPanel
           section={section}
           answers={answers}

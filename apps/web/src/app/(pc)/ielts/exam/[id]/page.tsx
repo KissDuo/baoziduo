@@ -29,7 +29,7 @@ function ResizableSplit({ left, right }: { left: React.ReactNode; right: React.R
   }, []);
 
   return (
-    <div ref={containerRef} className="flex flex-1 overflow-hidden">
+    <div ref={containerRef} className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
       <div className="overflow-y-auto" style={{ width: split + '%', minWidth: 0 }}>{left}</div>
       <div
         className="w-1.5 bg-slate-200 hover:bg-primary-400 cursor-col-resize flex-shrink-0 transition-colors active:bg-primary-500"

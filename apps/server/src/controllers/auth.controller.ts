@@ -17,7 +17,7 @@ const REFRESH_COOKIE_OPTIONS = {
 function setTokenCookies(res: Response, accessToken: string, refreshToken: string) {
   res.cookie('access_token', accessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: 15 * 60 * 1000, // 15 min
+    maxAge: 2 * 60 * 60 * 1000, // 2 hours, matches JWT expiry
   });
   res.cookie('refresh_token', refreshToken, {
     ...REFRESH_COOKIE_OPTIONS,
