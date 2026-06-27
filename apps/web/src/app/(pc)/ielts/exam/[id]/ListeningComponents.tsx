@@ -210,16 +210,17 @@ export function NoteModeGroup({ content, questions, answers, attemptId, onSave }
   const qMap = new Map(questions.map(q => [q.questionIndex, q]));
   const body = content.replace(/^\[note\]\n?/, '');
   const lines = body.split('\n');
-  let firstHeading = true;
   return (
     <div className="text-sm text-slate-800 leading-8 whitespace-pre-line">
       {lines.map((line, li) => {
         if (!line.trim()) return <div key={li} className="h-2" />;
+        // # MainTitle → centered, large, bold (P4 only, from [center][b])
+        if (line.trim().startsWith('# ')) {
+          return <p key={li} className="font-bold text-slate-900 text-base text-center mt-1 mb-3">{line.trim().slice(2)}</p>;
+        }
+        // ## SubTitle → bold only (P4 sub-heading or P1 heading, from [b])
         if (line.trim().startsWith('## ')) {
-          const title = line.trim().slice(3);
-          const isFirst = firstHeading;
-          firstHeading = false;
-          return <p key={li} className={isFirst ? 'font-bold text-slate-900 text-base text-center mt-1 mb-3' : 'font-bold text-slate-800 mt-3 mb-1 text-sm'}>{title}</p>;
+          return <p key={li} className="font-bold text-slate-800 mt-3 mb-1 text-sm">{line.trim().slice(3)}</p>;
         }
         if (!/\{Q\d+\}/.test(line)) return <p key={li} className="text-slate-700">{line.trim()}</p>;
         const parts = line.split(/(\{Q\d+\})/);
