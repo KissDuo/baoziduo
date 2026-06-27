@@ -17,7 +17,7 @@ VALUES (1801, '剑桥雅思 18 - Test 1 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (18011, 1801, 1, 'Part 1: Transport Survey', 'Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T1/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(18012, 1801, 2, 'Part 2: Becoming a Volunteer for ACE', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T1/S2.mp3', NULL, NOW());
+(18012, 1801, 2, 'Part 2: Becoming a Volunteer for ACE', 'Choose the correct letter, A, B or C .\nWhat information does the speaker give about each of the following areas of the museum?Choose SIX answers from the box and drag the correct letter, A–H, next to Questions 15–20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T1/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (18013, 1801, 3, 'Part 3: Talk on Jobs in Fashion Design', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T1/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
@@ -116,7 +116,7 @@ INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, aud
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (18022, 1802, 2, 'Part 2: Housing Development', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T2/S2.mp3', 'https://yxzm-image.oss-cn-beijing.aliyuncs.com/L-C18-T2-S2.png', NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(18023, 1802, 3, 'Part 3: The Laki Eruption of 1783', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T2/S3.mp3', NULL, NOW());
+(18023, 1802, 3, 'Part 3: The Laki Eruption of 1783', 'Choose the correct letter, A,BorC.\nWhat reasons did the recycling manager give for rejecting footwear, according to the students?ChooseFOURanswers from the box and write the correct letter,A–F, next to Questions 25–28.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T2/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (18024, 1802, 4, 'Part 4: Pockets', 'Complete the notes below.\nWrite ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T2/S4.mp3', NULL, NOW());
 
@@ -213,7 +213,7 @@ INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, aud
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (18032, 1803, 2, 'Part 2: Picking Mushrooms', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T3/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(18033, 1803, 3, 'Part 3: The Luddites and the Future of Work', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T3/S3.mp3', NULL, NOW());
+(18033, 1803, 3, 'Part 3: The Luddites and the Future of Work', 'Choose the correct letter, A,BorC.\nWhat reasons did the recycling manager give for rejecting footwear, according to the students?ChooseFOURanswers from the box and write the correct letter,A–F, next to Questions 25–28.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T3/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (18034, 1803, 4, 'Part 4: Space Traffic Management', 'Complete the notes below.\nWrite ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T3/S4.mp3', NULL, NOW());
 
@@ -308,9 +308,9 @@ VALUES (1804, '剑桥雅思 18 - Test 4 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (18041, 1804, 1, 'Part 1: Job Details from Employment Agency', 'Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T4/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(18042, 1804, 2, 'Part 2: Museum Guide', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T4/S2.mp3', NULL, NOW());
+(18042, 1804, 2, 'Part 2: Museum Guide', 'Choose TWOletters,A–E .\nWhat reason prevented each of the following members of the Compton Park Runners Club from joining until recently?Write the correct letter,A,B, orCnext to Questions 15–18.\nChoose the correct letter, A,BorC.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T4/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(18043, 1804, 3, 'Part 3: Origami in the Classroom', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T4/S3.mp3', NULL, NOW());
+(18043, 1804, 3, 'Part 3: Origami in the Classroom', 'Choose the correct letter, A,BorC.\nWhat reasons did the recycling manager give for rejecting footwear, according to the students?ChooseFOURanswers from the box and write the correct letter,A–F, next to Questions 25–28.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T4/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (18044, 1804, 4, 'Part 4: Victor Hugo', 'Complete the notes below.\nWrite ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-18/T4/S4.mp3', NULL, NOW());
 

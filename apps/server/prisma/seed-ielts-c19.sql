@@ -490,9 +490,9 @@ VALUES (1902, '剑桥雅思 19 - Test 2 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19021, 1902, 1, 'Part 1', 'Questions 1-6\nComplete the form below.\nWrite ONE WORD AND/OR A NUMBER for each answer.\n\nQuestions 7-10\nComplete the table below.\nWrite ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19022, 1902, 2, 'Part 2', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S2.mp3', NULL, NOW());
+(19022, 1902, 2, 'Part 2', 'Choose the correct letter, A,BorC.\nLabel the map below.Write the correct letter,A–H, next to Questions 16–20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19023, 1902, 3, 'Part 3', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S3.mp3', NULL, NOW());
+(19023, 1902, 3, 'Part 3', 'Choose TWOletters,A–E.\nWhat is the students’ opinion about each of the following food trends?Choose SIX answers from the box and write the correct letter,A–H, next to Questions 25–30.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19024, 1902, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S4.mp3', NULL, NOW());
 
@@ -587,9 +587,9 @@ VALUES (1903, '剑桥雅思 19 - Test 3 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19031, 1903, 1, 'Part 1', 'Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19032, 1903, 2, 'Part 2', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S2.mp3', NULL, NOW());
+(19032, 1903, 2, 'Part 2', 'What information is given about each of the following festival workshops?\nChoose SIX answers from the box and write the correct letter, A-H, next to Questions 11-16.\n\nChoose TWO letters, A-E.\n\nChoose TWO letters, A-E.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19033, 1903, 3, 'Part 3', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S3.mp3', NULL, NOW());
+(19033, 1903, 3, 'Part 3', 'Choose TWOletters,A–E.\nWhat is the students’ opinion about each of the following food trends?Choose SIX answers from the box and write the correct letter,A–H, next to Questions 25–30.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19034, 1903, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S4.mp3', NULL, NOW());
 
@@ -684,9 +684,9 @@ VALUES (1904, '剑桥雅思 19 - Test 4 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19041, 1904, 1, 'Part 1', 'Questions 1-6\nComplete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.\n\nQuestions 7-10\nComplete the table below.\nWrite ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19042, 1904, 2, 'Part 2', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S2.mp3', NULL, NOW());
+(19042, 1904, 2, 'Part 2', 'Choose the correct letter, A,BorC.\nLabel the map below.Write the correct letter,A–H, next to Questions 16–20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19043, 1904, 3, 'Part 3', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S3.mp3', NULL, NOW());
+(19043, 1904, 3, 'Part 3', 'Choose TWOletters,A–E.\nWhat is the students’ opinion about each of the following food trends?Choose SIX answers from the box and write the correct letter,A–H, next to Questions 25–30.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19044, 1904, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S4.mp3', NULL, NOW());
 

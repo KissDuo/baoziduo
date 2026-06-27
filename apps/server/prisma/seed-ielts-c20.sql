@@ -684,7 +684,7 @@ VALUES (2004, '剑桥雅思 20 - Test 4 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (20041, 2004, 1, 'Part 1: Accommodation', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(20042, 2004, 2, 'Part 2: Football Stadium Tour', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S2.mp3', NULL, NOW());
+(20042, 2004, 2, 'Part 2: Football Stadium Tour', 'Choose TWO letters, A–E .\nWhich event in the history of football in the UK took place in each of the following years?Choose SIX answers from the box and write the correct letter, A-H, next to Questions 15-20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (20043, 2004, 3, 'Part 3: Handwriting Research', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
