@@ -595,6 +595,35 @@ function extractQuestionTexts(groupContent: string): Map<number, string> {
 
 ## 十一、常见陷阱与错误模式
 
+### ⚠️ 铁律0：提示句（instructions）是必须的，永远从 KMF 提取
+
+**每次导入、每次修改数据后，必须检查 `IELTSExamSection.instructions` 是否正确。**
+
+instructions 来自 KMF 每个 group 的 `added_content[]`，**所有 group 的提示语必须合并存入**。前端 `findMatchContext()` / `getListeningMatchHint()` 依赖这些文本渲染每个题组的提示句。
+
+**症状**：某组题上方缺提示句（如匹配题只有选项没有 "Choose N answers..." 说明）。
+
+**检查方法**：
+```sql
+-- 找出 P2/P3 有非填空题型但 instructions 还是 "Complete the notes" 的 section
+SELECT s.id, s.instructions 
+FROM IELTSExamSection s 
+JOIN IELTSExam e ON s.examId = e.id 
+WHERE e.type = 'listening' AND s.sectionIndex IN (2,3)
+AND s.instructions LIKE 'Complete the notes%'
+AND EXISTS (SELECT 1 FROM IELTSQuestion q WHERE q.sectionId = s.id AND q.questionType != 'fill_blank');
+```
+
+### 铁律0补充：KMF `added_content` 格式清洗规则
+
+1. 去所有 HTML 标签：`.replace(/<[^>]+>/g, '')`
+2. 合并空白：`.replace(/\s+/g, ' ').trim()`
+3. 补 "Questions"：`.replace(/next to (\d+)/gi, 'next to Questions $1')`
+4. 清理空格逗号：`.replace(/\s+,/g, ',')`
+5. **所有 group 的提示语用 `\n` 连接**（保留顺序）
+
+---
+
 ### 陷阱1：`type` 字段是 STRING，不是 number
 
 ```javascript

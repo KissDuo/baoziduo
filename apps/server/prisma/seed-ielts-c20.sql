@@ -393,9 +393,9 @@ VALUES (2001, '剑桥雅思 20 - Test 1 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (20011, 2001, 1, 'Part 1: Name of Restaurant', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T1/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(20012, 2001, 2, 'Part 2: Pottery', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T1/S2.mp3', NULL, NOW());
+(20012, 2001, 2, 'Part 2: Pottery', 'Choose the correct letter, A, B or C .\nChoose TWO letters, A–E .', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T1/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(20013, 2001, 3, 'Part 3: Loneliness Study', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T1/S3.mp3', NULL, NOW());
+(20013, 2001, 3, 'Part 3: Loneliness Study', 'Choose TWO letters, A–E .\nChoose the correct letter, A, B or C .', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T1/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (20014, 2001, 4, 'Part 4: Reclaiming Urban Rivers', 'Complete the notes below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T1/S4.mp3', NULL, NOW());
 
@@ -686,7 +686,7 @@ INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, aud
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (20042, 2004, 2, 'Part 2: Football Stadium Tour', 'Choose TWO letters, A–E .\nWhich event in the history of football in the UK took place in each of the following years?Choose SIX answers from the box and write the correct letter, A-H, next to Questions 15-20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(20043, 2004, 3, 'Part 3: Handwriting Research', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S3.mp3', NULL, NOW());
+(20043, 2004, 3, 'Part 3: Handwriting Research', 'Choose TWO letters, A–E .\nChoose the correct letter, A, B or C .', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (20044, 2004, 4, 'Part 4: Chembe Bird Sanctuary', 'Complete the notes below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S4.mp3', NULL, NOW());
 

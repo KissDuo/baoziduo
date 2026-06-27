@@ -393,9 +393,9 @@ VALUES (1901, '剑桥雅思 19 - Test 1 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19011, 1901, 1, 'Part 1', 'Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19012, 1901, 2, 'Part 2', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S2.mp3', 'https://yxzm-image.oss-cn-beijing.aliyuncs.com/L-C19-T1-S2.png', NOW());
+(19012, 1901, 2, 'Part 2', 'Choose the correct letter, A,BorC.\nLabel the map below.Write the correct letter,A–H, next to Questions 16–20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S2.mp3', 'https://yxzm-image.oss-cn-beijing.aliyuncs.com/L-C19-T1-S2.png', NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19013, 1901, 3, 'Part 3', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S3.mp3', NULL, NOW());
+(19013, 1901, 3, 'Part 3', 'Choose TWO letters, A-E.\n\nChoose TWO letters, A-E.\n\nWhat is the students\' opinion about each of the following food trends?\nChoose SIX answers from the box and write the correct letter, A-H, next to Questions 25-30.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19014, 1901, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S4.mp3', NULL, NOW());
 
