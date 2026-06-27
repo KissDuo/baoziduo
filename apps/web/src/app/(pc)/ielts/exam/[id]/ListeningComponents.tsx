@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, memo } from 'react';
+import { useState, useRef, memo } from 'react';
 import { BlankInput, MatchingGroup } from './SharedComponents';
 
 // ═══════════════════════════════════════════
