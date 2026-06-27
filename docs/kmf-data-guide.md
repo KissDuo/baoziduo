@@ -712,6 +712,31 @@ const marker = hasHtmlTable ? '[table]' : '[note]';
 
 **修复**：用 KMF `content` 中是否含 `<table>` 标签为准，instructions 仅作参考。
 
+### 陷阱11：匹配题 options 必须全组共享 Group 级 answer[]
+
+匹配题（KMF type 694/683/684/685/680）的选项列表在 **Group 级 `answer[]`**，不是每个 child 独有。所有同组 child 必须共享同一个 options JSON 数组。
+
+```
+❌ child 1: options = ["A选项内容"]      // 只有自己的答案
+   child 2: options = ["B选项内容"]      // 不同！MatchingGroup 无法渲染
+✅ child 1: options = ["A选项内容","B选项内容","C选项内容",...]  // 全组共享
+   child 2: options = ["A选项内容","B选项内容","C选项内容",...]  // 完全相同
+```
+
+**症状**：拖拽面板只显示 1 个选项，或者匹配题整组不显示。
+
+**原因**：错误地从 `children[].answer[0].obj.content` 提取选项，而非从 `group.answer[]`。
+
+**正确提取**：
+```typescript
+// Group 级 answer[] → 共享选项列表
+const sharedOptions = group.answer.map(a => a.obj.content);
+
+// Child 的 choice 字母 → 映射到正确选项文本
+const childLetter = child.answer[0].ext.choice[0].ex_information.toUpperCase();
+const correctAnswer = group.answer.find(a => a.ext.choice[0].ex_information === childLetter)?.obj.content;
+```
+
 ### 陷阱5：多 section 共占同一 Q 号范围
 
 KMF 中多个 book/test 的 section 可能有相同的 Q 号范围（如所有 P1 都是 Q1-10）。匹配时必须用 **book + type + Q号** 三重索引，不能仅用 Q 号。
