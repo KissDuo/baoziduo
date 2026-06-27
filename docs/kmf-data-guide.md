@@ -761,6 +761,29 @@ instructions = instructions
   .replace(/\s+,/g, ',');  // 清理 "A-I ," → "A-I,"
 ```
 
+### 陷阱15：一个 section 可有多个 `[table]` 组，需按 marker 位置分界
+
+C19 T4P1 含两个独立的 `[table]`（Q1-Q6 和 Q7-Q10）。分组时必须用**下一个 `[table]` 的位置**作为前一组的截止边界，不能简单用 `start + 10` 全覆盖。
+
+```
+❌ Q1 的表组包含 Q1-Q10 → Q7 的表被跳过
+✅ Q1 的表组截止于 Q7 的 [table] 前 → Q1-Q6，Q7 独立成组 Q7-Q10
+```
+
+**修复**：`getTableGroups` 先收集所有 `[table]` 起始 index，每组截止于下一个 `[table]` 或 `start + 10`（取较小值）。
+
+### 陷阱16：无表头的 label-value 表格
+
+当表格第一行就包含 `______`（如 `| Name of supervisor: | ______ |`），这不是表头而是数据行。若当 `<thead>` 渲染，第一个 blank 就丢失了。
+
+**检测**：`parseTable` 检查首行是否有 `______`（`hasBlank()`）→ 整表无 `<thead>`，全部按 `<tbody>` 渲染。
+
+### 陷阱17：表格 title 行（colspan 合并单元格）和同格多 blank 换行
+
+KMF HTML table 第一行常用 `colspan` 合并所有列做标题（如 `| First day at work |`）。`parseTable` 检测首行仅 1 个非空 cell → 识别为 title，独立渲染为居中加粗行。
+
+同一 cell 内有多个 `______`（如 `to give ______ number to collect ______`），TableGroup 渲染时第二个及后续 blank 前加 `<br/>` 换行。
+
 ### 陷阱14：`[table]` 用 `______`，`[note]` 用 `{QN}`，不可混用
 
 两个组件搜索 blank 的方式不同：
