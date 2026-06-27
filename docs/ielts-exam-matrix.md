@@ -65,7 +65,9 @@
 | C19 | T2 | P1 | Q1-10 | fill_blank | note | NoteModeGroup |
 | C19 | T2 | P2 | Q11-13 | multiple_choice | single | SingleChoice |
 | C19 | T2 | P2 | Q14-15 | multiple_choice | multi | MultiChoiceGroup |
-| C19 | T2 | P2 | Q16-20 | matching | drag | MatchingGroup |
+| C19 | T2 | P2 | Q16 | multiple_choice | single | SingleChoice |
+| C19 | T2 | P2 | Q17-18 | multiple_choice | multi | MultiChoiceGroup |
+| C19 | T2 | P2 | Q19-20 | multiple_choice | multi | MultiChoiceGroup |
 | C19 | T2 | P3 | Q21-24 | multiple_choice | single | SingleChoice |
 | C19 | T2 | P3 | Q25-28 | matching | drag | MatchingGroup |
 | C19 | T2 | P3 | Q29-30 | multiple_choice | multi | MultiChoiceGroup |
