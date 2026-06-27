@@ -118,13 +118,87 @@ DATABASE_URL="mysql://root:DCHdch1234.@123.56.146.148:3306/en?timezone=%2B08%3A0
 
 ### 3.3 题型对照
 
+**听力：**
 | KMF type_cn | 我们的 questionType | 对应组件 |
 |-------------|-------------------|---------|
 | 听力图表题 | fill_blank | NoteModeGroup / TableGroup / FormFillBlank |
 | 选择/判断/听力填空题 | multiple_choice | SingleChoice / MultiChoiceGroup |
 | 听力配对题 | matching | MatchingGroup / FlowchartMatching |
 
-### 3.4 题目内容格式
+**阅读：**
+| KMF type_cn | KMF child type_cn | 我们的 questionType |
+|-------------|-------------------|-------------------|
+| 选择/判断/听力填空题 | 判断题 | true_false / yes_no |
+| 选择/判断/听力填空题 | 单选题 | multiple_choice |
+| 选择/判断/听力填空题 | 多选题 | multiple_choice |
+| 题干被包含配对题 | 带内容的拖拽题 | matching |
+| 拖拽配对题 | 带内容的拖拽题 | matching |
+| list of heading题 | 不带内容的拖拽题 | matching |
+| 不带词库的summary题 | 不带内容的填空题 | fill_blank |
+
+### 3.4 阅读文章正文
+
+**关键发现：文章在 `result.questions[].parent.question.obj.content`**
+
+```json
+{
+  "result": {
+    "questions": [
+      {
+        "parent": {
+          "question": {
+            "obj": {
+              "title": "The kākāpō",
+              "content": "[br/]The kākāpō is a nocturnal..."
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+**KMF 文章正文 BBCode 清洗规则（无一例外全部处理）：**
+
+```typescript
+function cleanKmfPassage(raw: string): string {
+  return raw
+    // 1. [p:X] → 段落字母 A-G，单独成行（前端 renderPassage 自动加粗）
+    .replace(/\[p:([a-z])\]/gi, (_, l: string) => `\n\n${l.toUpperCase()}\n`)
+    // 2. [br/][br/] → 单个段落间空行
+    .replace(/\[br\/\]\s*\[br\/\]/gi, '\n\n')
+    // 3. [br/] → 换行
+    .replace(/\[br\/\]/gi, '\n')
+    // 4. 去除 BBCode 格式化标签：[b][/b][i][/i][center][/center][h3][/h3][strong][/strong]
+    .replace(/\[\/?(?:center|b|i|h\d|strong)\]/gi, '')
+    // 5. 修复损坏的粗体标签如 [elms had] → elms（KMF bug）
+    .replace(/\[(\w+\s+\w+)\]/gi, '$1')
+    // 6. HTML 实体解码
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    // 7. 清理残留 HTML 标签
+    .replace(/<[^>]+>/g, '')
+    // 8. 规范化空白：去除 \r\n，压缩 3+ 连续换行为 2 个
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+```
+
+**关键规则：**
+| 原始标记 | 含义 | 转换为 |
+|----------|------|--------|
+| `[p:a]` | 段落 A 开始 | `\n\nA\n`（大写字母单独成行） |
+| `[br/]` | 换行 | `\n` |
+| `[br/][br/]` | 段落分隔 | `\n\n`（只用一段空行） |
+| `[center]...[/center]` | 居中 | 去除标签，保留文本 |
+| `[b]...[/b]` | 加粗 | 去除标签，保留文本 |
+| `[elms had]` | KMF 解析 bug | 修复为 `elms` |
+
+### 3.5 题目内容格式（听力和阅读共用）
 
 **填空（[note]/[table]）**：HTML 原文
 - `[blank]1[/blank]` → 映射为 `{Q1}`（注意 P4 需 +30：`{Q31}`）
@@ -214,15 +288,13 @@ C20: 952=T1P1, 953=T1P2, 954=T1P3, 955=T1P4,
 
 ## 五、已有 KMF 数据状态
 
-| 书 | 听力 section 数 | KMF 文件数 | 答案 | passageText | 选项/stem |
-|----|---------------|-----------|------|-------------|-----------|
-| C18 | 16 | 12 个（部分） | ✅ | ✅ (OCR补充) | ✅ |
-| C19 | 16 | 完整 | ✅ | ✅ | ✅ |
-| C20 | 16 | 16 个（完整） | ✅ | ✅ | ✅ |
+| 书 | 听力 | 阅读 | 文章来源 | 总题数 |
+|----|------|------|----------|--------|
+| C18 | 16/16 ✅ | 12/12 ✅ | KMF parent | 320 |
+| C19 | 16/16 ✅ | 12/12 ✅ | KMF parent | 320 |
+| C20 | 16/16 ✅ | 12/12 ✅ | KMF parent | 320 |
 
-### 待补充
-- C18 KMF 数据：缺 T1P2(部分)、T1P3、T2P2 等的 KMF 原始文件（已有答案来自早期抓取）
-- C19/C20 阅读部分：未从 KMF 抓取
+全部 960 题（480 听力 + 480 阅读）均从 KMF 导入，文章正文从 `parent.question.obj.content` 提取。
 
 ---
 

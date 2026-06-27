@@ -291,8 +291,8 @@ export default function IeltsExamPage() {
     // Filter out empty text blocks
     const nonEmptyBlocks = blocks.filter(b => b.type !== 'text' || b.content.trim());
 
-    // Find the first text block index (this is always the title)
-    const firstTextIdx = nonEmptyBlocks.findIndex(b => b.type === 'text');
+    // Find the first text block that's NOT an instruction line (the actual passage title)
+    const firstTextIdx = nonEmptyBlocks.findIndex(b => b.type === 'text' && !/^You should spend/i.test(b.content.trim()));
 
     return (
       <>
@@ -304,27 +304,14 @@ export default function IeltsExamPage() {
           const trimmed = block.content.trim();
           if (!trimmed) return null;
 
-          // First text block = title (+ optional subtitle if short enough)
+          // Instruction line: lighter color, no bold
+          const isInstructionLine = /^You should spend/i.test(trimmed);
+          if (isInstructionLine) {
+            return <p key={bi} className="mb-3 text-slate-500">{highlightText(joinLines(trimmed))}</p>;
+          }
+          // First text block (title already in section header) — render as normal body
           if (bi === firstTextIdx) {
-            const titleLines = trimmed.split('\n').map(l => l.trim()).filter(Boolean);
-            const title = titleLines[0] || '';
-            const rest = titleLines.slice(1).join(' ').trim();
-            const restWords = rest ? rest.split(/\s+/).filter(Boolean).length : 0;
-            // Subtitle: 1-25 words after title (typically a short description, then blank line)
-            const isSubtitle = restWords > 0 && restWords <= 25;
-            return (
-              <div key={bi} className="mb-4">
-                <p className="font-bold text-base text-slate-900">{highlightText(title)}</p>
-                {isSubtitle && (
-                  <p className="text-sm text-slate-700 mt-1 italic">
-                    {highlightText(joinLines(rest))}
-                  </p>
-                )}
-                {!isSubtitle && restWords > 25 && (
-                  <p className="mb-3 mt-1">{highlightText(joinLines(rest))}</p>
-                )}
-              </div>
-            );
+            return <p key={bi} className="mb-3">{highlightText(joinLines(trimmed))}</p>;
           }
 
           // Normal paragraph — join broken PDF lines into flowing text
@@ -356,7 +343,7 @@ export default function IeltsExamPage() {
         left={
           <div className="h-full overflow-y-auto p-6 bg-slate-50 relative" ref={passageRef} onMouseUp={handlePassageMouseUp}>
             <h2 className="text-base font-bold text-slate-800 mb-3">{section?.title}</h2>
-            <div className="text-sm leading-relaxed text-slate-700 break-words">
+            <div className="text-sm leading-relaxed text-slate-800 break-words">
               {renderPassage()}
             </div>
           </div>
