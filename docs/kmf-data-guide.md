@@ -231,7 +231,7 @@ KMF: children[].question.obj.content
   ↓ （去掉 [blank]N[/blank] → ______）
   ↓ （去掉 [match]N[/match] → 去除）
 IELTSQuestion.questionText
-```
+```1
 适用于 child type 101（单选）、611（多选）、405（带内容拖拽）、711（判断）。
 
 **来源2：Group 级 content（type 680/686/692）**
@@ -749,6 +749,17 @@ Section instructions: "What is the role of the volunteers...\nChoose the correct
 ```
 
 **症状**：匹配组上方缺提示句，或整个 section 只有 MC 的提示而没有匹配的提示。
+
+**额外格式要求**：前端 `getListeningMatchHint` 正则有两个硬性要求：
+1. Q 号前必须有 **"Questions"** 字样（`next to Questions 11-16` ✅，`next to 11-16` ❌）。KMF 原文通常缺 "Questions"，导入时需补上
+2. 字母范围后逗号前不能有空格（`A-I,` ✅，`A-I ,` ❌）。KMF HTML 清洗后可能残留多余空格，需 `replace(/\s+,/g, ',')` 清理
+
+```typescript
+// 导入时的标准化处理
+instructions = instructions
+  .replace(/next to (\d+)/gi, 'next to Questions $1')  // 补 "Questions"
+  .replace(/\s+,/g, ',');  // 清理 "A-I ," → "A-I,"
+```
 
 ### 陷阱5：多 section 共占同一 Q 号范围
 
