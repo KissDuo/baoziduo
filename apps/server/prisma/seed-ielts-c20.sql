@@ -400,25 +400,25 @@ INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, aud
 (20014, 2001, 4, 'Part 4: Reclaiming Urban Rivers', 'Complete the notes below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T1/S4.mp3', NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 1, 'fill_blank', '○ pollution from ______ on the river bank.', '["A. fish"]', 'A. fish', NULL, '## [table] Restaurant Recommendations\n| Name of restaurant | Location | Reason for recommendation | Other comments |\n| The Junction | Greyson Street, near the station | Good for people who are especially keen on ______. | Quite expensive. The ______ is a good place for a drink. |\n| Paloma | In Bow Street next to the cinema | ______ food, good for sharing. | Staff are very friendly. Need to pay £50 deposit. A limited selection of ______ food on the menu. |\n| The ______ | At the top of a ______. | A famous chef. All the ______ are very good. Only uses ______ ingredients. | Set lunch costs £______ per person. Portions probably of ______ size. |', 1, NULL, NOW());
+(20011, 1, 'fill_blank', '', NULL, 'fish', NULL, '[table] Name of restaurant\n| Name of restaurant | Location | Reason for recommendation | Other comments |\n| The Junction Greyson Street, near the station Good for people who are especially keen on ______ Quite expensive The ______ is a good place for a drink |\n| Paloma In Bow Street next to the cinema ______ food, good for sharing Staff are very friendly Need to pay £50 deposit A limited selection of ______ food on the menu |\n| The ______ At the top of a ______ A famous chef All the ______ are very good Only uses ______ ingredients Set lunch costs £ ______ per person Portions probably of ______ size |\n', 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 2, 'fill_blank', '● In 1957, the River Thames in London was declared biologically ______ .', '["A. roof"]', 'A. roof', NULL, NULL, 1, NULL, NOW());
+(20011, 2, 'fill_blank', '', NULL, 'roof', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 3, 'fill_blank', '● Seals and even a ______ have been seen in the River Thames.', '["A. Spanish"]', 'A. Spanish', NULL, NULL, 1, NULL, NOW());
+(20011, 3, 'fill_blank', '', NULL, 'Spanish', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 4, 'fill_blank', '● Riverside warehouses are converted to restaurants and ______', '["A. vegetarian"]', 'A. vegetarian', NULL, NULL, 1, NULL, NOW());
+(20011, 4, 'fill_blank', '', NULL, 'vegetarian', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 5, 'fill_blank', '○ build a riverside ______', '["A. Audley"]', 'A. Audley', NULL, NULL, 1, NULL, NOW());
+(20011, 5, 'fill_blank', '', NULL, 'Audley', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 6, 'fill_blank', '○ display ______ projects.', '["A. hotel"]', 'A. hotel', NULL, NULL, 1, NULL, NOW());
+(20011, 6, 'fill_blank', '', NULL, 'hotel', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 7, 'fill_blank', '● In Paris, ______ are created on the sides of the river every summer.', '["A. reviews"]', 'A. reviews', NULL, NULL, 1, NULL, NOW());
+(20011, 7, 'fill_blank', '', NULL, 'reviews', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 8, 'fill_blank', '● Over 2 billion passengers already travel by ______ in cities round the world.', '["A. local"]', 'A. local', NULL, NULL, 1, NULL, NOW());
+(20011, 8, 'fill_blank', '', NULL, 'local', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 9, 'fill_blank', '● Instead of road transport, goods could be transported by large freight barges and electric ______ or, in future, by ______ .', '["A. 30|thirty"]', 'A. 30|thirty', NULL, NULL, 1, NULL, NOW());
+(20011, 9, 'fill_blank', '', NULL, '30|thirty', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20011, 10, 'fill_blank', '● Instead of road transport, goods could be transported by large freight barges and electric ______ or, in future, by ______ .', '["A. average"]', 'A. average', NULL, NULL, 1, NULL, NOW());
+(20011, 10, 'fill_blank', '', NULL, 'average', NULL, NULL, 1, NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (20012, 11, 'multiple_choice', 'Heather says pottery differs from other art forms because', '["A. it lasts longer in the ground.","B. it is practised by more people.","C. it can be repaired more easily."]', 'A. it lasts longer in the ground.', NULL, NULL, 1, NULL, NOW());
@@ -497,25 +497,25 @@ INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, aud
 (20024, 2002, 4, 'Part 4: Developing Food Trends', 'Complete the notes below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T2/S4.mp3', NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 1, 'fill_blank', '○ pollution from ______ on the river bank.', '["A. break"]', 'A. break', NULL, '## [table]\nLocal councils can arrange practical support to help those caring for elderly people at home.\nThis can give the carer:\n● time for other responsibilities\n● a {Q1}\nAssessment of mother\'s needs\nThis may include discussion of:\n● how much {Q2} the caring involves \n● what types of tasks are involved, e.g.\n○ help with dressing\n○ helping her have a {Q3}\n○ shopping\n○ helping with meals\n○ dealing with {Q4}\n● any aspects of caring that are especially difficult, e.g.\n○ loss of {Q5}\n○ {Q6} her\n○ preventing a {Q7}\nTypes of support that may be offered to carers\n● transport costs, e.g. cost of a {Q8}\n● car-related costs, e.g. fuel and {Q9}\n● help with housework\n● help to reduce {Q10}', 1, NULL, NOW());
+(20021, 1, 'fill_blank', '● a ______', NULL, 'break', NULL, '## [table]\nLocal councils can arrange practical support to help those caring for elderly people at home.\nThis can give the carer:\n● time for other responsibilities\n● a {Q1}\nAssessment of mother\'s needs\nThis may include discussion of:\n● how much {Q2} the caring involves \n● what types of tasks are involved, e.g.\n○ help with dressing\n○ helping her have a {Q3}\n○ shopping\n○ helping with meals\n○ dealing with {Q4}\n● any aspects of caring that are especially difficult, e.g.\n○ loss of {Q5}\n○ {Q6} her\n○ preventing a {Q7}\nTypes of support that may be offered to carers\n● transport costs, e.g. cost of a {Q8}\n● car-related costs, e.g. fuel and {Q9}\n● help with housework\n● help to reduce {Q10}', 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 2, 'fill_blank', '● In 1957, the River Thames in London was declared biologically ______ .', '["A. time"]', 'A. time', NULL, NULL, 1, NULL, NOW());
+(20021, 2, 'fill_blank', '● how much ______ the caring involves', NULL, 'time', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 3, 'fill_blank', '● Seals and even a ______ have been seen in the River Thames.', '["A. shower"]', 'A. shower', NULL, NULL, 1, NULL, NOW());
+(20021, 3, 'fill_blank', '○ helping her have a ______', NULL, 'shower', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 4, 'fill_blank', '● Riverside warehouses are converted to restaurants and ______', '["A. money"]', 'A. money', NULL, NULL, 1, NULL, NOW());
+(20021, 4, 'fill_blank', '○ dealing with ______', NULL, 'money', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 5, 'fill_blank', '○ build a riverside ______', '["A. memory"]', 'A. memory', NULL, NULL, 1, NULL, NOW());
+(20021, 5, 'fill_blank', '○ loss of ______', NULL, 'memory', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 6, 'fill_blank', '○ display ______ projects.', '["A. lifting"]', 'A. lifting', NULL, NULL, 1, NULL, NOW());
+(20021, 6, 'fill_blank', '○ ______ her', NULL, 'lifting', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 7, 'fill_blank', '● In Paris, ______ are created on the sides of the river every summer.', '["A. fall"]', 'A. fall', NULL, NULL, 1, NULL, NOW());
+(20021, 7, 'fill_blank', '○ preventing a ______', NULL, 'fall', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 8, 'fill_blank', '● Over 2 billion passengers already travel by ______ in cities round the world.', '["A. taxi"]', 'A. taxi', NULL, NULL, 1, NULL, NOW());
+(20021, 8, 'fill_blank', '● transport costs, e.g. cost of a ______', NULL, 'taxi', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 9, 'fill_blank', '● Instead of road transport, goods could be transported by large freight barges and electric ______ or, in future, by ______ .', '["A. insurance"]', 'A. insurance', NULL, NULL, 1, NULL, NOW());
+(20021, 9, 'fill_blank', '● car-related costs, e.g. fuel and ______', NULL, 'insurance', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20021, 10, 'fill_blank', '● Instead of road transport, goods could be transported by large freight barges and electric ______ or, in future, by ______ .', '["A. stress"]', 'A. stress', NULL, NULL, 1, NULL, NOW());
+(20021, 10, 'fill_blank', '● help to reduce ______', NULL, 'stress', NULL, NULL, 1, NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (20022, 11, 'matching', 'walking around the town centre', '["giving advice to visitors"]', 'giving advice to visitors', NULL, NULL, 1, NULL, NOW());
@@ -594,25 +594,25 @@ INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, aud
 (20034, 2003, 4, 'Part 4: Inclusive Design', 'Complete the notes below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T3/S4.mp3', NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 1, 'fill_blank', '○ pollution from ______ on the river bank.', '["A. 239|two hundred thirty-nine|two hundred and thirty-nine"]', 'A. 239|two hundred thirty-nine|two hundred and thirty-nine', NULL, '## [table] Furniture Rental Companies\n| Name of company | Information about costs | Additional notes |\n| Peak Rentals | Prices range from $105 to $______ per room per month. | The furniture is very ______. Delivers in 1-2 days. Special offer: free ______ with every living room set. |\n| ______ and Oliver | Mid-range prices. 12% monthly free for ______. | Also offers a cleaning service. |\n| Larch Furniture | Offers cheapest prices for renting furniture and ______ items. | Must have own ______. Minimum contract length: six months. |\n| ______ Rentals | See the ______ for the most up-to-date prices. | ______ are allowed within 7 days of delivery. |', 1, NULL, NOW());
+(20031, 1, 'fill_blank', '$______ per room per month.', NULL, '239|two hundred thirty-nine|two hundred and thirty-nine', NULL, '## [table] Furniture Rental Companies\n| Name of company | Information about costs | Additional notes |\n| Peak Rentals | Prices range from $105 to $______ per room per month. | The furniture is very ______. Delivers in 1-2 days. Special offer: free ______ with every living room set. |\n| ______ and Oliver | Mid-range prices. 12% monthly free for ______. | Also offers a cleaning service. |\n| Larch Furniture | Offers cheapest prices for renting furniture and ______ items. | Must have own ______. Minimum contract length: six months. |\n| ______ Rentals | See the ______ for the most up-to-date prices. | ______ are allowed within 7 days of delivery. |', 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 2, 'fill_blank', '● In 1957, the River Thames in London was declared biologically ______ .', '["A. modern"]', 'A. modern', NULL, NULL, 1, NULL, NOW());
+(20031, 2, 'fill_blank', 'The furniture is very ______', NULL, 'modern', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 3, 'fill_blank', '● Seals and even a ______ have been seen in the River Thames.', '["A. lamp"]', 'A. lamp', NULL, NULL, 1, NULL, NOW());
+(20031, 3, 'fill_blank', 'free ______with every living room set', NULL, 'lamp', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 4, 'fill_blank', '● Riverside warehouses are converted to restaurants and ______', '["A. Aaron"]', 'A. Aaron', NULL, NULL, 1, NULL, NOW());
+(20031, 4, 'fill_blank', '______ and Oliver', NULL, 'Aaron', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 5, 'fill_blank', '○ build a riverside ______', '["A. damage"]', 'A. damage', NULL, NULL, 1, NULL, NOW());
+(20031, 5, 'fill_blank', '12% monthly free for ______', NULL, 'damage', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 6, 'fill_blank', '○ display ______ projects.', '["A. electronic"]', 'A. electronic', NULL, NULL, 1, NULL, NOW());
+(20031, 6, 'fill_blank', 'furniture and ______ items', NULL, 'electronic', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 7, 'fill_blank', '● In Paris, ______ are created on the sides of the river every summer.', '["A. insurance"]', 'A. insurance', NULL, NULL, 1, NULL, NOW());
+(20031, 7, 'fill_blank', 'Must have own ______', NULL, 'insurance', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 8, 'fill_blank', '● Over 2 billion passengers already travel by ______ in cities round the world.', '["A. Space"]', 'A. Space', NULL, NULL, 1, NULL, NOW());
+(20031, 8, 'fill_blank', '______ Rentals', NULL, 'Space', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 9, 'fill_blank', '● Instead of road transport, goods could be transported by large freight barges and electric ______ or, in future, by ______ .', '["A. app"]', 'A. app', NULL, NULL, 1, NULL, NOW());
+(20031, 9, 'fill_blank', 'See the ______ for the most', NULL, 'app', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20031, 10, 'fill_blank', '● Instead of road transport, goods could be transported by large freight barges and electric ______ or, in future, by ______ .', '["A. Exchanges"]', 'A. Exchanges', NULL, NULL, 1, NULL, NOW());
+(20031, 10, 'fill_blank', '______ are allowed within 7 days of delivery', NULL, 'Exchanges', NULL, NULL, 1, NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (20032, 11, 'multiple_choice', 'Who was responsible for starting the community project?', '["A. the castle owners","B. a national charity","C. the local council"]', 'B. a national charity', NULL, NULL, 1, NULL, NOW());
@@ -691,25 +691,25 @@ INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, aud
 (20044, 2004, 4, 'Part 4: Chembe Bird Sanctuary', 'Complete the notes below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T4/S4.mp3', NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 1, 'fill_blank', '○ pollution from ______ on the river bank.', '["A. Kings|King\'s"]', 'A. Kings|King\'s', NULL, '## [note]\nAdvice on family visit\nAccommodation\n● {Q1} Hotel on George Street\n● cost of family room per night: 2 £ {Q2} (approx.)\nRecommended trips\n● a {Q3} tour of the city centre (starts in Carlton Square)\n● a trip by {Q4} to the old fort\nScience Museum\n● best day to visit: {Q5}\n● see the exhibition about {Q6} which opens soon\nFood\n● Clacton Market:\n○ good for {Q7} food\n○ need to have lunch before {Q8} p.m.\nTheatre tickets\n● save up to {Q9} % on ticket prices at bargaintickets.com\nFree activities\n● Blakewell Gardens:\n● Roots Music Festival\n● climb Telegraph Hill to see a view of the {Q10}', 1, NULL, NOW());
+(20041, 1, 'fill_blank', '● ______ Hotel on George Street', NULL, 'Kings|King\'s', NULL, '## [note]\nAdvice on family visit\nAccommodation\n● {Q1} Hotel on George Street\n● cost of family room per night: 2 £ {Q2} (approx.)\nRecommended trips\n● a {Q3} tour of the city centre (starts in Carlton Square)\n● a trip by {Q4} to the old fort\nScience Museum\n● best day to visit: {Q5}\n● see the exhibition about {Q6} which opens soon\nFood\n● Clacton Market:\n○ good for {Q7} food\n○ need to have lunch before {Q8} p.m.\nTheatre tickets\n● save up to {Q9} % on ticket prices at bargaintickets.com\nFree activities\n● Blakewell Gardens:\n● Roots Music Festival\n● climb Telegraph Hill to see a view of the {Q10}', 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 2, 'fill_blank', '● In 1957, the River Thames in London was declared biologically ______ .', '["A. 125|one hundred and twenty-five|one hundred twenty-five"]', 'A. 125|one hundred and twenty-five|one hundred twenty-five', NULL, NULL, 1, NULL, NOW());
+(20041, 2, 'fill_blank', '● cost of family room per night: 2 £ ______ (approx.)', NULL, '125|one hundred and twenty-five|one hundred twenty-five', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 3, 'fill_blank', '● Seals and even a ______ have been seen in the River Thames.', '["A. walking"]', 'A. walking', NULL, NULL, 1, NULL, NOW());
+(20041, 3, 'fill_blank', '● a ______ tour of the city centre (starts in Carlton Square)', NULL, 'walking', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 4, 'fill_blank', '● Riverside warehouses are converted to restaurants and ______', '["A. boat"]', 'A. boat', NULL, NULL, 1, NULL, NOW());
+(20041, 4, 'fill_blank', '● a trip by ______ to the old fort', NULL, 'boat', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 5, 'fill_blank', '○ build a riverside ______', '["A. Tuesday"]', 'A. Tuesday', NULL, NULL, 1, NULL, NOW());
+(20041, 5, 'fill_blank', '● best day to visit: ______', NULL, 'Tuesday', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 6, 'fill_blank', '○ display ______ projects.', '["A. space"]', 'A. space', NULL, NULL, 1, NULL, NOW());
+(20041, 6, 'fill_blank', '● see the exhibition about ______ which opens soon', NULL, 'space', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 7, 'fill_blank', '● In Paris, ______ are created on the sides of the river every summer.', '["A. vegetarian"]', 'A. vegetarian', NULL, NULL, 1, NULL, NOW());
+(20041, 7, 'fill_blank', '○ good for ______ food', NULL, 'vegetarian', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 8, 'fill_blank', '● Over 2 billion passengers already travel by ______ in cities round the world.', '["A. 2.30|two thirty|2:30"]', 'A. 2.30|two thirty|2:30', NULL, NULL, 1, NULL, NOW());
+(20041, 8, 'fill_blank', '○ need to have lunch before ______ p.m.', NULL, '2.30|two thirty|2:30', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 9, 'fill_blank', '● Instead of road transport, goods could be transported by large freight barges and electric ______ or, in future, by ______ .', '["A. 75|seventy-five"]', 'A. 75|seventy-five', NULL, NULL, 1, NULL, NOW());
+(20041, 9, 'fill_blank', '● save up to ______ % on ticket prices at bargaintickets.com', NULL, '75|seventy-five', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(20041, 10, 'fill_blank', '● Instead of road transport, goods could be transported by large freight barges and electric ______ or, in future, by ______ .', '["A. port"]', 'A. port', NULL, NULL, 1, NULL, NOW());
+(20041, 10, 'fill_blank', '● climb Telegraph Hill to see a view of the ______', NULL, 'port', NULL, NULL, 1, NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (20042, 11, 'multiple_choice', 'Which [b] TWO [/b] things does the speaker say about visiting the football stadium with children?', '["A. Children can get their photo taken with a football player.","B. There is a competition for children today.","C. Parents must stay with their children at all times.","D. Children will need sunhats and drinks.","E. The café has a special offer on meals for children."]', 'B. There is a competition for children today.', NULL, NULL, 1, NULL, NOW());

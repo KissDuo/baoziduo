@@ -593,7 +593,74 @@ function extractQuestionTexts(groupContent: string): Map<number, string> {
 
 ---
 
-## 十一、音频
+## 十一、常见陷阱与错误模式
+
+### 陷阱1：`type` 字段是 STRING，不是 number
+
+```javascript
+// ❌ 错误
+if (group.question.obj.type === 680) ...
+// ✅ 正确
+if (group.question.obj.type === "680") ...
+```
+
+KMF JSON 中所有 `type`、`business_type`、`logic_type` 等字段都是字符串。用 `===` 严格比较时必须匹配类型。
+
+### 陷阱2：Group content 指纹匹配可能错配
+
+当用 group content 中的 `[blank]N[/blank]` 提取 questionText 时，如果 DB section 中**所有题都为空**（无指纹题），则无法区分哪个 KMF sheet 对应哪个 section，可能把所有空 section 都匹配到同一个 KMF group。
+
+**症状**：多个不同的 section（如 C20 T2P1、T3P1、T4P1）出现完全相同的 questionText（如都显示 "pollution from ______ on the river bank"）。
+
+**修复规则**：
+1. 优先用已填充的题做指纹匹配（content + answer 双重比对）
+2. 指纹匹配 score 为 0 时，**跳过不修**（而非匹配第一个候选）
+3. 对 table 型 section（KMF type 692 含 HTML `<table>`），questionText 应留空，内容在 passageText
+
+### 陷阱3：填空 correctAnswer 不应有 "A. " 前缀
+
+KMF type 404（不带内容的填空题）的 answer 直接是答案词（如 `"fish"`），**没有字母前缀**。字母前缀（`A. `, `B. `）只用于 MC 选项（child type 101/611）。
+
+**症状**：`correctAnswer = "A. fish"` 且 `options = ["A. fish"]`。
+
+**原因**：错误地将填空答案当成 MC 选项处理。
+
+**修复规则**：
+- fill_blank 的 `correctAnswer` = KMF `answer[0].obj.content`（直接取）
+- fill_blank 的 `options` = **NULL**（填空不需要选项）
+
+### 陷阱4：Table 型的 passageText 格式
+
+KMF type 692（听力图表题）的 content 可能是 HTML `<table>`。需转换为管道格式，且 `[blank]N[/blank]` 要转为 `______`。
+
+```typescript
+// HTML table → pipe format
+function convertHtmlTableToPipe(html: string): string {
+  return html
+    .replace(/<tr[^>]*>(.*?)<\/tr>/gs, (_, row) => `| ${row.replace(/<td[^>]*>/g, ' ').replace(/<\/td>/g, ' |').replace(/<[^>]+>/g, '')} |\n`)
+    .replace(/\[blank\]\d+\[\/blank\]/g, '______');
+}
+```
+
+### 陷阱5：多 section 共占同一 Q 号范围
+
+KMF 中多个 book/test 的 section 可能有相同的 Q 号范围（如所有 P1 都是 Q1-10）。匹配时必须用 **book + type + Q号** 三重索引，不能仅用 Q 号。
+
+```typescript
+// ❌ 单靠 Q 号匹配 — 会跨书错配
+const key = `${qNum}`;
+
+// ✅ 三重索引
+const key = `${book}|${type}|${qNum}`;  // "18|listening|12"
+```
+
+### 陷阱6：同一个 sheet 内多个 group 的 seq 重复
+
+KMF 同一个 sheet 内可能有多个 group（不同题型组），它们的 children 可能有相同的 Q 号（因为每个 group 独立计数）。去重时保留 content 最长的那个。
+
+---
+
+## 十二、音频
 
 ```
 https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-{book}/T{test}/S{section}.mp3
