@@ -223,12 +223,31 @@ IELTSExamSection.instructions (后半部分)
 - **格式**: `<div class="selection-inline js-selection-note">text</div><b>bold</b>...`
 - **处理**: 去除所有 HTML 标签，`<b>` 内容保留为纯文本
 
-### 4.3 题目内容 (questionText)
+### 4.3 题目内容 (questionText) — 三种来源
 
+**来源1（默认）：child 级 content**
 ```
-KMF: result.questions[].children[].question.obj.content
-  ↓ （填空：去掉 [blank]N[/blank] → ______ 或 ...）
-  ↓ （匹配：去掉 [match]N[/match]）
+KMF: children[].question.obj.content
+  ↓ （去掉 [blank]N[/blank] → ______）
+  ↓ （去掉 [match]N[/match] → 去除）
+IELTSQuestion.questionText
+```
+适用于 child type 101（单选）、611（多选）、405（带内容拖拽）、711（判断）。
+
+**来源2：Group 级 content（type 680/686/692）**
+```
+KMF: question.obj.content  ← Group 级！child content 为空
+  ↓ 按 [br]/[br/] 分行
+  ↓ [blank]N[/blank] / [match]N[/match] → 确定该行属于 QN
+  ↓ 清洗 BBCode/HTML → 得到每道题的 questionText
+IELTSQuestion.questionText
+```
+详见第十章。
+
+**来源3：多选题共享**
+```
+KMF: relative_seq: ["17","18"]  ← 一个 child 对应多道题
+  ↓ 同一个 child.question.obj.content → Q17 & Q18 共用
 IELTSQuestion.questionText
 ```
 
@@ -483,7 +502,98 @@ if group.type === 681 (sentence completion):
 
 ---
 
-## 十、音频
+## 十、questionText 提取规则
+
+### 10.1 铁律：type 字段是 STRING
+
+KMF JSON 中所有 `type` 字段都是 **字符串**（`"680"`, `"691"` 等），不是 number。用 `=== "680"` 而非 `=== 680`。
+
+### 10.2 questionText 的三个来源
+
+**来源1：`children[].question.obj.content`**（绝大多数题型）
+
+适用于 child type 101（单选）、611（多选）、405（带内容拖拽）、711（判断）。
+
+KMF 的 `children[].question.obj.content` 直接就是题干文本：
+```
+child.question.obj.content = "What made David leave London and move to Northsea?"
+→ questionText = "What made David leave London and move to Northsea?"
+```
+
+**来源2：`question.obj.content`（Group 级提取）** ⭐ 重要
+
+适用于 child type 404（不带内容填空）、406（不带内容拖拽），即 KMF group type 680/686/692。
+
+这些 child 的 `content` 为空，题干嵌入在 **group 级 `content`** 中，通过 `[blank]N[/blank]` 或 `[match]N[/match]` 标记与题号对应。
+
+```typescript
+// Group content 示例 (type 680):
+"A move away from the exploration of heavily mined reserves on land is a good idea. [blank]18[/blank][br]
+The negative effects of undersea exploration on local areas and their inhabitants are being ignored. [blank]19[/blank][br]"
+
+// 提取规则：
+// 1. 按 [br] 或 [br/] 分割成行
+// 2. 每行如果有 [blank]N[/blank] 或 [match]N[/match]，则该行属于 QN
+// 3. 清除标记符（替换为 ______），清除 BBCode/HTML
+// 4. 提取的句子 = questionText
+
+// 结果：
+// Q18: "A move away from the exploration of heavily mined reserves on land is a good idea. ______"
+// Q19: "The negative effects of undersea exploration on local areas and their inhabitants are being ignored. ______"
+```
+
+**注意**：type 680 的 content 可能混用 `[blank]` 和 `[match]` 两种标记，都要处理。
+
+**来源3：多选题共享**（child type 611）
+
+一个 KMF child（`relative_seq: ["17","18"]`）对应 DB 中多道题（Q17 和 Q18），**questionText 相同**。
+
+导入时必须把同一个 child 的 content 写入所有对应的 DB questions。
+
+### 10.3 提取流程完整代码
+
+```typescript
+function extractQuestionTexts(groupContent: string): Map<number, string> {
+  const qTexts = new Map<number, string>();
+  
+  // 1. 分割行（同时处理 [br] 和 [br/]）
+  const lines = groupContent
+    .replace(/\[br\/\]/g, '\n')
+    .replace(/\[br\]/g, '\n')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+  
+  for (const line of lines) {
+    // 2. 找所有 [blank]N[/blank] 和 [match]N[/match]
+    const markerRegex = /\[(blank|match)\](\d+)\[\/\1\]/g;
+    const markers: {qNum: number; fullMatch: string}[] = [];
+    let m;
+    while ((m = markerRegex.exec(line)) !== null) {
+      markers.push({ qNum: parseInt(m[2]), fullMatch: m[0] });
+    }
+    if (markers.length === 0) continue;
+    
+    // 3. 清除标记符和 BBCode/HTML
+    let cleanLine = line;
+    for (const mk of markers) {
+      cleanLine = cleanLine.replace(mk.fullMatch, '______');
+    }
+    cleanLine = cleanBbcode(cleanLine); // 用 cleanKmfPassage 同款规则
+    if (cleanLine && cleanLine !== '______') {
+      for (const mk of markers) {
+        qTexts.set(mk.qNum, cleanLine);
+      }
+    }
+  }
+  
+  return qTexts;
+}
+```
+
+---
+
+## 十一、音频
 
 ```
 https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-{book}/T{test}/S{section}.mp3
