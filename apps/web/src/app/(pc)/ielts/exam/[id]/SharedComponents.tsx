@@ -187,7 +187,7 @@ export const MatchingGroup = memo(function MatchingGroup({
                   } ${dragging ? 'border-primary-500 bg-primary-100' : ''}`}
                 >
                   {selected ? (
-                    <span draggable onDragStart={() => { setDragging(selected); dragFromQidRef.current = item.qid; }} onDragEnd={() => { setDragging(null); dragFromQidRef.current = null; }} className="cursor-grab active:cursor-grabbing" title="Drag back to remove">{selected}</span>
+                    <span draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', ''); setDragging(selected); dragFromQidRef.current = item.qid; }} onDragEnd={() => { setDragging(null); dragFromQidRef.current = null; }} onClick={() => { onSave(item.qid, ''); }} className="cursor-pointer active:cursor-grabbing hover:text-red-500 transition-colors" title="Click to remove, or drag back to box">{selected}</span>
                   ) : '______'}
                 </div>
               </div>
@@ -200,7 +200,7 @@ export const MatchingGroup = memo(function MatchingGroup({
             {options.map((opt, oi) => {
               const used = items.some(it => answers[it.qid] === opt);
               return (
-                <div key={oi} draggable onDragStart={() => { setDragging(opt); dragFromQidRef.current = null; }} onDragEnd={() => setDragging(null)}
+                <div key={oi} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', ''); setDragging(opt); dragFromQidRef.current = null; }} onDragEnd={() => setDragging(null)}
                   className={`text-xs px-2.5 py-1.5 rounded border cursor-grab active:cursor-grabbing transition-colors ${
                     used ? 'opacity-40 bg-slate-100 text-slate-400' : 'bg-white hover:border-primary-300 hover:bg-primary-50 text-slate-700'
                   }`}
