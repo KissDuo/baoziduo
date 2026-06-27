@@ -1,292 +1,477 @@
-# KMF 数据提取与导入指南
+# KMF 数据完整参考指南
 
-> KMF（考满分）是剑桥雅思题目的主要数据源，替代 PDF 解析。本文档记录完整的获取、解析、导入流程。
+> KMF（考满分）是剑桥雅思题目的**唯一数据源**。本文档是 KMF 数据格式、类型系统、字段映射的唯一真相源。
 
 ---
 
 ## 一、获取 KMF 数据
 
-### 1.1 前提条件
-- 已登录 KMF（https://ielts.kmf.com）的账号
-- 浏览器 F12 开发者工具
-
-### 1.2 获取认证 Token
-
-1. 登录 KMF 后，打开任意剑雅听力练习页面
-2. F12 → Network → 筛选 XHR/Fetch
-3. 找到 `practise-detail?u=...` 请求
-4. 右键 → Copy → Copy as cURL
-5. 将整条 curl 命令发给 Claude Code
-
-**Token 有效期**：约 2 小时，过期需重新获取。
-
-### 1.3 URL 格式
-
-每个听力 section 对应一个独立的练习 ID（`u` 参数）：
-
+### 1.1 API
 ```
 https://api.kmf.com/ielts-app/front/practise-detail?u={18位数字ID}
 ```
+需 Bearer token（浏览器 F12 → Copy as cURL），有效期约 2 小时。
 
-例如：`https://api.kmf.com/ielts-app/front/practise-detail?u=178248974640518410`
+### 1.2 数据存储铁律
+KMF 原始 JSON **必须**存入 `apps/server/prisma/kmf-data/`，**禁止**存入 `/tmp`。
 
-KMF 将每个 section 拆成多组练习（如 T1P2 可能分 Q11-13、Q14-15、Q16-20 三组），一组一个 `u`。完整抓取需收集所有 `u`。
-
-### 1.4 批量采集流程
-
-1. 在 KMF 列表页过滤 "剑18/19/20" → 听力
-2. 逐一点击"开始练习"
-3. 每点一个，从 F12 Network 复制 `practise-detail` 的 curl
-4. 发给 Claude Code，自动排队并行下载
-
----
-
-## 二、数据存储位置
-
-**铁律：KMF 数据必须直接存入 `apps/server/prisma/kmf-data/`，禁止存入 `/tmp`（会被清理）。**
-
-### 2.1 原始 JSON
 ```
-apps/server/prisma/kmf-data/
-├── _mapping.json          # Sheet ID → 题型/题量 对照表
-├── c18/                    # 剑18 原始数据（28个文件含阅读）
-├── c19/                    # 剑19 原始数据（16个 section 全）
-└── c20/                    # 剑20 原始数据（16个 section 全）
-```
-**当前完整度**：C18=28, C19=16, C20=16。每本书听力需 16 个唯一 sheet。
-
-### 2.2 数据库种子
-```
-apps/server/prisma/
-├── seed-ielts-c18.sql     # 剑18 听力+阅读，~125KB
-├── seed-ielts-c19.sql     # 剑19 听力+阅读，~226KB
-└── seed-ielts-c20.sql     # 剑20 听力+阅读，~223KB
-```
-
-导出命令：
-```bash
-DATABASE_URL="mysql://root:DCHdch1234.@123.56.146.148:3306/en?timezone=%2B08%3A00" \
-  ./apps/server/node_modules/.bin/tsx /tmp/export-seeds.ts
+kmf-data/
+├── _mapping.json           # sheet_id → 题型/题量 对照表
+├── c18/ c19/ c20/          # 听力原始数据（16+16+16）
+├── c18-reading/ c19-reading/ c20-reading/  # 阅读原始数据（12+12+12）
+└── c18_t1p1.json ...       # 预处理汇总文件（可选）
 ```
 
 ---
 
-## 三、KMF JSON 结构
+## 二、KMF JSON 顶层结构
 
-### 3.1 顶层结构
-```json
+```
 {
-  "status": 200,
-  "result": {
-    "result": {
-      "sheet_id": 952,
-      "exam_unique": "178248974640518410",
-      "question_count": 10,
-      "subject": 2
+  status: 200,
+  message: "OK",
+  result: {
+    result: {           ← 考试元数据
+      sheet_id, exam_unique, subject(1=阅读/2=听力),
+      mode(8=听力/18=阅读), question_count, ...
     },
-    "questions": [ ... ]
+    questions: [...]    ← 题组数组
   }
 }
 ```
 
-- `sheet_id`：section 唯一编号，用于映射到我们的 section
-- `question_count`：该组题目数
-- `subject`：2=听力
+### 2.1 `result.result` 字段全解
 
-### 3.2 Question 对象
-```json
-{
-  "question": {
-    "obj": {
-      "type_cn": "听力图表题",        // 题型中文名
-      "subject_cn": "LISTENING",
-      "content": "<h3>...</h3><table>...",  // 题目内容 HTML
-      "title": "Hinchingbrooke Country Park"
-    },
-    "ext": {
-      "added_content": [               // 提示句
-        { "ex_information": "Complete the notes below." },
-        { "ex_information": "Write ONE WORD AND/OR A NUMBER for each answer." }
-      ]
-    }
-  },
-  "children": [ ... ],    // 子题（每道小题）
-  "answer": [],
-  "option": []
-}
+| 字段 | 类型 | 含义 | 用途 |
+|------|------|------|------|
+| `sheet_id` | number | Section 唯一编号 | 映射到我们的 sectionId |
+| `subject` | number | 1=阅读, 2=听力 | 区分听阅 |
+| `mode` | number | 8=听力, 18=阅读 | 同 subject 冗余 |
+| `exam_unique` | string | 18位练习ID | URL 中的 `u` 参数 |
+| `question_count` | number | 该组题数 | 校验 |
+| `version` | number | 固定 1 | 无用 |
+| `cost_total` | number | 固定 0 | 用户状态，无用 |
+| `question_correct` | number | 固定 0 | 用户状态，无用 |
+| `stat_section` | object | 题型分布统计 | 无用 |
+| `total_time` | number | 固定 0 | 用户状态，无用 |
+| `uid` | number | 用户ID | 无用 |
+
+### 2.2 `result.questions[]` 结构
+
+每个元素是一个**题组**（大题），包含：
+- `question` — 题组元信息
+- `parent` — 所属文章/听力材料（祖题目）
+- `children[]` — 子题（小题）
+- `answer[]` — 题组级选项列表（匹配题用）
+- `option[]` — 始终为空
+
+---
+
+## 三、KMF 两级类型系统
+
+KMF 使用**两级类型**：Group 级（题组外观）+ Child 级（单题交互）。
+
+### 3.1 Group 级 type（`result.questions[].question.obj.type`）
+
+控制在 `content` 中的呈现方式 + 子题集合类型。
+
+| type | type_cn | 子题 type | 出现模块 | 数量 | 我们映射为 |
+|------|---------|-----------|---------|------|-----------|
+| **692** | 听力图表题 | 404 | 听力 P1/P4 | 26组 | fill_blank → NoteModeGroup / TableGroup / FormFillBlank |
+| **694** | 听力配对题 | 405 | 听力 P2/P3 | 15组 | matching → MatchingGroup / FlowchartMatching |
+| **691** | 选择/判断/听力填空题 | 101/404/611/711 | 听阅混合 | 91组 | 按 child type 分派 |
+| **686** | 不带词库的summary题 | 404 | 阅读 | 27组 | fill_blank → SummaryCompletion / FillBlank |
+| **680** | 带词库的summary题 | 406 | 阅读 | 8组 | matching → MatchingGroup |
+| **683** | 拖拽配对题 | 405 | 阅读 | 12组 | matching → MatchingGroup |
+| **684** | 题干被包含配对题 | 405 | 阅读 | 12组 | matching → MatchingGroup |
+| **685** | list of heading题 | 406 | 阅读 | 3组 | matching → MatchingGroup |
+| **681** | Sentence completion题 | 403 | 阅读 | 1组 | fill_blank → FillBlank |
+
+### 3.2 Child 级 type（`children[].question.obj.type`）
+
+控制单道题的交互方式 + 答案结构。
+
+| type | type_cn | 数量 | answer 结构 | 我们的 questionType |
+|------|---------|------|------------|-------------------|
+| **101** | 单选题 | 143 | 3选项，1 correct | `multiple_choice` |
+| **404** | 不带内容的填空题 | 344 | 1答案，content=答案词 | `fill_blank` |
+| **403** | 带内容的填空题 | 14 | 1答案，content=答案词 | `fill_blank` |
+| **405** | 带内容的拖拽题 | 186 | 1选项，choice=字母 | `matching` |
+| **406** | 不带内容的拖拽题 | 62 | 1选项，choice=字母 | `matching` |
+| **611** | 多选题 | 33 | 5选项，2 correct | `multiple_choice` |
+| **711** | 判断题 | 122 | 3选项(TRUE/FALSE/NG)，1 correct | `true_false` / `yes_no` |
+
+### 3.3 Group 级 type 详细说明
+
+#### 692 — 听力图表题（Listening P1/P4）
+- **子题型**: 404（不带内容的填空题）
+- **content 格式**: BBCode + HTML table/列表
+  - `[center][b]Title[/b][/center]` → 标题
+  - `<h2>Subtitle</h2>` → 子标题
+  - `● text [blank]1[/blank]` → 填空行
+  - `<table>...</table>` → 表格
+- **content 渲染规则**:
+  - 有 `<table>` → TableGroup（管道格式）
+  - 有 `<h2>` 子标题 → NoteModeGroup
+  - 有 `[form]` 语义 → FormFillBlank
+  - 其他 → NoteModeGroup
+- **parent**: 有（393 听力祖题目），但 content 为空
+- **special_info**: 有（地图图片 URL，map labelling 用）
+- **added_content**: 指令如 `Complete the notes below. Write ONE WORD ONLY...`
+- **模块**: 每本书 T1-4 P1/P4
+
+#### 694 — 听力配对题（Listening P2/P3）
+- **子题型**: 405（带内容的拖拽题）
+- **content**: 只有标题 `[center][b]Title[/b][/center]`
+- **answer[]**: 全部选项列表（A-F/H）
+  - `obj.content`: 选项文本
+  - `ext.choice[0].ex_information`: 字母 a/b/c...
+- **parent**: 有，content 为空
+- **模块**: C18 T1P2 Q16-20, T1P3 Q25-28, T2P3 Q27-30 等
+
+#### 691 — 选择/判断/听力填空题（听阅混合，最复杂）
+- **子题型**: 101(单选) / 404(填空) / 611(多选) / 711(判断)
+- **content**: 标题 `[center][b]Title[/b][/center]`
+- **一个 group 内子题类型可混合**（如 MC 和填空同组）
+- **按子题 type 分派组件**: 101→SingleChoice, 611→MultiChoiceGroup, 711→TrueFalse, 404→FillBlank
+- **business_type 细分**:
+  - 1000/1001/1002: 听力单选/多选
+  - 1100/1101/1102: 阅读判断/单选/多选
+- **模块**: 听力和阅读均有，遍布 P2/P3 和阅读全部 passage
+
+#### 686 — 不带词库的summary题（阅读）
+- **子题型**: 404（不带内容的填空题）
+- **content**: 文章摘要含 `[blank]N[/blank]` 填空标记（BBCode 格式）
+- **清理后**: `[blank]N[/blank]` → `(N) ______`，标题加 `##` 前缀
+- **parent**: 有（392 阅读祖题目），content=文章正文
+- **模块**: 遍布阅读全三本书
+
+#### 680 — 带词库的summary题（阅读）
+- **子题型**: 406（不带内容的拖拽题）
+- **content**: 文章摘要含 `[match]N[/match]` 标记
+- **answer[]**: 选项词/短语列表
+- **提示语**: `Complete the summary using the list of words/phrases, A-J, below.`
+- **模块**: C18T1P3 Q27-31, C18T2P2 Q24-26 等
+
+#### 683 — 拖拽配对题（阅读匹配）
+- **子题型**: 405（带内容的拖拽题）
+- **answer[]**: 选项短语列表（如 "a TSI Cut"）
+- **提示语**: `Look at the following statements... and the list of people/items below.`
+- **特点**: 选项是**短语文本**
+
+#### 684 — 题干被包含配对题（阅读段落信息匹配）
+- **子题型**: 405（带内容的拖拽题）
+- **answer[]**: 纯字母选项（A, B, C...）
+- **提示语**: `Which paragraph/section contains the following information?`
+- **特点**: 选项是**纯字母**
+
+#### 685 — list of heading题（阅读标题匹配）
+- **子题型**: 406（不带内容的拖拽题）
+- **answer[]**: 标题文本列表
+- **提示语**: `Choose the correct heading for each paragraph/section.`
+- **模块**: C18T3P2 Q14-20, C20T2P2 Q14-19
+
+#### 681 — Sentence completion题（阅读）
+- **子题型**: 403（带内容的填空题）
+- **仅1组**: C20 T4P2 Q18-22
+- **提示语**: `Complete the sentences below. Choose ONE WORD ONLY...`
+- **映射**: fill_blank
+
+### 3.4 business_type 速查表
+
+| business_type | 含义 | 对应 group type |
+|---------------|------|----------------|
+| 1000/1001/1002 | 听力选择/判断混合 | 691 |
+| 1004 | 听力配对 | 694 |
+| 1006 | 听力图表/填空 | 692 |
+| 1100/1101/1102 | 阅读选择/判断混合 | 691 |
+| 1103 | 阅读 summary（无词库） | 686 |
+| 1104 | 阅读段落信息匹配 | 684 |
+| 1105 | 阅读 summary（有词库） | 680 |
+| 1107 | 阅读拖拽配对 | 683 |
+| 1108 | 阅读 heading 匹配 | 685 |
+| 1109 | 阅读句子填空 | 681 |
+
+---
+
+## 四、字段到我们系统的映射
+
+### 4.1 文章正文 (passageText / instructions)
+
+```
+KMF: result.questions[].parent.question.obj.content
+  ↓ cleanKmfPassage()
+  ↓ 存入 DB
+IELTSExamSection.instructions = passage + "\n\n" + questionInstructions
 ```
 
-### 3.3 题型对照
+- **parent 存在条件**: 阅读全有（type 392 祖题目），听力有 parent 但 content 为空
+- **parent.question.obj.title**: 文章标题
+- **parent.question.obj.html_content**: HTML 版正文（备用，优先用 content）
 
-**听力：**
-| KMF type_cn | 我们的 questionType | 对应组件 |
-|-------------|-------------------|---------|
-| 听力图表题 | fill_blank | NoteModeGroup / TableGroup / FormFillBlank |
-| 选择/判断/听力填空题 | multiple_choice | SingleChoice / MultiChoiceGroup |
-| 听力配对题 | matching | MatchingGroup / FlowchartMatching |
+### 4.2 题目指令 (instructions)
 
-**阅读：**
-| KMF type_cn | KMF child type_cn | 我们的 questionType |
-|-------------|-------------------|-------------------|
-| 选择/判断/听力填空题 | 判断题 | true_false / yes_no |
-| 选择/判断/听力填空题 | 单选题 | multiple_choice |
-| 选择/判断/听力填空题 | 多选题 | multiple_choice |
-| 题干被包含配对题 | 带内容的拖拽题 | matching |
-| 拖拽配对题 | 带内容的拖拽题 | matching |
-| list of heading题 | 不带内容的拖拽题 | matching |
-| 不带词库的summary题 | 不带内容的填空题 | fill_blank |
-
-### 3.4 阅读文章正文
-
-**关键发现：文章在 `result.questions[].parent.question.obj.content`**
-
-```json
-{
-  "result": {
-    "questions": [
-      {
-        "parent": {
-          "question": {
-            "obj": {
-              "title": "The kākāpō",
-              "content": "[br/]The kākāpō is a nocturnal..."
-            }
-          }
-        }
-      }
-    ]
-  }
-}
+```
+KMF: result.questions[].question.ext.added_content[]
+  ↓ 每个 entry.ex_information 是 HTML 片段
+  ↓ 去 HTML 标签 + 拼接
+IELTSExamSection.instructions (后半部分)
 ```
 
-**KMF 文章正文 BBCode 清洗规则（无一例外全部处理）：**
+- **ex_property_id**: 固定 "6"（表示提示语）
+- **格式**: `<div class="selection-inline js-selection-note">text</div><b>bold</b>...`
+- **处理**: 去除所有 HTML 标签，`<b>` 内容保留为纯文本
+
+### 4.3 题目内容 (questionText)
+
+```
+KMF: result.questions[].children[].question.obj.content
+  ↓ （填空：去掉 [blank]N[/blank] → ______ 或 ...）
+  ↓ （匹配：去掉 [match]N[/match]）
+IELTSQuestion.questionText
+```
+
+### 4.4 填空 passageText (686/692 型)
+
+```
+KMF: result.questions[].question.obj.content
+  ↓ BBCode 清洗 + [blank]N[/blank] → (N) ______
+  ↓ HTML table → | col | col | 管道格式
+IELTSQuestion.passageText
+```
+
+### 4.5 选项 (options)
+
+**单选/多选 (child type 101/611)**:
+```
+children[].answer[] 每个选项:
+  obj.content = 选项文本（如 "He was eager to develop a hobby."）
+  ext.choice[0].ex_information = 字母 a/b/c/d/e
+  ext.correct[] = 含 "correct" 标记
+
+前端需要: ["A. He was eager...", "B. He wanted...", "C. He found..."]
+          → 字母由 ext.choice 提供，content 由 obj.content 提供
+          → 拼接: letter.toUpperCase() + ". " + content
+          → 存入 options JSON 数组
+```
+
+**匹配题 (group type 680/683/684/685/694)**:
+```
+Group 级 answer[] 每个选项:
+  obj.content = 选项文本（如 "one shoe was missing"）
+  obj.option_name = 可选字母（如 "A"，nullable！）
+  ext.choice[0].ex_information = 字母 a/b/c...
+
+前端需要: ["one shoe was missing", "the colour...", ...]
+          → 不带字母前缀！MatchingGroup 渲染时自动加 A/B/C
+```
+
+### 4.6 正确答案 (correctAnswer)
+
+**填空 (404/403)**: `children[].answer[0].obj.content` = 答案词
+- 可能有变体如 `"discs,disks"` → 存原样
+
+**单选 (101)**: 找 `correct` 标记的 answer → 取其 `obj.content`
+- 格式: `"C. He found his job..."`（字母 + 文本）
+
+**多选 (611)**: 找所有 `correct` 标记的 answers → 取 content 列表
+- `relative_seq: ["27","28"]` 表示该 child 对应 Q27 和 Q28 两题
+
+**判断 (711)**: `obj.content` = `TRUE`/`FALSE`/`NOT GIVEN`
+- 需根据提示语判断是 TRUE/FALSE 还是 YES/NO
+
+**匹配 (405/406)**: `children[].answer[0].ext.choice[0].ex_information` = 字母(b) → 大写(B)
+
+### 4.7 图片 URL (imageUrl)
+
+```
+KMF: result.questions[].question.ext.special_info[]
+  ↓ ex_property_id = "9"
+  ↓ ex_information = "https://img.kmf.com/kaomanfen/img/ielts/xxx.png"
+IELTSExamSection.imageUrl
+```
+
+- 只有类型 686（summary）和 692（听力图表/地图）有 special_info
+- 地图题（map_labelling）的图片由此字段提供
+
+### 4.8 题号 (questionIndex)
+
+```
+KMF: children[].relative_seq = ["11"] 或 ["27","28"]（多选）
+  ↓ [0] 即题号
+IELTSQuestion.questionIndex
+```
+
+---
+
+## 五、BBCode / HTML 格式标记完整清单
+
+### 5.1 BBCode 标记（在 `content` 字段中）
+
+| 标记 | 出现次数 | 含义 | 处理方式 |
+|------|---------|------|---------|
+| `[br/]` | 885 | 换行 | → `\n` |
+| `[br/][br/]` | — | 段落分隔 | 先处理：→ `\n\n` |
+| `[blank]N[/blank]` | 364对 | 第N个填空 | → `(N) ______` |
+| `[match]N[/match]` | 167对 | 第N个匹配空 | → 去除 |
+| `[b]...[/b]` | 145对 | 加粗 | → 去除标签，保留文本 |
+| `[center]...[/center]` | 79对 | 居中 | → 去除标签，保留文本 |
+| `[p:A]`..`[p:H]` | 47+47+... | 段落标记字母 | → `\n\nA\n`（大写，单独成行） |
+| `[i]...[/i]` | 5对 | 斜体 | → 去除标签，保留文本 |
+| `[insert:N]` | 76 | 插入位置标记 | → 去除（仅供 KMF 内部用） |
+| `[img]...[/img]` | 4对 | 图片 | → 去除 |
+| `[P:A]` 大写变体 | 少见 | 与 `[p:a]` 同 | → 同 `[p:A]` 处理 |
+| 损坏标签 `[xxx yyy]` | 少数 | KMF bug | → 去除外层 `[]` |
+
+### 5.2 HTML 标签（在 `html_content` 字段中，备用）
+
+| 标签 | 用途 |
+|------|------|
+| `<p>`, `</p>` | 段落 |
+| `<table>`, `<tr>`, `<td>` | 表格 |
+| `<strong>`, `</strong>` | 加粗 |
+| `<h2>`, `</h2>`, `<h3>`, `</h3>` | 子标题 |
+| `<span style="...">` | 内联样式（font-size, font-weight） |
+| `<br/>` | 换行 |
+| `<tbody>` | 表格体 |
+
+### 5.3 HTML 实体
+
+| 实体 | 含义 |
+|------|------|
+| `&nbsp;` | 空格（1492次） |
+| `&quot;` | 双引号 |
+| `&amp;` | & 符号 |
+
+---
+
+## 六、数据清洗规则
+
+### 6.1 `cleanKmfPassage()` — 文章正文
 
 ```typescript
 function cleanKmfPassage(raw: string): string {
   return raw
-    // 1. [p:X] → 段落字母 A-G，单独成行（前端 renderPassage 自动加粗）
-    .replace(/\[p:([a-z])\]/gi, (_, l: string) => `\n\n${l.toUpperCase()}\n`)
-    // 2. [br/][br/] → 单个段落间空行
+    // 1. [p:X] → 段落字母单独成行
+    .replace(/\[p:([a-z])\]/gi, (_, l) => `\n\n${l.toUpperCase()}\n`)
+    .replace(/\[P:([a-z])\]/gi, (_, l) => `\n\n${l.toUpperCase()}\n`)  // 大写变体
+    // 2. [br/][br/] → 段落间空行（必须在单个[br/]之前处理！）
     .replace(/\[br\/\]\s*\[br\/\]/gi, '\n\n')
     // 3. [br/] → 换行
     .replace(/\[br\/\]/gi, '\n')
-    // 4. 去除 BBCode 格式化标签：[b][/b][i][/i][center][/center][h3][/h3][strong][/strong]
+    // 4. 去除 BBCode 格式化标签
     .replace(/\[\/?(?:center|b|i|h\d|strong)\]/gi, '')
-    // 5. 修复损坏的粗体标签如 [elms had] → elms（KMF bug）
+    // 5. 去除 [insert:N] 标记
+    .replace(/\[insert:\d+\]/gi, '')
+    // 6. 修复损坏标签 [xxx yyy] → xxx yyy
     .replace(/\[(\w+\s+\w+)\]/gi, '$1')
-    // 6. HTML 实体解码
+    // 7. HTML 实体解码
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
-    // 7. 清理残留 HTML 标签
+    .replace(/&quot;/gi, '"')
+    // 8. 清理残留 HTML 标签
     .replace(/<[^>]+>/g, '')
-    // 8. 规范化空白：去除 \r\n，压缩 3+ 连续换行为 2 个
+    // 9. 规范化空白
     .replace(/\r\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 ```
 
-**关键规则：**
-| 原始标记 | 含义 | 转换为 |
-|----------|------|--------|
-| `[p:a]` | 段落 A 开始 | `\n\nA\n`（大写字母单独成行） |
-| `[br/]` | 换行 | `\n` |
-| `[br/][br/]` | 段落分隔 | `\n\n`（只用一段空行） |
-| `[center]...[/center]` | 居中 | 去除标签，保留文本 |
-| `[b]...[/b]` | 加粗 | 去除标签，保留文本 |
-| `[elms had]` | KMF 解析 bug | 修复为 `elms` |
+### 6.2 `cleanKmfGroupContent()` — 题组内容（填空 passageText）
 
-### 3.5 题目内容格式（听力和阅读共用）
-
-**填空（[note]/[table]）**：HTML 原文
-- `[blank]1[/blank]` → 映射为 `{Q1}`（注意 P4 需 +30：`{Q31}`）
-- `<h3><strong>Title</strong></h3>` → `## Title`
-- `<p>text</p>` → 描述句
-- `<table>` → `[table]` 格式，需手动转为 `| col1 | col2 |` 管道格式
-
-**MC 单选**：`children[].answer[]` 含 3 个选项，`correct` 标记正确答案
-- 需加 A/B/C 前缀，存入 `options` JSON 数组
-
-**MC 多选**：`children[].relative_seq` = `[N, N+1]`，一个 child 对应 2 题
-- `answer[]` 含 5 个选项，`correct` 标记 2 个正确答案
-
-**匹配**：`children[].answer[0].ext.choice[0].ex_information` = 字母 (a-f)
-- 需转为大写，加前缀存储为 `correctAnswer`
-- 匹配条目名称从 `children[].question.obj.content` 获取（去除 `[match]N[/match]` 标记）
-
-### 3.5 Child 对象（小题）
-
-```json
-{
-  "relative_seq": ["11"],        // 题号（或 ["17","18"] 表示多选共享）
-  "question": { "obj": { "content": "题干预文本" } },
-  "answer": [
-    {
-      "obj": { "content": "选项文本或答案" },
-      "ext": {
-        "choice": [{ "ex_information": "a" }],   // 匹配题字母
-        "correct": [{ "ex_information": "correct" }] // 正确答案标记
-      }
-    }
-  ],
-  "option": []   // MCQ 选项（有时为空，选项在 answer 中）
+```typescript
+function cleanKmfGroupContent(raw: string): string {
+  return raw
+    // [center][b]Title[/b][/center] → ## Title
+    .replace(/\[center\]\[b\](.+?)\[\/b\]\[\/center\]/gi, '## $1')
+    // [blank]N[/blank] → (N) ______
+    .replace(/\[blank\](\d+)\[\/blank\]/gi, '($1) ______')
+    // 其余同 cleanKmfPassage
+    .replace(/\[br\/\]\s*\[br\/\]/gi, '\n\n')
+    .replace(/\[br\/\]/gi, '\n')
+    .replace(/\[\/?(?:center|b|i|h\d|strong)\]/gi, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 ```
 
----
+### 6.3 HTML 表格 → 管道格式
 
-## 四、导入流程
-
-### 4.1 完整导入脚本模式
-
-```typescript
-// 1. 获取 KMF 数据
-const data = JSON.parse(readFileSync('kmf-data/c20/xxx.json'));
-
-// 2. 识别题型
-const typeCn = data.result.questions[0].question.obj.type_cn;
-
-// 3. 根据题型提取：
-//    - 填空 → 解析 content HTML，[blank]N → {QN}，构建 passageText
-//    - MC → 从 children[].answer[] 提取选项和正确答案
-//    - 匹配 → 从 children[].answer[0].ext.choice 提取字母映射
-
-// 4. 更新数据库
-await prisma.iELTSQuestion.update({ where: { id }, data: { ... } });
-await prisma.iELTSExamSection.update({ where: { id }, data: { instructions: ... } });
-
-// 5. 导出种子
+KMF 的 HTML `<table>` 需转换为管道格式：
+```
+原始: <table><tbody><tr><td>H1</td><td>H2</td></tr>...</table>
+转换: | H1 | H2 |
+      | data1 | data2 |
 ```
 
-### 4.2 关键映射
+### 6.4 added_content → 纯文本指令
 
-**KMF [blank]N → 我们 Q 号**：
-- P1/P2/P3：`[blank]1` → `{Q1}`，直接映射
-- P4：`[blank]1` → `{Q31}`，需 +30
-
-**KMF sheet_id → 我们的 sectionId**：
 ```
-C18: 373=T1P1, 374=T1P2, 375=T1P3, 376=T1P4, 377=T2P1, ...
-C19: 390=T1P1, 391=T1P2, ...（待完整收集）
-C20: 952=T1P1, 953=T1P2, 954=T1P3, 955=T1P4,
-     956=T2P1, 957=T2P2, 958=T2P3, 959=T2P4,
-     960=T3P1, 961=T3P2, 962=T3P3, 963=T3P4,
-     964=T4P1, 965=T4P2, 966=T4P3, 967=T4P4
+原始: <div class="selection-inline js-selection-note">Complete the notes below.</div>
+      <div class="selection-block"></div>
+      <div class="selection-inline js-selection-note">Write</div>
+      <b> ONE WORD ONLY </b>
+
+处理: 去所有 HTML 标签 → "Complete the notes below. Write ONE WORD ONLY."
 ```
-
-### 4.3 注意事项
-
-1. **匹配题指令**：KMF 使用 `drag`，我们需改为 `write` 以兼容前端 `getListeningMatchHint` 正则
-2. **MC 选项格式**：必须加字母前缀（A. / B. / C.），存储为 JSON 数组
-3. **表格数据**：KMF 的 HTML `<table>` 需手动转为 `[table]\n| col | col |\n| data |` 管道格式
-4. **多选映射**：`relative_seq: [27,28]` 表示 Q27 和 Q28 共享同一组选项
-5. **匹配题 questionText**：从 `children[].question.obj.content` 提取，需去掉 `[match]N[/match]` 标记
 
 ---
 
-## 五、已有 KMF 数据状态
+## 七、Group type → 组件分派逻辑
+
+```
+if group.type === 692 (听力图表题):
+  if content has <table>          → TableGroup
+  elif content has <h2>/<h3>      → NoteModeGroup
+  elif content has [form] 语义    → FormFillBlank
+  else                            → NoteModeGroup
+
+if group.type === 694 (听力配对题):
+  if content has flowchart 语义   → FlowchartMatching
+  else                            → MatchingGroup
+
+if group.type === 691 (选择/判断/填空题):
+  by child.type:
+    101 (single choice)           → SingleChoice
+    611 (multi choice)            → MultiChoiceGroup
+    711 (T/F/NG, Y/N/NG)          → TrueFalse
+    404 (fill blank)              → FillBlank
+
+if group.type === 686 (不带词库summary):
+                                  → SummaryCompletion / FillBlank
+
+if group.type === 680/683/684/685:
+                                  → MatchingGroup
+
+if group.type === 681 (sentence completion):
+                                  → FillBlank
+```
+
+---
+
+## 八、数据校验检查清单
+
+每次导入/修改后必须检查：
+
+1. **文章正文**: parent 的 `content` 是否完整（非空、BBCode 已清洗）
+2. **题目指令**: `added_content` 是否提取为纯文本、拼接到 instructions
+3. **填空 passageText**: `[blank]` 是否转为 `(N) ______`、标题有 `##` 前缀
+4. **匹配选项**: Group 级 `answer[]` 是否完整、不含字母前缀
+5. **单选选项**: 字母（来自 `ext.choice`）+ 文本（来自 `obj.content`）拼接存入 options JSON
+6. **正确答案**: 填空取 `obj.content`、匹配取 `choice 字母`、判断取 `obj.content`
+7. **图片 URL**: `special_info` 中的 `ex_information` 是否写入 `imageUrl`
+8. **题号**: `relative_seq[0]` 是否匹配 questionIndex
+
+---
+
+## 九、已有数据状态
 
 | 书 | 听力 | 阅读 | 文章来源 | 总题数 |
 |----|------|------|----------|--------|
@@ -294,27 +479,12 @@ C20: 952=T1P1, 953=T1P2, 954=T1P3, 955=T1P4,
 | C19 | 16/16 ✅ | 12/12 ✅ | KMF parent | 320 |
 | C20 | 16/16 ✅ | 12/12 ✅ | KMF parent | 320 |
 
-全部 960 题（480 听力 + 480 阅读）均从 KMF 导入，文章正文从 `parent.question.obj.content` 提取。
+全部 960 题（480 听力 + 480 阅读）均从 KMF 导入。
 
 ---
 
-## 六、音频
+## 十、音频
 
-听力音频存储在阿里云 OSS：
 ```
 https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-{book}/T{test}/S{section}.mp3
 ```
-
-已为 C18/C19/C20 全部 48 个 section 写入 `IELTSExamSection.audioUrl`。
-
----
-
-## 七、新增题库 checklist
-
-1. 从 KMF 抓取所有 section 的 `practise-detail` JSON → 存入 `kmf-data/`
-2. 运行导入脚本：解析 content、提取答案/选项/stem
-3. 运行 `/tmp/export-seeds.ts` 导出 SQL 种子
-4. 更新音频 URL（OSS 上传后）
-5. 更新地图图片 URL（OSS 上传后）
-6. 更新本文档的"已有数据状态"表格
-7. 更新 `ielts-exam-matrix.md` 矩阵
