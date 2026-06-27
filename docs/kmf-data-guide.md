@@ -629,18 +629,28 @@ KMF type 404（不带内容的填空题）的 answer 直接是答案词（如 `"
 - fill_blank 的 `correctAnswer` = KMF `answer[0].obj.content`（直接取）
 - fill_blank 的 `options` = **NULL**（填空不需要选项）
 
-### 陷阱4：Table 型的 passageText 格式
+### 陷阱4：HTML Table 必须按 `<tr>` / `<td>` 解析
 
-KMF type 692（听力图表题）的 content 可能是 HTML `<table>`。需转换为管道格式，且 `[blank]N[/blank]` 要转为 `______`。
+KMF type 692（听力图表题）的 `content` 字段中含完整 HTML `<table>`，用 `<tr>` 分行、`<td>` 分列。**禁止**简单 regex 清理 HTML 后拼接——会丢失列边界，所有数据挤进第一列。
 
 ```typescript
-// HTML table → pipe format
-function convertHtmlTableToPipe(html: string): string {
-  return html
-    .replace(/<tr[^>]*>(.*?)<\/tr>/gs, (_, row) => `| ${row.replace(/<td[^>]*>/g, ' ').replace(/<\/td>/g, ' |').replace(/<[^>]+>/g, '')} |\n`)
-    .replace(/\[blank\]\d+\[\/blank\]/g, '______');
+// ✅ 正确：用 <tr> 和 <td> 做分隔符逐格提取
+const trs = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
+let pipeTable = '## [table] Title\n';
+
+for (const tr of trs) {
+  const tds = tr.match(/<td[^>]*>[\s\S]*?<\/td>/gi) || [];
+  const cells = tds.map(td =>
+    td.replace(/<input[^>]*>/g, '______')  // KMF input → blank
+       .replace(/<[^>]+>/g, '')            // 去所有 HTML 标签
+       .replace(/&nbsp;/g, ' ')
+       .replace(/\s+/g, ' ').trim()
+  );
+  pipeTable += '| ' + cells.join(' | ') + ' |\n';
 }
 ```
+
+**关键**：`<input>` 标签所在位置 = 填空位置，转为 `______`。其他 HTML 标签全部去除，保留纯文本。KMF 就是通过 `<tr>`/`<td>` 这些"特殊字符串"来分割表格内容的。
 
 ### 陷阱5：多 section 共占同一 Q 号范围
 
