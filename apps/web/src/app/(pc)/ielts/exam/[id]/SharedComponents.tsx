@@ -238,8 +238,16 @@ function parseTable(text: string) {
     dataStart = 1;
   }
 
-  const headers = lines[dataStart]!.split('|').map(h => h.trim());
-  const rows = lines.slice(dataStart + 1).map(l => l.split('|').map(c => c.trim()));
+  let headers = lines[dataStart]!.split('|').map(h => h.trim());
+  let rows = lines.slice(dataStart + 1).map(l => l.split('|').map(c => c.trim()));
+
+  // If the "headers" row contains blanks, it's actually a data row (no real header)
+  const noRealHeader = headers.some(h => hasBlank(h));
+  if (noRealHeader) {
+    rows = [headers, ...rows];
+    headers = []; // empty → skip <thead>
+  }
+
   return { headers, rows, title };
 }
 
@@ -274,11 +282,13 @@ export const TableGroup = memo(function TableGroup({
         <p className="font-bold text-slate-900 text-sm text-center py-2 border border-slate-300 bg-slate-50 rounded-t-lg">{table.title}</p>
       )}
       <table className="w-full text-sm border-collapse table-auto">
-        <thead><tr className="bg-slate-100">
-          {headerTrimmed.map((h, i) =>
-            <th key={`h-${i}`} className="border border-slate-300 px-3 py-2 text-left font-medium text-slate-700 whitespace-nowrap">{h}</th>
-          )}
-        </tr></thead>
+        {headerTrimmed.length > 0 && (
+          <thead><tr className="bg-slate-100">
+            {headerTrimmed.map((h, i) =>
+              <th key={`h-${i}`} className="border border-slate-300 px-3 py-2 text-left font-medium text-slate-700 whitespace-nowrap">{h}</th>
+            )}
+          </tr></thead>
+        )}
         <tbody>
           {rowsTrimmed.map((row, ri) => {
             const priorBlanks = rowsTrimmed.slice(0, ri).reduce((s, r) =>
