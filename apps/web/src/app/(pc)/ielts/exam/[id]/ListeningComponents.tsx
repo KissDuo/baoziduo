@@ -123,6 +123,7 @@ export const FlowchartMatching = memo(function FlowchartMatching({
   if (!first?.passageText) return null;
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const [dragging, setDragging] = useState<string | null>(null);
+  const dragFromQidRef = useRef<number | null>(null);
 
   type LinePart = { text: string; qid?: number; qi?: number };
   const steps: LinePart[][] = [];
@@ -171,7 +172,11 @@ export const FlowchartMatching = memo(function FlowchartMatching({
                         className={`inline-flex items-center justify-center border-2 border-dashed rounded px-2 py-0.5 text-sm font-medium min-w-[36px] h-7 transition-colors ${
                           selected ? 'border-primary-400 bg-primary-50 text-primary-700' : 'border-slate-300 text-slate-400'
                         } ${dragging ? 'border-primary-500 bg-primary-100' : ''}`}
-                      >{selected || '______'}</span>
+                      >
+                        {selected ? (
+                          <span draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', ''); setDragging(selected); dragFromQidRef.current = q?.id || null; }} onDragEnd={() => { setDragging(null); dragFromQidRef.current = null; }} onClick={() => { if (q) onSave(q.id, ''); }} className="cursor-pointer hover:text-red-500 transition-colors" title="Click to remove, or drag back to box">{selected}</span>
+                        ) : '______'}
+                      </span>
                       {parts[1] && <span>{parts[1]}</span>}
                     </div>
                   );
@@ -182,13 +187,13 @@ export const FlowchartMatching = memo(function FlowchartMatching({
           </div>
         ))}
       </div>
-      <div className="w-52 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-shrink-0">
+      <div onDrop={(e) => { e.preventDefault(); if (dragFromQidRef.current) { onSave(dragFromQidRef.current, ''); setDragging(null); dragFromQidRef.current = null; } }} onDragOver={(e) => e.preventDefault()} className="w-52 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-shrink-0">
         <p className="text-xs font-medium text-slate-500 mb-2">Drag options into the blanks</p>
         <div className="space-y-1">
           {options.map((opt, oi) => {
             const used = questions.some((q: any) => answers[q.id] === opt);
             return (
-              <div key={oi} draggable onDragStart={() => setDragging(opt)} onDragEnd={() => setDragging(null)}
+              <div key={oi} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', ''); setDragging(opt); dragFromQidRef.current = null; }} onDragEnd={() => setDragging(null)}
                 className={`text-xs px-2.5 py-1.5 rounded border cursor-grab active:cursor-grabbing transition-colors ${
                   used ? 'opacity-40 bg-slate-100 text-slate-400' : 'bg-white hover:border-primary-300 hover:bg-primary-50 text-slate-700'
                 }`}
