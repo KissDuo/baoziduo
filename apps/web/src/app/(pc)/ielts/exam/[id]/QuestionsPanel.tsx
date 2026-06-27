@@ -51,13 +51,19 @@ function getSummaryGroup(qs: any[]) {
   return { questions: group, firstIndex: start };
 }
 
-function getTableGroup(qs: any[]) {
-  const first = qs.find((q: any) => q.passageText && q.passageText.trim().startsWith('[table]'));
-  if (!first) return null;
-  const start = first.questionIndex;
-  const tableQs = qs.filter((q: any) => q.questionIndex >= start && q.questionIndex < start + 10 &&
-    (q.questionType === 'fill_blank' || (q.passageText && q.passageText.trim().startsWith('[table]'))));
-  return { questions: tableQs, firstIndex: start };
+function getTableGroups(qs: any[]) {
+  const groups: { questions: any[]; firstIndex: number }[] = [];
+  const seen = new Set<number>();
+  for (const q of qs) {
+    if (seen.has(q.id)) continue;
+    if (!q.passageText || !q.passageText.trim().startsWith('[table]')) continue;
+    const start = q.questionIndex;
+    const tableQs = qs.filter((g: any) => g.questionIndex >= start && g.questionIndex < start + 10 &&
+      (g.questionType === 'fill_blank' || (g.passageText && g.passageText.trim().startsWith('[table]'))));
+    tableQs.forEach((g: any) => seen.add(g.id));
+    groups.push({ questions: tableQs, firstIndex: start });
+  }
+  return groups;
 }
 
 function getNoteGroup(qs: any[]) {
@@ -234,23 +240,64 @@ function detectMatchKind(instructions: string, qiStart: number, qiEnd: number): 
 
 function findMatchContext(instructions: string, qiStart: number, qiEnd: number): string | null {
   const lines = instructions.split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i]!.trim();
-    const rm = l.match(new RegExp(`Questions\\s+${qiStart}\\s*[-–]\\s*${qiEnd}`, 'i'));
-    if (!rm) continue;
-    const parts: string[] = [];
-    for (let j = i; j < lines.length; j++) {
-      const t = lines[j]!.trim();
-      // Stop at: blank line, next Questions group, or numbered question item
-      if (j > i) {
-        if (!t) break;
-        if (t.match(/^Questions\s+\d/)) break;
-        if (/^\d{1,2}[.)](\s|$)/.test(t)) break;
+
+  // First try to find by explicit Q number patterns
+  const patterns = [
+    new RegExp(`Questions\\s+${qiStart}\\s*[-–]\\s*${qiEnd}\\b`, 'i'),
+    new RegExp(`(?:in\\s+)?boxes\\s+${qiStart}\\s*[-–]\\s*${qiEnd}\\b`, 'i'),
+  ];
+
+  for (const pattern of patterns) {
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i]!.trim();
+      if (!pattern.test(l)) continue;
+      const parts: string[] = [];
+      let start = i;
+      while (start > 0 && lines[start - 1]!.trim() && !/^Questions\s+\d/.test(lines[start - 1]!.trim())) start--;
+      for (let j = start; j < lines.length; j++) {
+        const t = lines[j]!.trim();
+        if (j > i) {
+          if (!t) break;
+          if (/^Questions\s+\d/.test(t)) break;
+          if (/^\d{1,2}[.)](\s|$)/.test(t)) break;
+        }
+        if (t) parts.push(t);
       }
-      if (t) parts.push(t);
+      return parts.join(' ').trim();
     }
-    return parts.join(' ').trim();
   }
+
+  // Fallback: find instruction block that appears between question groups
+  // For sentence/people matching where KMF doesn't include Q numbers in instructions
+  // Look for a standalone instruction line (no "Questions" prefix, no numbered items)
+  const fallbackPatterns = [
+    /complete\s+each\s+sentence\s+with\s+the\s+correct\s+ending/i,
+    /look\s+at\s+the\s+following\s+statements/i,
+    /match\s+each\s+statement\s+with\s+the\s+correct\s+(person|people)/i,
+    /choose\s+\w+\s+answers?\s+from\s+the\s+box/i,
+  ];
+
+  for (const fp of fallbackPatterns) {
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i]!.trim();
+      if (!fp.test(l)) continue;
+      // Check if this line is NOT already preceded by a Questions marker
+      if (i > 0 && /^Questions\s+\d/.test(lines[i - 1]!.trim())) continue;
+      const parts: string[] = [];
+      for (let j = i; j < lines.length; j++) {
+        const t = lines[j]!.trim();
+        if (j > i) {
+          if (!t) break;
+          if (/^Questions\s+\d/.test(t)) break;
+          if (/^\d{1,2}[.)](\s|$)/.test(t) && j > i + 1) break;
+          if (/^Complete\s+the\s+(notes|summary|table|form)/i.test(t) && j > i) break;
+        }
+        if (t) parts.push(t);
+      }
+      return parts.join(' ').trim();
+    }
+  }
+
   return null;
 }
 
@@ -274,17 +321,18 @@ function getPersonMatchHint(
 }
 
 function getSentenceMatchHint(options: string[], qiStart: number, qiEnd: number): React.ReactNode {
-  const letters = options.map(o => o.trim()[0]).filter(Boolean).join('');
-  const range = letters.length > 0 ? `${letters[0]}–${letters[letters.length - 1]}` : '';
-  return <span>Complete each sentence with the correct ending, {range}, below.</span>;
+  const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const range = options.length > 0 ? `A–${L[options.length - 1]}` : '';
+  return <span>Complete each sentence with the correct ending, <b>{range}</b>, below.</span>;
 }
 
 function getParagraphMatchHint(
   options: string[], sectionIndex: number, qiStart: number, qiEnd: number, instructions: string
 ): React.ReactNode {
   const ctx = findMatchContext(instructions, qiStart, qiEnd) || '';
-  const letters = options.map(o => o.trim()[0]).filter(Boolean).join('');
-  const range = letters.length > 0 ? `${letters[0]}–${letters[letters.length - 1]}` : '';
+  // Extract letter range from instructions rather than options
+  const rangeMatch = ctx.match(/([A-Z])[-–]([A-Z])/);
+  const range = rangeMatch ? `${rangeMatch[1]}–${rangeMatch[2]}` : '';
   // Extract section count from instructions (e.g. "seven sections")
   const secMatch = ctx.match(/(\w+)\s+sections?/i);
   const secCount = secMatch ? secMatch[1] : '';
@@ -334,8 +382,9 @@ export const QuestionsPanel = memo(function QuestionsPanel({
   const mcFirstIds = new Set<number>(); mcGroups.forEach(g => mcFirstIds.add(g.firstId));
   const summary = getSummaryGroup(section.questions);
   const summaryIds = new Set(summary?.questions.map(q => q.id) || []);
-  const table = getTableGroup(section.questions);
-  const tableIds = new Set(table?.questions.map(q => q.id) || []);
+  const tableGroups = getTableGroups(section.questions);
+  const tableIds = new Set<number>(); tableGroups.forEach(g => g.questions.forEach(q => tableIds.add(q.id)));
+  const tableFirstIds = new Set<number>(); tableGroups.forEach(g => tableFirstIds.add(g.questions[0]?.id!));
   const note = getNoteGroup(section.questions);
   const noteIds = new Set(note?.questions.map(q => q.id) || []);
   const mapGroups = getMapGroups(section.questions);
@@ -470,28 +519,26 @@ export const QuestionsPanel = memo(function QuestionsPanel({
             return null;
           }
           // Table
-          if (tableIds.has(q.id)) {
-            if (q.id === table!.questions[0]!.id) {
-              const qiVals = table!.questions.map(q => q.questionIndex);
-              const header = qRange(qiVals);
-              const heading = headingMap.get(q.questionIndex);
-              // Try extract table-specific hint from passageText (second line after [table] Title)
-              const tablePt = table!.questions[0]?.passageText || '';
-              const tablePtLines = tablePt.split('\n');
-              let tblHint: React.ReactNode = null;
-              if (tablePtLines.length > 1 && !tablePtLines[1]!.startsWith('|')) {
-                tblHint = <span className="text-xs text-slate-600">{tablePtLines[1]}</span>;
-              }
-              if (!tblHint) tblHint = formHint || getStandardHint(table!.questions, section.sectionIndex || 1, qiVals[0]!, qiVals[qiVals.length - 1]!, inst);
-              return (
-                <div key="tg" className="mb-4">
-                  <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
-                  {tblHint && <p className="text-xs text-slate-600 mb-2">{tblHint}</p>}
-                  <TableGroup questions={table!.questions} answers={answers} attemptId={attemptId} onSave={onSave} title={heading} />
-                </div>
-              );
+          if (tableIds.has(q.id) && !tableFirstIds.has(q.id)) return null;
+          if (tableFirstIds.has(q.id)) {
+            const tg = tableGroups.find(g => g.questions[0]?.id === q.id)!;
+            const qiVals = tg.questions.map(q => q.questionIndex);
+            const header = qRange(qiVals);
+            const heading = headingMap.get(q.questionIndex);
+            const tablePt = tg.questions[0]?.passageText || '';
+            const tablePtLines = tablePt.split('\n');
+            let tblHint: React.ReactNode = null;
+            if (tablePtLines.length > 1 && !tablePtLines[1]!.startsWith('|')) {
+              tblHint = <span className="text-xs text-slate-600">{tablePtLines[1]}</span>;
             }
-            return null;
+            if (!tblHint) tblHint = formHint || getStandardHint(tg.questions, section.sectionIndex || 1, qiVals[0]!, qiVals[qiVals.length - 1]!, inst);
+            return (
+              <div key={`tg-${tg.firstIndex}`} className="mb-4">
+                <h3 className="font-bold text-slate-800 text-sm mb-2">{header}</h3>
+                {tblHint && <p className="text-xs text-slate-600 mb-2">{tblHint}</p>}
+                <TableGroup questions={tg.questions} answers={answers} attemptId={attemptId} onSave={onSave} title={heading} />
+              </div>
+            );
           }
           // Multi-choice group (skip non-first)
           if (mcAllIds.has(q.id) && !mcFirstIds.has(q.id)) return null;
