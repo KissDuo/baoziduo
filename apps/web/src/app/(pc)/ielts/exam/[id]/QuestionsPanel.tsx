@@ -54,14 +54,23 @@ function getSummaryGroup(qs: any[]) {
 function getTableGroups(qs: any[]) {
   const groups: { questions: any[]; firstIndex: number }[] = [];
   const seen = new Set<number>();
-  for (const q of qs) {
-    if (seen.has(q.id)) continue;
-    if (!q.passageText || !q.passageText.trim().startsWith('[table]')) continue;
-    const start = q.questionIndex;
-    const tableQs = qs.filter((g: any) => g.questionIndex >= start && g.questionIndex < start + 10 &&
+  // Find all table-start indices
+  const tableStarts = qs
+    .filter((q: any) => q.passageText && q.passageText.trim().startsWith('[table]'))
+    .map((q: any) => q.questionIndex)
+    .sort((a, b) => a - b);
+
+  for (const startQi of tableStarts) {
+    // Find the actual question object for this start
+    const startQ = qs.find((g: any) => g.questionIndex === startQi && g.passageText?.trim().startsWith('[table]'));
+    if (!startQ || seen.has(startQ.id)) continue;
+    // Find end: next table start, or start+10, whichever is smaller
+    const nextStart = tableStarts.find(s => s > startQi);
+    const end = nextStart ? Math.min(nextStart, startQi + 10) : startQi + 10;
+    const tableQs = qs.filter((g: any) => g.questionIndex >= startQi && g.questionIndex < end &&
       (g.questionType === 'fill_blank' || (g.passageText && g.passageText.trim().startsWith('[table]'))));
     tableQs.forEach((g: any) => seen.add(g.id));
-    groups.push({ questions: tableQs, firstIndex: start });
+    groups.push({ questions: tableQs, firstIndex: startQi });
   }
   return groups;
 }
