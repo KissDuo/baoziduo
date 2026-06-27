@@ -761,6 +761,21 @@ instructions = instructions
   .replace(/\s+,/g, ',');  // 清理 "A-I ," → "A-I,"
 ```
 
+### 陷阱14：`[table]` 用 `______`，`[note]` 用 `{QN}`，不可混用
+
+两个组件搜索 blank 的方式不同：
+
+| 标记 | 组件 | blank 格式 | 检测方式 |
+|------|------|-----------|---------|
+| `[table]` | TableGroup | `______` | `hasBlank()` 正则 `/{2,}/` |
+| `[note]` | NoteModeGroup | `{Q31}` | `/\{Q\d+\}/` 正则 |
+
+**症状**：table 里出现 `{Q1}` 文字但没输入框；note 里出现 `______` 文字但没输入框。
+
+**原因**：格式用错了组件不识别。
+
+**规则**：从 KMF HTML `<table>` 重建的 passageText 用 `______`；从 KMF BBCode `[blank]N[/blank]` 重建的用 `{QN}`。
+
 ### 陷阱5：多 section 共占同一 Q 号范围
 
 KMF 中多个 book/test 的 section 可能有相同的 Q 号范围（如所有 P1 都是 Q1-10）。匹配时必须用 **book + type + Q号** 三重索引，不能仅用 Q 号。
