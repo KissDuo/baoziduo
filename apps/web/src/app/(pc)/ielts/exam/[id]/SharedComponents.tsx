@@ -228,9 +228,19 @@ function parseTable(text: string) {
   });
   const lines = normalized.slice(1).filter(l => l.trim() && l.trim().startsWith('|'));
   if (lines.length < 1) return null;
-  const headers = lines[0]!.split('|').map(h => h.trim());
-  const rows = lines.slice(1).map(l => l.split('|').map(c => c.trim()));
-  return { headers, rows };
+
+  // Detect title row: first row has only one non-empty cell (colspan)
+  let title: string | null = null;
+  let dataStart = 0;
+  const firstCells = lines[0]!.split('|').map(h => h.trim()).filter(h => h !== '');
+  if (firstCells.length === 1 && lines.length > 1) {
+    title = firstCells[0]!;
+    dataStart = 1;
+  }
+
+  const headers = lines[dataStart]!.split('|').map(h => h.trim());
+  const rows = lines.slice(dataStart + 1).map(l => l.split('|').map(c => c.trim()));
+  return { headers, rows, title };
 }
 
 export const TableGroup = memo(function TableGroup({
@@ -260,6 +270,9 @@ export const TableGroup = memo(function TableGroup({
   return (
     <div className="py-3 border-b border-slate-100 overflow-x-auto">
       {title && <p className="font-bold text-slate-900 text-base text-center mt-2 mb-2">{title}</p>}
+      {table.title && (
+        <p className="font-bold text-slate-900 text-sm text-center py-2 border border-slate-300 bg-slate-50 rounded-t-lg">{table.title}</p>
+      )}
       <table className="w-full text-sm border-collapse table-auto">
         <thead><tr className="bg-slate-100">
           {headerTrimmed.map((h, i) =>
@@ -275,6 +288,7 @@ export const TableGroup = memo(function TableGroup({
                 {row.map((cell, ci) => {
                   if (hasBlank(cell)) {
                     const blanksBefore = row.slice(0, ci).reduce((s, c) => s + countBlanks(c), 0);
+                    const blanksInCell = countBlanks(cell);
                     let blankIdx = -1;
                     const parts = cell.split(/(_{2,}|\.{3,})/);
                     return (
@@ -283,13 +297,14 @@ export const TableGroup = memo(function TableGroup({
                           if (/^_{2,}$/.test(part) || /^\.{3,}$/.test(part)) {
                             blankIdx++;
                             const q = qMap.get(first.questionIndex + priorBlanks + blanksBefore + blankIdx);
-                            if (q) {
-                              return <span key={pi} className="inline-flex items-center gap-0.5 align-baseline">
-                                <b className="text-xs text-slate-600">{q.questionIndex}</b>
-                                <BlankInput qid={q.id} initial={answers[q.id] || ''} attemptId={attemptId} onSave={onSave} />
-                              </span>;
+                            const isNotFirst = blankIdx > 0;
+                            const el = q
+                              ? <span className="inline-flex items-center gap-0.5 align-baseline"><b className="text-xs text-slate-600">{q.questionIndex}</b><BlankInput qid={q.id} initial={answers[q.id] || ''} attemptId={attemptId} onSave={onSave} /></span>
+                              : <span className="text-slate-400">____</span>;
+                            if (isNotFirst && blanksInCell > 1) {
+                              return <span key={pi}><br />{el}</span>;
                             }
-                            return <span key={pi} className="text-slate-400">____</span>;
+                            return <span key={pi}>{el}</span>;
                           }
                           return <span key={pi}>{part}</span>;
                         })}
