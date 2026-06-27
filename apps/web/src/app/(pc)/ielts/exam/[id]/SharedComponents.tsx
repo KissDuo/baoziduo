@@ -22,7 +22,7 @@ export function BlankInput({ qid, initial, attemptId, onSave }: {
 }
 
 // ── Text formatter: handles \n → <br>, **text** → <strong> ──
-function RichText({ text }: { text: string }) {
+export function RichText({ text }: { text: string }) {
   const lines = text.split('\n');
   return (
     <>
@@ -111,7 +111,7 @@ export const SingleChoice = memo(function SingleChoice({ q, ans, onSave }: {
   if (q.options) { try { options = JSON.parse(q.options); } catch {} }
   return (
     <div className="py-2.5 border-b border-slate-100 last:border-0">
-      {q.questionText && <p className="text-sm font-bold text-slate-800 mb-3">{q.questionText}</p>}
+      {q.questionText && <p className="text-sm text-slate-800 mb-3"><RichText text={q.questionText} /></p>}
       {options.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           {options.map((opt, i) => (
@@ -137,7 +137,7 @@ export const MultiChoiceGroup = memo(function MultiChoiceGroup({
 }) {
   return (
     <div className="py-3 border-b border-slate-100">
-      {questionText && <p className="text-sm font-bold text-slate-800 mb-3">{questionText}</p>}
+      {questionText && <p className="text-sm text-slate-800 mb-3"><RichText text={questionText} /></p>}
       <div className="grid grid-cols-1 gap-2">
         {options.map((opt, oi) => {
           const checked = questionIds.some(qid => answers[qid] === opt);
@@ -166,6 +166,7 @@ export const MatchingGroup = memo(function MatchingGroup({
 }) {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const [dragging, setDragging] = useState<string | null>(null);
+  const [dragFromQid, setDragFromQid] = useState<number | null>(null);
 
   return (
     <div className="py-3 border-b border-slate-100">
@@ -175,27 +176,31 @@ export const MatchingGroup = memo(function MatchingGroup({
           {items.map((item) => {
             const selected = answers[item.qid] || '';
             return (
-              <div key={item.qid} className="flex items-start gap-2 text-sm">
+              <div key={item.qid} className="flex items-start gap-2 text-sm flex-wrap">
                 <span className="text-slate-500 shrink-0 w-5 text-right text-xs">{item.qi}</span>
-                <span className="text-slate-700">{item.text}</span>
+                <span className="text-slate-700 flex-1 min-w-0">{item.text}</span>
                 <div
-                  onDrop={(e) => { e.preventDefault(); if (dragging) { onSave(item.qid, dragging); setDragging(null); } }}
+                  onDrop={(e) => { e.preventDefault(); if (dragging) { onSave(item.qid, dragging); setDragging(null); setDragFromQid(null); } }}
                   onDragOver={(e) => e.preventDefault()}
-                  className={`border-2 border-dashed rounded px-3 py-0.5 text-center text-sm min-w-[70px] flex-shrink-0 transition-colors ${
+                  className={`border-2 border-dashed rounded px-3 py-0.5 text-center text-sm min-w-[70px] transition-colors ${
                     selected ? 'border-primary-400 bg-primary-50 text-primary-700' : 'border-slate-300 text-slate-400'
                   } ${dragging ? 'border-primary-500 bg-primary-100' : ''}`}
-                >{selected || '______'}</div>
+                >
+                  {selected ? (
+                    <span draggable onDragStart={() => { setDragging(selected); setDragFromQid(item.qid); }} onDragEnd={() => { setDragging(null); setDragFromQid(null); }} className="cursor-grab active:cursor-grabbing" title="Drag back to remove">{selected}</span>
+                  ) : '______'}
+                </div>
               </div>
             );
           })}
         </div>
-        <div className="w-64 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-shrink-0">
+        <div onDrop={(e) => { e.preventDefault(); if (dragFromQid) { onSave(dragFromQid, ''); setDragging(null); setDragFromQid(null); } }} onDragOver={(e) => e.preventDefault()} className="w-64 border border-slate-200 rounded-lg p-3 bg-slate-50 flex-shrink-0">
           <p className="text-xs font-medium text-slate-500 mb-2">Drag options into the boxes</p>
           <div className="space-y-1">
             {options.map((opt, oi) => {
               const used = items.some(it => answers[it.qid] === opt);
               return (
-                <div key={oi} draggable onDragStart={() => setDragging(opt)} onDragEnd={() => setDragging(null)}
+                <div key={oi} draggable onDragStart={() => { setDragging(opt); setDragFromQid(null); }} onDragEnd={() => setDragging(null)}
                   className={`text-xs px-2.5 py-1.5 rounded border cursor-grab active:cursor-grabbing transition-colors ${
                     used ? 'opacity-40 bg-slate-100 text-slate-400' : 'bg-white hover:border-primary-300 hover:bg-primary-50 text-slate-700'
                   }`}

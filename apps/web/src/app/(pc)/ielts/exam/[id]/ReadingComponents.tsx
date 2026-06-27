@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import { BlankInput } from './SharedComponents';
+import { BlankInput, RichText } from './SharedComponents';
 
 // ═══════════════════════════════════════════
 // SummaryCompletion — 阅读填空段落 (整段框起来，空在段落中)
@@ -59,7 +59,7 @@ export const TrueFalse = memo(function TrueFalse({ q, ans, onSave }: {
 }) {
   return (
     <div className="py-2.5 border-b border-slate-100 last:border-0">
-      {q.questionText && <p className="text-sm font-bold text-slate-800 mb-3">{q.questionText}</p>}
+      {q.questionText && <p className="text-sm text-slate-800 mb-3"><RichText text={q.questionText} /></p>}
       <div className="flex gap-2">
         {['TRUE','FALSE','NOT GIVEN'].map(o => (
           <button key={o} onClick={()=>onSave(q.id,o)} className={`px-4 py-1.5 rounded border text-xs font-medium ${ans===o?'bg-primary-600 text-white border-primary-600':'border-slate-300 text-slate-600 hover:bg-slate-50'}`}>{o}</button>
