@@ -636,7 +636,7 @@ KMF type 692（听力图表题）的 `content` 字段中含完整 HTML `<table>`
 ```typescript
 // ✅ 正确：用 <tr> 和 <td> 做分隔符逐格提取
 const trs = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
-let pipeTable = '## [table] Title\n';
+let pipeTable = '[table] Title\n';  // 无 ## 前缀！
 
 for (const tr of trs) {
   const tds = tr.match(/<td[^>]*>[\s\S]*?<\/td>/gi) || [];
@@ -651,6 +651,23 @@ for (const tr of trs) {
 ```
 
 **关键**：`<input>` 标签所在位置 = 填空位置，转为 `______`。其他 HTML 标签全部去除，保留纯文本。KMF 就是通过 `<tr>`/`<td>` 这些"特殊字符串"来分割表格内容的。
+
+### 陷阱7：passageText 标记符不能有 `##` 前缀
+
+`[table]`、`[note]`、`[form]`、`[flowchart]` 这些标记符**本身就是第一行开头**，前端通过 `startsWith('[table]')` 等精确匹配检测。**前面不能再加 `## `**。
+
+```
+❌ "## [table] Restaurant Recommendations\n| ..."   → 检测失败
+✅ "[table] Restaurant Recommendations\n| ..."       → 正确
+
+❌ "## [note]\n..."   → 检测失败
+✅ "[note]\n..."       → 正确
+```
+
+**仅 summary 或普通标题用 `## Title` 格式**（无标记符的纯文本标题）。这是 FillBlank 组件边框模式用的：
+```
+✅ "## Urban farming in Paris\n\nVertical tubes..."  → FillBlank 框模式
+```
 
 ### 陷阱5：多 section 共占同一 Q 号范围
 
