@@ -683,6 +683,22 @@ UI:  "Which <strong>TWO</strong> things..."
 
 **注意**：这些组件的 questionText 段落**不加 `font-bold`**，粗体完全由 `**...**` 标记控制。如果发现 questionText 中还有原始 `[b]` 标签，说明导入时未执行 BBCode 清洗。
 
+### 陷阱9：听力 P4 `[note]` 的标题和子标题来自 KMF BBCode
+
+KMF 听力 P4（type 692）的 `content` 中，标题通过 BBCode 标记区分：
+
+```
+[center][b]Reclaiming urban rivers[/b][/center]  ← 主标题 → "## Title"
+[b]Historical background[/b]                      ← 子标题 → "## SubTitle"
+● bullet point with [blank]N[/blank]              ← 正文 + {Q(N+30)}
+```
+
+**提取规则**：
+1. `[center][b]...[/b][/center]` → `## Title`（NoteModeGroup 自动居中加粗大字）
+2. `[b]...[/b]` 独立的短行（≤10词，无句号）→ `## SubTitle`（加粗小字）
+3. `●` / `○` 开头 → 正文行
+4. `[blank]N[/blank]` → `{Q(N+30)}`（P4 的 Q 号偏移 **+30**）
+
 ### 陷阱5：多 section 共占同一 Q 号范围
 
 KMF 中多个 book/test 的 section 可能有相同的 Q 号范围（如所有 P1 都是 Q1-10）。匹配时必须用 **book + type + Q号** 三重索引，不能仅用 Q 号。
