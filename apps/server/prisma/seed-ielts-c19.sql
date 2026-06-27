@@ -682,7 +682,7 @@ INSERT INTO IELTSExam (id, title, type, isFullExam, difficultyLevel, totalQuesti
 VALUES (1904, '剑桥雅思 19 - Test 4 听力', 'listening', TRUE, 'intermediate', 40, 4, 30, TRUE, NOW(), NOW());
 
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19041, 1904, 1, 'Part 1', 'Questions 1-6\nComplete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.\n\nQuestions 7-10\nComplete the table below.\nWrite ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S1.mp3', NULL, NOW());
+(19041, 1904, 1, 'Part 1', 'Complete the notes below.WriteONE WORD AND/OR A NUMBERfor each answer.\nComplete the table below.WriteONE WORD ONLYfor each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19042, 1904, 2, 'Part 2', 'Choose the correct letter, A,BorC.\nLabel the map below.Write the correct letter,A–H, next to Questions 16–20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
@@ -691,25 +691,25 @@ INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, aud
 (19044, 1904, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S4.mp3', NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 1, 'fill_blank', 'Area: ______hectares', NULL, 'Kaeden', NULL, '[note]\n## First day at work\n\n● Name of supervisor: {Q1}\n● Where to leave coat and bag: use {Q2} in staffroom\n● See Tiffany in HR: to give {Q3} number, to collect {Q4}\n● Location of HR office: on {Q5} floor\n● Supervisor\'s mobile number: {Q6}', 1, NULL, NOW());
+(19041, 1, 'fill_blank', '', NULL, 'Kaeden', NULL, '[table]\n| First day at work |\n| ● Name of supervisor: | ______ |\n| ● Where to leave coat and bag: | use ______ in staffroom |\n| ● See Tiffany in HR: | to give ______ number to collect ______ |\n| ● Location of HR office: | on ______ floor |\n| ● Supervisor\'s mobile number: | ______ |\n', 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 2, 'fill_blank', 'Wetland: lakes, ponds and a ______', NULL, 'locker', NULL, NULL, 1, NULL, NOW());
+(19041, 2, 'fill_blank', '', NULL, 'locker|lockers', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 3, 'fill_blank', 'Science: Children look at ______ about plants, etc.', NULL, 'passport', NULL, NULL, 1, NULL, NOW());
+(19041, 3, 'fill_blank', '', NULL, 'passport', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 4, 'fill_blank', 'Geography: includes learning to use a ______ and compass History: changes in land use', NULL, 'uniform', NULL, NULL, 1, NULL, NOW());
+(19041, 4, 'fill_blank', '', NULL, 'uniform', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 5, 'fill_blank', 'Leisure and tourism: mostly concentrates on the park\'s ______', NULL, 'third', NULL, NULL, 1, NULL, NOW());
+(19041, 5, 'fill_blank', '', NULL, 'third|3rd', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 6, 'fill_blank', 'Music: Children make ______ with natural materials, and experiment with rhythm and speed.', NULL, '0412665903', NULL, NULL, 1, NULL, NOW());
+(19041, 6, 'fill_blank', '', NULL, '0412 665 903|0412665903', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 7, 'fill_blank', 'They give children a feeling of ______ that they may not have elsewhere.', NULL, 'yellow', NULL, NULL, 1, NULL, NOW());
+(19041, 7, 'fill_blank', '', NULL, 'yellow', NULL, '[table]\n| Responsibilities |\n|  | Task 1 | Task 2 | Notes |  |\n| Bakery section | Check sell-by dates | Change price labels | Use ______ labels |  |\n| Sushi takeaway counter | Re-stock with ______ boxes if needed | Wipe preparation area and clean the sink | Do not clean any knives |  |\n| Meat and fish counters | Clean the serving area, including the weighing scales | Collect ______ for the fish from the cold-room | Must wear special ______ |  |\n', 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 8, 'fill_blank', 'Children learn new ______ and gain self-confidence.', NULL, 'plastic', NULL, NULL, 1, NULL, NOW());
+(19041, 8, 'fill_blank', '', NULL, 'plastic', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 9, 'fill_blank', 'Cost per child: £ ______', NULL, 'ice', NULL, NULL, 1, NULL, NOW());
+(19041, 9, 'fill_blank', '', NULL, 'ice', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(19041, 10, 'fill_blank', 'Adults, such as ______ , free', NULL, 'gloves', NULL, NULL, 1, NULL, NOW());
+(19041, 10, 'fill_blank', '', NULL, 'gloves', NULL, NULL, 1, NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (19042, 11, 'multiple_choice', 'Which TWO problems with some training programmes for new runners does Liz mention?', '["A. There is a risk of serious injury.","B. They are unsuitable for certain age groups.","C. They are unsuitable for people with health issues.","D. It is difficult to stay motivated.","E. There is a lack of individual support."]', 'A. There is a risk of serious injury.', NULL, NULL, 1, NULL, NOW());
