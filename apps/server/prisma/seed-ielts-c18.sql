@@ -53,7 +53,7 @@ INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText,
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (18012, 14, 'multiple_choice', 'Which TWO issues does the speaker ask the audience to consider before they apply to be volunteers?', '["A. their financial situation","B. their level of commitment","C. their work experience","D. their ambition","E. their availability"]', 'B. their level of commitment', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18012, 15, 'multiple_choice', '1870 [match]15[/match]', '["A. their financial situation","B. their level of commitment","C. their work experience","D. their ambition","E. their availability"]', 'E. their availability', NULL, NULL, 1, NULL, NOW());
+(18012, 15, 'multiple_choice', '1870', '["A. their financial situation","B. their level of commitment","C. their work experience","D. their ambition","E. their availability"]', 'E. their availability', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (18012, 16, 'matching', 'Fundraising', '["original, new ideas","a good level of fitness","an understanding of food and diet","experience on stage","a good memory","(not used)","(not used)"]', 'original, new ideas', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
@@ -150,17 +150,17 @@ INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText,
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (18022, 14, 'multiple_choice', 'What are the team still hoping to find?', '["A. the facilities for cyclists","B. the impact on the environment","C. the encouragement of good relations between residents","D. the low cost of all the accommodation","E. the rural location"]', 'C. the encouragement of good relations between residents', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 15, 'map_labelling', 'Jump for joy [match]15[/match]', '["A","B","C","D","E","F","G","H","I"]', 'G', NULL, NULL, 1, NULL, NOW());
+(18022, 15, 'map_labelling', 'Jump for joy', '["A","B","C","D","E","F","G","H","I"]', 'G', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 16, 'map_labelling', '1874 [match]16[/match]', '["A","B","C","D","E","F","G","H","I"]', 'C', NULL, NULL, 1, NULL, NOW());
+(18022, 16, 'map_labelling', '1874', '["A","B","C","D","E","F","G","H","I"]', 'C', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 17, 'map_labelling', '1875 [match]17[/match]', '["A","B","C","D","E","F","G","H","I"]', 'D', NULL, NULL, 1, NULL, NOW());
+(18022, 17, 'map_labelling', '1875', '["A","B","C","D","E","F","G","H","I"]', 'D', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 18, 'map_labelling', '1877 [match]18[/match]', '["A","B","C","D","E","F","G","H","I"]', 'B', NULL, NULL, 1, NULL, NOW());
+(18022, 18, 'map_labelling', '1877', '["A","B","C","D","E","F","G","H","I"]', 'B', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 19, 'map_labelling', '1878 [match]19[/match]', '["A","B","C","D","E","F","G","H","I"]', 'H', NULL, NULL, 1, NULL, NOW());
+(18022, 19, 'map_labelling', '1878', '["A","B","C","D","E","F","G","H","I"]', 'H', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 20, 'map_labelling', '1880 [match]20[/match]', '["A","B","C","D","E","F","G","H","I"]', 'A', NULL, NULL, 1, NULL, NOW());
+(18022, 20, 'map_labelling', '1880', '["A","B","C","D","E","F","G","H","I"]', 'A', NULL, NULL, 1, NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (18023, 21, 'multiple_choice', 'Why do the students think the Laki eruption of 1783 is so important?', '["A. It was the most severe eruption in modern times.","B. It led to the formal study of volcanoes.","C. It had a profound effect on society."]', 'C. It had a profound effect on society.', NULL, NULL, 1, NULL, NOW());
@@ -249,15 +249,15 @@ INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText,
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (18032, 15, 'multiple_choice', 'What advice does Dan give about picking mushrooms in parks?', '["A. Choose wooded areas.","B. Don\'t disturb wildlife.","C. Get there early."]', 'C. Get there early.', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18032, 16, 'multiple_choice', 'Farm shop [blank]1[/blank]', '["A. use a mushroom app.","B. join a group.","C. take a reference book."]', 'B. join a group.', NULL, NULL, 1, NULL, NOW());
+(18032, 16, 'multiple_choice', 'Farm shop ______', '["A. use a mushroom app.","B. join a group.","C. take a reference book."]', 'B. join a group.', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18032, 17, 'multiple_choice', 'Disabled entry [blank]2[/blank]', '["A. selecting only fully grown mushrooms","B. picking a limited amount of mushrooms","C. avoiding areas where rare mushroom species grow"]', 'B. picking a limited amount of mushrooms', NULL, NULL, 1, NULL, NOW());
+(18032, 17, 'multiple_choice', 'Disabled entry ______', '["A. selecting only fully grown mushrooms","B. picking a limited amount of mushrooms","C. avoiding areas where rare mushroom species grow"]', 'B. picking a limited amount of mushrooms', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18032, 18, 'multiple_choice', 'Adventure playground [blank]3[/blank]', '["A. a huge demand for them from restaurants.","B. a lack of rain in this part of the country.","C. a rise in building developments locally."]', 'C. a rise in building developments locally.', NULL, NULL, 1, NULL, NOW());
+(18032, 18, 'multiple_choice', 'Adventure playground ______', '["A. a huge demand for them from restaurants.","B. a lack of rain in this part of the country.","C. a rise in building developments locally."]', 'C. a rise in building developments locally.', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18032, 19, 'multiple_choice', 'Kitchen gardens [blank]4[/blank]', '["A. keep them in the fridge for no more than two days.","B. keep them in a brown bag in a dark room.","C. leave them for a period after washing them."]', 'A. keep them in the fridge for no more than two days.', NULL, NULL, 1, NULL, NOW());
+(18032, 19, 'multiple_choice', 'Kitchen gardens ______', '["A. keep them in the fridge for no more than two days.","B. keep them in a brown bag in a dark room.","C. leave them for a period after washing them."]', 'A. keep them in the fridge for no more than two days.', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18032, 20, 'multiple_choice', 'The Temple of the Four Winds [blank]5[/blank]', '["A. Experiment with different recipes.","B. Expect some to have a strong taste.","C. Cook them for a long time."]', 'A. Experiment with different recipes.', NULL, NULL, 1, NULL, NOW());
+(18032, 20, 'multiple_choice', 'The Temple of the Four Winds ______', '["A. Experiment with different recipes.","B. Expect some to have a strong taste.","C. Cook them for a long time."]', 'A. Experiment with different recipes.', NULL, NULL, 1, NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (18033, 21, 'multiple_choice', 'Which TWO opinions about the Luddites do the students express?', '["A. Their actions were ineffective.","B. They are still influential today.","C. They have received unfair criticism.","D. They were proved right.","E. Their attitude is understandable."]', 'A. Their actions were ineffective.', NULL, NULL, 1, NULL, NOW());
