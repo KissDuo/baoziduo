@@ -490,9 +490,9 @@ VALUES (2002, '剑桥雅思 20 - Test 2 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (20021, 2002, 1, 'Part 1: Elderly Care Support', 'Complete the table below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T2/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(20022, 2002, 2, 'Part 2: Community Volunteers', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T2/S2.mp3', NULL, NOW());
+(20022, 2002, 2, 'Part 2: Community Volunteers', 'What is the role of the volunteers in each of the following activities?\nChoose SIX answers from the box and write the correct letter, A-I, next to Questions 11-16.\n\nChoose the correct letter, A, B or C.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T2/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(20023, 2002, 3, 'Part 3: Human Geography', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T2/S3.mp3', NULL, NOW());
+(20023, 2002, 3, 'Part 3: Human Geography', 'What is Rosie and Colin\'s opinion about each of the following aspects of human geography?\nChoose FIVE answers from the box and write the correct letter, A-G, next to Questions 21-25.\n\nChoose the correct letter, A, B or C.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T2/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (20024, 2002, 4, 'Part 4: Developing Food Trends', 'Complete the notes below.Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-20/T2/S4.mp3', NULL, NOW());
 
