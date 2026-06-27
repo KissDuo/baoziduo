@@ -669,6 +669,20 @@ for (const tr of trs) {
 ✅ "## Urban farming in Paris\n\nVertical tubes..."  → FillBlank 框模式
 ```
 
+### 陷阱8：questionText 中 `[b]` 必须转为 `**`，前端用 RichText 渲染
+
+KMF 的 `[b]...[/b]` 标记表示加粗。导入时必须转为 `**...**`（Markdown 粗体语法）。前端 `SingleChoice`、`MultiChoiceGroup`、`TrueFalse` 组件使用 `<RichText>` 渲染 questionText，会自动将 `**text**` 转为 `<strong>text</strong>`。
+
+```
+KMF: "Which [b] TWO [/b] things..."
+  ↓ 清洗
+DB:  "Which ** TWO ** things..."
+  ↓ RichText 渲染
+UI:  "Which <strong>TWO</strong> things..."
+```
+
+**注意**：这些组件的 questionText 段落**不加 `font-bold`**，粗体完全由 `**...**` 标记控制。如果发现 questionText 中还有原始 `[b]` 标签，说明导入时未执行 BBCode 清洗。
+
 ### 陷阱5：多 section 共占同一 Q 号范围
 
 KMF 中多个 book/test 的 section 可能有相同的 Q 号范围（如所有 P1 都是 Q1-10）。匹配时必须用 **book + type + Q号** 三重索引，不能仅用 Q 号。
