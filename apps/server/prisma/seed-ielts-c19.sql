@@ -393,9 +393,9 @@ VALUES (1901, '剑桥雅思 19 - Test 1 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19011, 1901, 1, 'Part 1', 'Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19012, 1901, 2, 'Part 2', 'Questions 11-15\nChoose the correct letter, A, B or C.\n\nQuestions 16-20\nLabel the map below.\nWrite the correct letter, A-H, next to Questions 16-20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S2.mp3', 'https://yxzm-image.oss-cn-beijing.aliyuncs.com/L-C19-T1-S2.png', NOW());
+(19012, 1901, 2, 'Part 2', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S2.mp3', 'https://yxzm-image.oss-cn-beijing.aliyuncs.com/L-C19-T1-S2.png', NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19013, 1901, 3, 'Part 3', 'Questions 21 and 22\nChoose TWO letters, A-E.\n\nQuestions 23 and 24\nChoose TWO letters, A-E.\n\nQuestions 25-30\nWhat is the students\' opinion about each of the following food trends?\nChoose SIX answers from the box and write the correct letter, A-H, next to Questions 25-30.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S3.mp3', NULL, NOW());
+(19013, 1901, 3, 'Part 3', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19014, 1901, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T1/S4.mp3', NULL, NOW());
 
@@ -490,9 +490,9 @@ VALUES (1902, '剑桥雅思 19 - Test 2 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19021, 1902, 1, 'Part 1', 'Questions 1-6\nComplete the form below.\nWrite ONE WORD AND/OR A NUMBER for each answer.\n\nQuestions 7-10\nComplete the table below.\nWrite ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19022, 1902, 2, 'Part 2', 'Questions 11-16\nChoose the correct letter, A, B or C.\n\nQuestions 17-20\nChoose FIVE answers from the box and write the correct letter, A-G, next to Questions 17-20.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S2.mp3', NULL, NOW());
+(19022, 1902, 2, 'Part 2', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19023, 1902, 3, 'Part 3', 'Questions 21-24\nChoose the correct letter, A, B or C.\n\nQuestions 25-28\nWhat reasons did the recycling manager give for rejecting footwear, according to the students?\nChoose FOUR answers from the box and write the correct letter, A-F, next to Questions 25-28.\n\nQuestions 29 and 30\nChoose the correct letter, A, B or C.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S3.mp3', NULL, NOW());
+(19023, 1902, 3, 'Part 3', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19024, 1902, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T2/S4.mp3', NULL, NOW());
 
@@ -587,9 +587,9 @@ VALUES (1903, '剑桥雅思 19 - Test 3 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19031, 1903, 1, 'Part 1', 'Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19032, 1903, 2, 'Part 2', 'Questions 11-16\n## Q11 What information is given about each of the following festival workshops?\nChoose SIX answers from the box and write the correct letter, A-H, next to Questions 11-16.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S2.mp3', NULL, NOW());
+(19032, 1903, 2, 'Part 2', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19033, 1903, 3, 'Part 3', 'Questions 21-25\nChoose the correct letter, A, B or C.\n\nQuestions 26-30\n## Q26\nComplete the flowchart below.\nChoose FIVE answers from the box and write the correct letter, A-H, next to Questions 26-30.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S3.mp3', NULL, NOW());
+(19033, 1903, 3, 'Part 3', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19034, 1903, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S4.mp3', NULL, NOW());
 
@@ -684,9 +684,9 @@ VALUES (1904, '剑桥雅思 19 - Test 4 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19041, 1904, 1, 'Part 1', 'Questions 1-6\nComplete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.\n\nQuestions 7-10\nComplete the table below.\nWrite ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19042, 1904, 2, 'Part 2', 'Questions 11 and 12\nChoose TWO letters, A-E.\n\nQuestions 13 and 14\nChoose TWO letters, A-E.\n\nQuestions 15-18\n## Q15 What reason prevented each of the following members of the Compton Park Runners Club from joining until recently?\nWrite the correct letter, A, B, or C next to Questions 15-18.\n\nQuestions 19 and 20\nChoose the correct letter, A, B or C.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S2.mp3', NULL, NOW());
+(19042, 1904, 2, 'Part 2', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19043, 1904, 3, 'Part 3', 'Questions 21-25\nChoose the correct letter, A, B or C.\n\nQuestions 26-30\n## Q26 Where does Jane\'s grandfather keep each of the following types of books in his shop?\nChoose FIVE answers from the box and write the correct letter, A-G, next to Questions 26-30.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S3.mp3', NULL, NOW());
+(19043, 1904, 3, 'Part 3', 'Complete the notes below.Write ONE WORD AND/OR A NUMBER for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19044, 1904, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T4/S4.mp3', NULL, NOW());
 

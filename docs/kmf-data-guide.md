@@ -737,6 +737,19 @@ const childLetter = child.answer[0].ext.choice[0].ex_information.toUpperCase();
 const correctAnswer = group.answer.find(a => a.ext.choice[0].ex_information === childLetter)?.obj.content;
 ```
 
+### 陷阱12：听力 P2/P3 多 group 的 instructions 必须合并
+
+一个听力 P2/P3 的 KMF sheet 包含**多个 group**（如 matching + MC），每个 group 有自己的 `added_content` 提示语。**所有 group 的提示语都要合并存入 section instructions**，用换行分隔。前端 `findGroupHint()` 会自动为每个 group 匹配对应的提示句。
+
+```
+KMF group 1 added_content: "What is the role of the volunteers in each of the following activities?..."
+KMF group 2 added_content: "Choose the correct letter, A, B or C."
+  ↓ 合并
+Section instructions: "What is the role of the volunteers...\nChoose the correct letter..."
+```
+
+**症状**：匹配组上方缺提示句，或整个 section 只有 MC 的提示而没有匹配的提示。
+
 ### 陷阱5：多 section 共占同一 Q 号范围
 
 KMF 中多个 book/test 的 section 可能有相同的 Q 号范围（如所有 P1 都是 Q1-10）。匹配时必须用 **book + type + Q号** 三重索引，不能仅用 Q 号。
