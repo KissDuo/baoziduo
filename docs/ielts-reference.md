@@ -7,18 +7,19 @@
 ## 一、核心规则
 
 ### 数据来源铁律
-所有 IELTS 题目数据，**永远必须以 PDF 原文为准**，禁止自己猜测、编造或从记忆补充。
-- 有 PDF → 从 PDF 提取
-- 没有 PDF → 问用户要，或留空
+所有 IELTS 题目数据，**永远必须以 KMF（考满分）API 为准**，禁止自己猜测、编造或从记忆补充。
+- 有 KMF → 从 KMF API 抓取（详见 [[kmf-data-guide]]）
+- 没有 KMF → 问用户要，或留空
 - 不确定 → 问用户
 - 永远不猜
+- **PDF 仅作参考，不再作为数据源。**
 
-### 解析标准流程
-每次从 PDF 解析 IELTS 题目时的强制步骤：
-1. **先读本文档** — 获取最新题型格式
-2. **先识别题型** — 根据提示语判断（"Choose the correct letter" / "Complete the form below" / "Write ONE WORD ONLY"）
-3. **从前到后顺序提取** — Section 标题 → instructions → 子标题 → 逐题 questionText/options/correctAnswer → 特殊布局标记
-4. **校验** — 填空题必须有字数限制、questionType 与枚举一致、options 合法 JSON、correctAnswer 匹配
+### 导入标准流程
+每次从 KMF 导入 IELTS 题目时的强制步骤：
+1. **先读本文档 + kmf-data-guide** — 获取最新题型格式和 KMF 解析规则
+2. **从 KMF API 获取数据** — `practise-detail?u=...` 接口，存 `kmf-data/` 目录
+3. **按题型解析** — 填空(HTML→passageText)、匹配(Group级answer[])、MC(children.answer[])
+4. **写入数据库** — 逐题 update，导出种子 SQL
 
 ---
 
@@ -237,26 +238,19 @@ Choose **FOUR** answers from the box and write the correct letter, **A-F**, next
 ## 八、数据提取流水线
 
 ```
-PDF → pdftotext → /tmp/cXX_full.txt → extract-cXX-passages.ts → DB
+KMF API → kmf-data/*.json → import scripts → DB → export-seeds.ts → .sql
 ```
+
+详细流程见 [[kmf-data-guide]]。
 
 ### 提取脚本核心逻辑
-1. `pdftotext` 提取全文
-2. 按 `READING PASSAGE X` 定位文章
-3. 按 `Questions X-Y` 定位题目
-4. Passage text: READING PASSAGE → Questions 之间
-5. Question instructions: Questions → 下一 passage 或 Answer 之间
-6. P3 边界: 用 "Answer" 或 "Test X" 标记
+1. 从 KMF API 获取 `practise-detail` JSON，存入 `kmf-data/`
+2. 解析 `result.questions[]`：提取文章正文(parent)、题型(type_cn)、选项(answer[])、指令(added_content)
+3. BBCode 清洗（见 kmf-data-guide 第三节）
+4. 写入数据库并导出 SQL 种子
 
-### cleanText() 规则
-- 过滤 boilerplate（出版社、页码、URL等）
-- 合并连续空行
-- 段落合并: 不以 `.?!` 结尾 → 合并；独立字母永不合并
-
-### PDF 文件位置
-```
-桌面/英语学习资料/剑桥雅思/剑桥雅思真题XX 学术类.pdf
-```
+### 不再使用 PDF
+PDF 文件仅作人工参考，所有数据直接从 KMF API 获取。
 
 ---
 
