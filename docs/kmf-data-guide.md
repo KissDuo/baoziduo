@@ -959,6 +959,20 @@ function cleanQuestionText(raw: string): string {
 ```
 
 **杜绝方案**：rebuild 脚本完成后立即跑 `scan-all-br.ts` + `clean-all-br.ts` 验证。禁止"修A坏B"——修一个 section 时不能把已清洗过的 BBCode 重新带回。
+### 陷阱21：KMF type 711（判断题）的 practice data 不可靠
+
+KMF practice API 返回的数据中，type 711（判断题）的 `children[].answer[0].obj.content` 存储的是**用户作答**，不是正确答案。当 `ext.correct[]` 不含 "correct" 时，该答案为错误作答，不可写入 DB。只有 `correct=True` 时答案才可信。
+
+**症状**：判断题全部答案变成同一个值（如全 YES）。
+
+**规避**：判断题优先保留 DB 现有答案，仅在 KMF `correct=True` 时更新。或找非 practice 数据源。
+
+### 陷阱22：KMF 目录中的重复文件会导致 test 分配偏移
+
+C19 `c19/` 目录中 sheet 378 和 386 各出现两次。按 sheet_id 排序分配 test 时，重复文件会多占一个 test 槽位，导致后续 section 全部错位（如 T4P2 拿到了 T3P2 的数据）。
+
+**修复**：加载 KMF 文件时先 `Set<sheetId>` 去重。
+
 ### 陷阱20：人名匹配提示语用标准字母 A/B/C/D，不用人名首字母
 
 `getPersonMatchHint` 生成 "Match each statement with the correct person, A, B, C or D." 时，字母来自标准序列 `ABCDEFGHIJKLMNOPQRSTUVWXYZ`（按选项数量取），**不能**用 `options.map(o => o[0])` 取人名首字母。
