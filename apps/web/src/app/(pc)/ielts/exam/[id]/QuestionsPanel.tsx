@@ -156,7 +156,7 @@ function extractWordLimit(instructions: string, qiStart: number, qiEnd: number):
   const lines = instructions.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i]!;
-    const rm = l.match(new RegExp(`(?:Questions|boxes)\\s+${qiStart}\\s*[-–]\\s*${qiEnd}`, 'i'));
+    const rm = l.match(new RegExp(`(?:Questions|boxes)\\s+${qiStart}\\s*(?:[-–]|and)\\s*${qiEnd}`, 'i'));
     if (!rm) continue;
     // Search subsequent lines for word limit pattern
     for (let j = i; j < Math.min(i + 5, lines.length); j++) {
@@ -257,6 +257,7 @@ function findMatchContext(instructions: string, qiStart: number, qiEnd: number):
   const patterns = [
     new RegExp(`Questions\\s+${qiStart}\\s*[-–]\\s*${qiEnd}\\b`, 'i'),
     new RegExp(`(?:in\\s+)?boxes\\s+${qiStart}\\s*[-–]\\s*${qiEnd}\\b`, 'i'),
+    new RegExp(`(?:in\\s+)?boxes\\s+${qiStart}\\s+and\\s+${qiEnd}\\b`, 'i'),  // "boxes 22 and 23"
   ];
 
   for (const pattern of patterns) {
