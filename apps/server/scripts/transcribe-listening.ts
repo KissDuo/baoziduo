@@ -31,11 +31,11 @@ async function whisperTranscribe(audioUrl: string): Promise<{ text: string; segm
     );
 
     // whisper-cpp outputs a .json file with segments
-    const jsonPath = audioPath.replace('.mp3', '.json');
+    const jsonPath = audioPath + '.json'; // whisper-cli appends .json to the full path
     const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
     const segments = (jsonData.transcription || []).map((s: any) => ({
-      start: s.timestamps?.from ? parseFloat(s.timestamps.from) / 100 : s.offsets?.from / 100 || 0,
-      end: s.timestamps?.to ? parseFloat(s.timestamps.to) / 100 : s.offsets?.to / 100 || 0,
+      start: (s.offsets?.from || 0) / 1000,
+      end: (s.offsets?.to || 0) / 1000,
       text: (s.text || '').trim(),
     })).filter((s: any) => s.text.length > 0);
 
@@ -97,9 +97,15 @@ async function transcribeSection(sectionId: number) {
 
   // Check existing
   const existing = await p.listeningTranscript.findUnique({ where: { sectionId } });
-  if (existing) {
+  if (existing && existing.status !== 'failed') {
     console.log(`  Transcript already exists (id=${existing.id}, status=${existing.status})`);
     return;
+  }
+  if (existing) {
+    // Delete failed transcript to retry
+    await p.listeningSentence.deleteMany({ where: { transcriptId: existing.id } });
+    await p.listeningTranscript.delete({ where: { id: existing.id } });
+    console.log(`  Retrying failed transcript...`);
   }
 
   // Create pending transcript
