@@ -156,7 +156,7 @@ function extractWordLimit(instructions: string, qiStart: number, qiEnd: number):
   const lines = instructions.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i]!;
-    const rm = l.match(new RegExp(`Questions\\s+${qiStart}\\s*[-–]\\s*${qiEnd}`, 'i'));
+    const rm = l.match(new RegExp(`(?:Questions|boxes)\\s+${qiStart}\\s*[-–]\\s*${qiEnd}`, 'i'));
     if (!rm) continue;
     // Search subsequent lines for word limit pattern
     for (let j = i; j < Math.min(i + 5, lines.length); j++) {
@@ -168,8 +168,11 @@ function extractWordLimit(instructions: string, qiStart: number, qiEnd: number):
       if (m) return m[1]!.trim().toUpperCase();
     }
   }
-  // Fallback: search entire instructions for "Write X" pattern
-  const writeMatch = instructions.match(/write\s+(.+?)(?:\s+for\s+each\s+answer)?\.?$/im);
+  // Fallback: search nearest instructions for "Choose X from the passage"
+  const chooseMatch = instructions.match(/choose\s+(.+?)\s+from\s+the\s+passage/i);
+  if (chooseMatch) return chooseMatch[1]!.trim().toUpperCase();
+  // Fallback: search entire instructions for "Write X" pattern (but only if short — avoid matching TF instructions)
+  const writeMatch = instructions.match(/write\s+(ONE\s+WORD(?:\s+ONLY)?(?:\s+AND\/OR\s+A\s+NUMBER)?)\s+for\s+each\s+answer\.?/im);
   if (writeMatch) return writeMatch[1]!.trim().toUpperCase();
   return null;
 }

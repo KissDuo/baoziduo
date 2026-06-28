@@ -26,7 +26,7 @@ export const SummaryCompletion = memo(function SummaryCompletion({
 
   return (
     <div className="my-3">
-      {title && <p className="font-bold text-slate-800 text-sm mb-1">{title}</p>}
+      {title && <p className="font-bold text-slate-900 text-base text-center mt-1 mb-3">{title}</p>}
       {hint && <p className="text-xs text-slate-500 mb-2">{hint}</p>}
       <div className="border-2 border-slate-300 rounded-lg p-4 text-sm text-slate-800 leading-8">
         {parts.map((part: string, pi: number) => {
