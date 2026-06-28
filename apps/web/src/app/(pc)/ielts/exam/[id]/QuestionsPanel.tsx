@@ -325,11 +325,12 @@ function getPersonMatchHint(
   const peopleList = letters.length > 1
     ? letters.slice(0, -1).join(', ') + ' or ' + letters[letters.length - 1] + '.'
     : letters[0] + '.';
+  const boldLetters = letters.map((l, i) => <span key={i}><b>{l}</b>{i < letters.length - 2 ? ', ' : i === letters.length - 2 ? ' or ' : ''}</span>);
   return (
     <span>
       Look at the following statements (Questions {qiStart}–{qiEnd}) and the list of people below.<br />
-      Match each statement with the correct person, {peopleList}<br />
-      {nbMatch && <><i>{nbMatch[0]}</i></>}
+      Match each statement with the correct person, {boldLetters}.<br />
+      {nbMatch && <><b>NB</b>{nbMatch[0].substring(2)}</>}
     </span>
   );
 }
@@ -354,10 +355,10 @@ function getParagraphMatchHint(
   const nb = nbMatch ? nbMatch[0] : '';
   return (
     <span>
-      Reading Passage {sectionIndex} has {secCount} sections,{range}.<br />
+      Reading Passage {sectionIndex} has {secCount} sections, <b>{range}</b>.<br />
       Which section contains the following information?<br />
-      Write the correct letter,{range}, in boxes {qiStart}–{qiEnd} on your answer sheet.<br />
-      {nb && <><i>{nb}</i></>}
+      Write the correct letter, <b>{range}</b>, in boxes {qiStart}–{qiEnd} on your answer sheet.<br />
+      {nb && <><b>NB</b>{nb.substring(2)}</>}
     </span>
   );
 }
