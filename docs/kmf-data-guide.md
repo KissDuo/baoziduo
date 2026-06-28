@@ -712,6 +712,15 @@ function buildSectionInstructions(kmfResult: any): string {
 
 **铁律**：以后任何从 KMF 写入 DB `instructions` 的操作，一律调用 `buildSectionInstructions(kmfResult)`，不再手写提取逻辑。
 
+**⚠️ KMF sheet_id 顺序 ≠ Test 顺序**：同一本书的 KMF 文件中，sheet_id 的数值大小与 Test 1-4 没有对应关系。不能按 sheet_id 排序来分配 Test 编号。必须通过文章标题（`parent.question.obj.title`）与已确认的 Test/Section 对应关系来手动映射。
+
+```json
+// C19 reading P1 (Q1-13) — sheet_id 顺序不可信：
+// sheet 440 → "The Industrial Revolution in Britain" (NOT T1!)
+// sheet 510 → "How tennis rackets have changed" (T1)
+// 必须按标题内容确定属于哪个 Test
+```
+
 ### 铁律0补充：KMF `added_content` 格式清洗规则
 
 1. **先补空格**：KMF 的 `<div>Choose</div><b> ONE WORD ONLY </b>` → 去标签后变成 "ChooseONE WORD ONLY"。必须在去标签前在块级元素间插入空格：`.replace(/<\/div>\s*<div[^>]*>/gi, ' ').replace(/<\/div>\s*<b>/gi, ' ').replace(/<\/b>\s*<div[^>]*>/gi, ' ')`
