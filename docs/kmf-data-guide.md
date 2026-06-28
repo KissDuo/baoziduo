@@ -375,10 +375,12 @@ function cleanKmfPassage(raw: string): string {
     // 1. [p:X] → 段落字母单独成行
     .replace(/\[p:([a-z])\]/gi, (_, l) => `\n\n${l.toUpperCase()}\n`)
     .replace(/\[P:([a-z])\]/gi, (_, l) => `\n\n${l.toUpperCase()}\n`)  // 大写变体
-    // 2. [br/][br/] → 段落间空行（必须在单个[br/]之前处理！）
+    // 2. [br/][br/] 或 [br][br] → 段落间空行（必须在单个[br]之前处理！）
     .replace(/\[br\/\]\s*\[br\/\]/gi, '\n\n')
-    // 3. [br/] → 换行
+    .replace(/\[br\]\s*\[br\]/gi, '\n\n')      // ⚠️ KMF 同时使用 [br] 和 [br/]
+    // 3. [br/] 或 [br] → 换行
     .replace(/\[br\/\]/gi, '\n')
+    .replace(/\[br\]/gi, '\n')                   // ⚠️ 必须两种都处理
     // 4. 去除 BBCode 格式化标签
     .replace(/\[\/?(?:center|b|i|h\d|strong)\]/gi, '')
     // 5. 去除 [insert:N] 标记
@@ -652,11 +654,24 @@ const rm = l.match(new RegExp(`(?:Questions|boxes)\\s+${qiStart}\\s*[-–]\\s*${
 
 ### 铁律0补充：KMF `added_content` 格式清洗规则
 
-1. 去所有 HTML 标签：`.replace(/<[^>]+>/g, '')`
-2. 合并空白：`.replace(/\s+/g, ' ').trim()`
-3. 补 "Questions"：`.replace(/next to (\d+)/gi, 'next to Questions $1')`
-4. 清理空格逗号：`.replace(/\s+,/g, ',')`
-5. **所有 group 的提示语用 `\n` 连接**（保留顺序）
+1. **先补空格**：KMF 的 `<div>Choose</div><b> ONE WORD ONLY </b>` → 去标签后变成 "ChooseONE WORD ONLY"。必须在去标签前在块级元素间插入空格：`.replace(/<\/div>\s*<div[^>]*>/gi, ' ').replace(/<\/div>\s*<b>/gi, ' ').replace(/<\/b>\s*<div[^>]*>/gi, ' ')`
+2. 去所有 HTML 标签：`.replace(/<[^>]+>/g, '')`
+3. 合并空白：`.replace(/\s+/g, ' ').trim()`
+4. 补 "Questions"：`.replace(/next to (\d+)/gi, 'next to Questions $1')`
+5. 清理空格逗号：`.replace(/\s+,/g, ',')`
+6. **所有 group 的提示语用 `\n` 连接**（保留顺序）
+
+```typescript
+function cleanAddedContent(html: string): string {
+  return html
+    .replace(/<\/div>\s*<div[^>]*>/gi, ' ')   // div→div: 加空格
+    .replace(/<\/div>\s*<b>/gi, ' ')           // div→b: 加空格
+    .replace(/<\/b>\s*<div[^>]*>/gi, ' ')     // b→div: 加空格
+    .replace(/<[^>]+>/g, '')                   // 去所有标签
+    .replace(/\s+/g, ' ')                      // 合并空白
+    .trim();
+}
+```
 
 ---
 
@@ -848,6 +863,20 @@ C19 T4P1 含两个独立的 `[table]`（Q1-Q6 和 Q7-Q10）。分组时必须用
 当表格第一行就包含 `______`（如 `| Name of supervisor: | ______ |`），这不是表头而是数据行。若当 `<thead>` 渲染，第一个 blank 就丢失了。
 
 **检测**：`parseTable` 检查首行是否有 `______`（`hasBlank()`）→ 整表无 `<thead>`，全部按 `<tbody>` 渲染。
+
+### 陷阱18：`[br]` 和 `[br/]` 是两种不同标记，都必须清理
+
+KMF 同时使用 `[br]` 和 `[br/]` 两种换行标记。`cleanKmfPassage` 必须两种都处理，且先处理双换行 `[br][br]` / `[br/][br/]` → `\n\n`，再处理单换行。
+
+```typescript
+// ⚠️ 必须同时处理两种
+.replace(/\[br\]\s*\[br\]/gi, '\n\n')   // [br][br]
+.replace(/\[br\/\]\s*\[br\/\]/gi, '\n\n') // [br/][br/]
+.replace(/\[br\]/gi, '\n')                // 单 [br]
+.replace(/\[br\/\]/gi, '\n')              // 单 [br/]
+```
+
+**症状**：passageText 或 questionText 中残留 `[br]` 文字，UI 显示原始 BBCode。
 
 ### 陷阱17：表格 title 行（colspan 合并单元格）和同格多 blank 换行
 
