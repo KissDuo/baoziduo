@@ -26,9 +26,10 @@ export default function ListeningDetailPage() {
 
   // Sentence dictation
   const [currentSentenceIdx, setCurrentSentenceIdx] = useState(0);
-  const [userInput, setUserInput] = useState('');
+  const [userWords, setUserWords] = useState<string[]>([]);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [checkResult, setCheckResult] = useState<any>(null);
+  const [checkResult, setCheckResult] = useState<boolean[] | null>(null);
+  const wordInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     fetch(`http://localhost:5201/api/v1/listening/${id}`)
@@ -64,17 +65,38 @@ export default function ListeningDetailPage() {
     audio.addEventListener('timeupdate', stop);
   };
 
-  const checkInput = async () => {
-    if (!userInput.trim()) return;
-    try {
-      const res = await fetch(`http://localhost:5201/api/v1/listening/${id}/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sentenceIndex: currentSentenceIdx, userInput }),
-      });
-      const result = await res.json();
-      setCheckResult(result);
-    } catch {}
+  // Initialize word inputs when sentence changes
+  useEffect(() => {
+    if (!data) return;
+    const words = data.sentences[currentSentenceIdx]?.text.split(/\s+/) || [];
+    setUserWords(new Array(words.length).fill(''));
+    setCheckResult(null);
+    setShowAnswer(false);
+  }, [currentSentenceIdx, data]);
+
+  const confirmAnswer = () => {
+    if (!currentSentence) return;
+    const answerWords = currentSentence.text.split(/\s+/);
+    const results = answerWords.map((aw: string, i: number) =>
+      (userWords[i] || '').toLowerCase().trim() === aw.toLowerCase().replace(/[^a-z]/g, '')
+    );
+    setCheckResult(results);
+  };
+
+  const handleWordKeyDown = (e: React.KeyboardEvent, idx: number) => {
+    if (e.key === ' ' || e.key === 'Tab') {
+      e.preventDefault();
+      const next = wordInputRefs.current[idx + 1];
+      if (next) next.focus();
+    }
+  };
+
+  const handleWordChange = (idx: number, val: string) => {
+    const next = [...userWords];
+    next[idx] = val;
+    setUserWords(next);
+    setCheckResult(null);
+    setShowAnswer(false);
   };
 
   if (loading) return <div className="p-8 text-slate-400">Loading...</div>;
@@ -127,34 +149,42 @@ export default function ListeningDetailPage() {
       )}
 
       {/* Sentence dictation mode */}
-      {mode === 'sentence' && currentSentence && (
+      {mode === 'sentence' && currentSentence && (() => {
+        const words = currentSentence.text.split(/\s+/);
+        return (
         <div className="max-w-lg mx-auto">
           <div className="text-center mb-4">
             <span className="text-sm text-slate-500">句子 {currentSentenceIdx + 1} / {data.sentences.length}</span>
           </div>
 
-          {/* Play button */}
           <div className="text-center mb-4">
             <button onClick={playCurrentSentence}
               className="px-6 py-2 bg-primary-600 text-white rounded-lg text-sm">🔊 播放当前句</button>
           </div>
 
-          {/* Input area */}
-          <textarea value={userInput} onChange={e => { setUserInput(e.target.value); setShowAnswer(false); setCheckResult(null); }}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); checkInput(); } }}
-            placeholder="输入你听到的内容..."
-            className="w-full border-2 border-slate-300 rounded-lg p-3 text-sm min-h-[80px] focus:border-primary-400 outline-none" />
-
-          {/* Word-by-word check result */}
-          {checkResult && !showAnswer && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {checkResult.wordResults?.map((w: any, i: number) => (
-                <span key={i} className={`text-xs px-1.5 py-0.5 rounded ${w.correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                  {w.input || '___'}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* Word inputs grid */}
+          <div className="flex flex-wrap gap-2 justify-center mb-4">
+            {words.map((word: string, i: number) => {
+              const checked = checkResult?.[i];
+              const isCorrect = checked === true;
+              const isWrong = checked === false;
+              const wlen = Math.max(60, word.length * 16);
+              return (
+                <input key={i} ref={el => { wordInputRefs.current[i] = el; }}
+                  value={userWords[i] || ''}
+                  onChange={e => handleWordChange(i, e.target.value)}
+                  onKeyDown={e => handleWordKeyDown(e, i)}
+                  placeholder={word.replace(/[a-zA-Z]/g, '_')}
+                  className={`text-center text-sm px-2 py-1.5 rounded border-2 outline-none transition-colors ${
+                    isCorrect ? 'border-green-400 bg-green-50 text-green-700' :
+                    isWrong ? 'border-red-400 bg-red-50 text-red-600' :
+                    'border-slate-300 focus:border-primary-400'
+                  }`}
+                  style={{ width: wlen + 'px' }}
+                />
+              );
+            })}
+          </div>
 
           {/* Answer display */}
           {showAnswer && (
@@ -166,17 +196,19 @@ export default function ListeningDetailPage() {
 
           {/* Action buttons */}
           <div className="flex items-center justify-center gap-2 mt-4">
-            <button onClick={() => { setCurrentSentenceIdx(Math.max(0, currentSentenceIdx - 1)); setUserInput(''); setShowAnswer(false); setCheckResult(null); }}
+            <button onClick={() => setCurrentSentenceIdx(Math.max(0, currentSentenceIdx - 1))}
               disabled={currentSentenceIdx === 0} className="px-3 py-1.5 text-sm border rounded disabled:opacity-30">上一句</button>
-            <button onClick={() => { setShowAnswer(!showAnswer); if (!showAnswer) checkInput(); }}
+            <button onClick={confirmAnswer}
+              className="px-4 py-1.5 text-sm bg-primary-600 text-white rounded font-medium">确认</button>
+            <button onClick={() => setShowAnswer(!showAnswer)}
               className="px-3 py-1.5 text-sm border rounded">{showAnswer ? '隐藏答案' : '展示答案'}</button>
             <button onClick={playCurrentSentence}
               className="px-3 py-1.5 text-sm border rounded">重播</button>
-            <button onClick={() => { setCurrentSentenceIdx(Math.min(data.sentences.length - 1, currentSentenceIdx + 1)); setUserInput(''); setShowAnswer(false); setCheckResult(null); }}
+            <button onClick={() => setCurrentSentenceIdx(Math.min(data.sentences.length - 1, currentSentenceIdx + 1))}
               disabled={currentSentenceIdx >= data.sentences.length - 1} className="px-3 py-1.5 text-sm border rounded disabled:opacity-30">下一句</button>
           </div>
         </div>
-      )}
+      )})()}
     </div>
   );
 }
