@@ -103,7 +103,7 @@ function getMapGroups(qs: any[]) {
 function getSequentialGroups(qs: any[], exclude: Set<number>): Map<number, number[]> {
   // Returns Map<firstQuestionId, questionIds[]>
   const map = new Map<number, number[]>();
-  const individualTypes = ['fill_blank', 'true_false', 'multiple_choice'];
+  const individualTypes = ['fill_blank', 'true_false', 'yes_no', 'multiple_choice'];
   let i = 0;
   while (i < qs.length) {
     const q = qs[i]!;
@@ -143,7 +143,7 @@ const QuestionBlock = memo(function QB({ q, ans, attemptId, onSave }: { q: any; 
   if (q.questionType === 'multiple_choice') {
     return <div className="flex items-baseline gap-1">{num}<div className="flex-1"><SingleChoice q={q} ans={ans} onSave={onSave} /></div></div>;
   }
-  if (q.questionType === 'true_false') {
+  if (q.questionType === 'true_false' || q.questionType === 'yes_no') {
     return <div className="flex items-baseline gap-1">{num}<div className="flex-1"><TrueFalse q={q} ans={ans} onSave={onSave} /></div></div>;
   }
   return null;
@@ -182,6 +182,7 @@ function getStandardHint(questions: any[], sectionIndex: number, qiStart: number
   if (!first) return null;
   switch (first.questionType) {
     case 'true_false':
+    case 'yes_no':
       return (
         <span>
           Do the following statements agree with the information given in Reading Passage {sectionIndex}?<br />
