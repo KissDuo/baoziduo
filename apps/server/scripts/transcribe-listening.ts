@@ -1,9 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import { config } from '../src/config/index.js';
+import { execSync } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 const p = new PrismaClient();
-const WHISPER_API = 'https://api.openai.com/v1/audio/transcriptions';
 const DEEPSEEK_API = 'https://api.deepseek.com/chat/completions';
+
+// whisper-cpp CLI: uses local GGML model
+const WHISPER_BIN = 'whisper-cli';
+const WHISPER_MODEL = process.env.WHISPER_MODEL || path.join(os.tmpdir(), 'ggml-base.bin');
 
 async function whisperTranscribe(audioUrl: string): Promise<{ text: string; segments: { start: number; end: number; text: string }[] } | null> {
   console.log(`  Downloading audio: ${audioUrl}`);
@@ -11,34 +18,43 @@ async function whisperTranscribe(audioUrl: string): Promise<{ text: string; segm
   if (!audioRes.ok) { console.error(`  Failed to download audio: ${audioRes.status}`); return null; }
   const audioBuffer = await audioRes.arrayBuffer();
 
-  console.log(`  Transcribing with Whisper (${(audioBuffer.byteLength / 1024 / 1024).toFixed(1)}MB)...`);
-  const formData = new FormData();
-  formData.append('file', new Blob([audioBuffer], { type: 'audio/mpeg' }), 'audio.mp3');
-  formData.append('model', 'whisper-1');
-  formData.append('response_format', 'verbose_json');
-  formData.append('timestamp_granularities[]', 'segment');
+  const tmpDir = os.tmpdir();
+  const audioPath = path.join(tmpDir, `whisper-input-${Date.now()}.mp3`);
+  fs.writeFileSync(audioPath, Buffer.from(audioBuffer));
+  console.log(`  Audio saved: ${(audioBuffer.byteLength / 1024 / 1024).toFixed(1)}MB`);
 
-  const res = await fetch(WHISPER_API, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${config.openai.apiKey}` },
-    body: formData,
-  });
+  console.log(`  Transcribing with whisper-cpp...`);
+  try {
+    const result = execSync(
+      `${WHISPER_BIN} -m ${WHISPER_MODEL} -f ${audioPath} -oj -l en`,
+      { timeout: 300000, encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 }
+    );
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => '');
-    console.error(`  Whisper error ${res.status}: ${err.slice(0, 300)}`);
+    // whisper-cpp outputs a .json file with segments
+    const jsonPath = audioPath.replace('.mp3', '.json');
+    const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+    const segments = (jsonData.transcription || []).map((s: any) => ({
+      start: s.timestamps?.from ? parseFloat(s.timestamps.from) / 100 : s.offsets?.from / 100 || 0,
+      end: s.timestamps?.to ? parseFloat(s.timestamps.to) / 100 : s.offsets?.to / 100 || 0,
+      text: (s.text || '').trim(),
+    })).filter((s: any) => s.text.length > 0);
+
+    // Cleanup
+    try { fs.unlinkSync(audioPath); fs.unlinkSync(jsonPath); } catch {}
+
+    if (segments.length === 0) {
+      // Fallback: single segment with full text
+      const fullText = jsonData.text || '';
+      return { text: fullText, segments: [{ start: 0, end: 0, text: fullText }] };
+    }
+
+    console.log(`  Got ${segments.length} segments`);
+    return { text: segments.map(s => s.text).join(' '), segments };
+  } catch (e: any) {
+    console.error(`  whisper-cpp error: ${e.message}`);
+    try { fs.unlinkSync(audioPath); } catch {}
     return null;
   }
-
-  const data = await res.json() as any;
-  const segments = (data.segments || []).map((s: any) => ({
-    start: s.start,
-    end: s.end,
-    text: s.text.trim(),
-  })).filter((s: any) => s.text.length > 0);
-
-  console.log(`  Got ${segments.length} segments`);
-  return { text: data.text, segments };
 }
 
 async function translateSentences(sentences: string[]): Promise<string[]> {

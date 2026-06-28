@@ -141,8 +141,16 @@ export default function IeltsPage() {
                 <span>{exam.durationMinutes} 分钟</span>
               </div>
             </div>
-            <div className="text-primary-600 text-2xl">
-              {exam.type === 'listening' ? '🔜' : '→'}
+            <div className="flex items-center gap-3">
+              {exam.type === 'listening' && (
+                <Link href={`/listening`} onClick={e => e.stopPropagation()}
+                  className="px-3 py-1.5 text-xs font-medium text-primary-600 border border-primary-300 rounded-lg hover:bg-primary-50 transition-colors">
+                  🎧 精听
+                </Link>
+              )}
+              <div className="text-primary-600 text-2xl">
+                {exam.type === 'listening' ? '🔜' : '→'}
+              </div>
             </div>
           </div>
         </Link>
