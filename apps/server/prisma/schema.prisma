@@ -244,6 +244,39 @@ model CollocationWord {
   @@index([wordAnnotationId])
 }
 
+// ========================
+// INTENSIVE LISTENING (精听模式)
+// ========================
+
+model ListeningTranscript {
+  id        Int      @id @default(autoincrement())
+  sectionId Int      @unique
+  section   IELTSExamSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sourceUrl String   @db.VarChar(500)
+  status    String   @default("pending")  // pending | transcribed | translated | ready
+  category  String?  @db.VarChar(50)     // "ielts" | "ted" | "news" | ...
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sentences  ListeningSentence[]
+
+  @@index([category])
+}
+
+model ListeningSentence {
+  id           Int      @id @default(autoincrement())
+  transcriptId Int
+  transcript   ListeningTranscript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+  index        Int
+  startTime    Float
+  endTime      Float
+  text         String   @db.Text
+  translation  String   @db.Text     // Chinese translation
+  createdAt    DateTime @default(now())
+
+  @@index([transcriptId, index])
+}
+
 model WordTag {
   id    Int    @id @default(autoincrement())
   name  String @unique @db.VarChar(100)
@@ -401,6 +434,7 @@ model IELTSExamSection {
   createdAt     DateTime         @default(now())
 
   questions     IELTSQuestion[]
+  transcript    ListeningTranscript?  // 精听文稿
 
   @@index([examId, sectionIndex])
 }

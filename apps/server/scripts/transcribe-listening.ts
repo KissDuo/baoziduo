@@ -1,0 +1,163 @@
+import { PrismaClient } from '@prisma/client';
+import { config } from '../src/config/index.js';
+
+const p = new PrismaClient();
+const WHISPER_API = 'https://api.openai.com/v1/audio/transcriptions';
+const DEEPSEEK_API = 'https://api.deepseek.com/chat/completions';
+
+async function whisperTranscribe(audioUrl: string): Promise<{ text: string; segments: { start: number; end: number; text: string }[] } | null> {
+  console.log(`  Downloading audio: ${audioUrl}`);
+  const audioRes = await fetch(audioUrl);
+  if (!audioRes.ok) { console.error(`  Failed to download audio: ${audioRes.status}`); return null; }
+  const audioBuffer = await audioRes.arrayBuffer();
+
+  console.log(`  Transcribing with Whisper (${(audioBuffer.byteLength / 1024 / 1024).toFixed(1)}MB)...`);
+  const formData = new FormData();
+  formData.append('file', new Blob([audioBuffer], { type: 'audio/mpeg' }), 'audio.mp3');
+  formData.append('model', 'whisper-1');
+  formData.append('response_format', 'verbose_json');
+  formData.append('timestamp_granularities[]', 'segment');
+
+  const res = await fetch(WHISPER_API, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${config.openai.apiKey}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => '');
+    console.error(`  Whisper error ${res.status}: ${err.slice(0, 300)}`);
+    return null;
+  }
+
+  const data = await res.json() as any;
+  const segments = (data.segments || []).map((s: any) => ({
+    start: s.start,
+    end: s.end,
+    text: s.text.trim(),
+  })).filter((s: any) => s.text.length > 0);
+
+  console.log(`  Got ${segments.length} segments`);
+  return { text: data.text, segments };
+}
+
+async function translateSentences(sentences: string[]): Promise<string[]> {
+  const text = sentences.join('\n---\n');
+  const prompt = `Translate each of the following English sentences into Chinese. Return ONLY a JSON array of strings, one translation per sentence, in the same order:\n\n${text}`;
+
+  try {
+    const res = await fetch(DEEPSEEK_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.deepseek.apiKey}` },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        max_tokens: 4000,
+      }),
+    });
+    if (!res.ok) { console.error(`  Translation error: ${res.status}`); return sentences.map(() => ''); }
+    const data = await res.json() as any;
+    const content = data.choices?.[0]?.message?.content || '';
+    const jsonStr = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    const translations = JSON.parse(jsonStr);
+    return Array.isArray(translations) ? translations : sentences.map(() => '');
+  } catch (e) {
+    console.error(`  Translation parse error: ${e}`);
+    return sentences.map(() => '');
+  }
+}
+
+async function transcribeSection(sectionId: number) {
+  const section = await p.iELTSExamSection.findUnique({
+    where: { id: sectionId },
+    include: { exam: true },
+  });
+  if (!section) { console.error(`Section ${sectionId} not found`); return; }
+  if (!section.audioUrl) { console.error(`Section ${sectionId} has no audioUrl`); return; }
+
+  console.log(`\nTranscribing: ${section.exam.title} Part ${section.sectionIndex}`);
+  console.log(`  Audio: ${section.audioUrl}`);
+
+  // Check existing
+  const existing = await p.listeningTranscript.findUnique({ where: { sectionId } });
+  if (existing) {
+    console.log(`  Transcript already exists (id=${existing.id}, status=${existing.status})`);
+    return;
+  }
+
+  // Create pending transcript
+  const transcript = await p.listeningTranscript.create({
+    data: {
+      sectionId,
+      sourceUrl: section.audioUrl,
+      status: 'pending',
+      category: 'ielts',
+    },
+  });
+  console.log(`  Created transcript id=${transcript.id}`);
+
+  // Whisper transcription
+  const result = await whisperTranscribe(section.audioUrl);
+  if (!result) {
+    await p.listeningTranscript.update({ where: { id: transcript.id }, data: { status: 'failed' } });
+    return;
+  }
+
+  await p.listeningTranscript.update({ where: { id: transcript.id }, data: { status: 'transcribed' } });
+
+  // Translate
+  const texts = result.segments.map(s => s.text);
+  console.log(`  Translating ${texts.length} sentences...`);
+  const translations = await translateSentences(texts);
+
+  // Insert sentences
+  for (let i = 0; i < result.segments.length; i++) {
+    const seg = result.segments[i]!;
+    await p.listeningSentence.create({
+      data: {
+        transcriptId: transcript.id,
+        index: i,
+        startTime: seg.start,
+        endTime: seg.end,
+        text: seg.text,
+        translation: translations[i] || '',
+      },
+    });
+  }
+
+  await p.listeningTranscript.update({ where: { id: transcript.id }, data: { status: 'ready' } });
+  console.log(`  ✅ Done! ${result.segments.length} sentences`);
+}
+
+async function main() {
+  const arg = process.argv[2];
+  if (!arg) {
+    console.error('Usage: tsx scripts/transcribe-listening.ts <sectionId|all>');
+    return;
+  }
+
+  if (arg === 'all') {
+    // Transcribe all IELTS listening sections that have audioUrl
+    const sections = await p.iELTSExamSection.findMany({
+      where: {
+        exam: { type: 'listening' },
+        audioUrl: { not: null },
+        transcript: null,  // only those without transcript yet
+      },
+      include: { exam: true },
+      orderBy: { id: 'asc' },
+    });
+    console.log(`Found ${sections.length} sections to transcribe`);
+    for (const s of sections) {
+      try { await transcribeSection(s.id); } catch (e) { console.error(`  Error: ${e}`); }
+    }
+    console.log('\nAll done!');
+  } else {
+    await transcribeSection(parseInt(arg));
+  }
+
+  await p.$disconnect();
+}
+
+main().catch(e => { console.error(e); process.exit(1); });
