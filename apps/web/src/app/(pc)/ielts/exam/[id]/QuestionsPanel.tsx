@@ -253,7 +253,7 @@ function detectMatchKind(instructions: string, qiStart: number, qiEnd: number): 
   if (!ctx) return 'generic';
   const lower = ctx.toLowerCase();
   if (lower.includes('complete each sentence') || lower.includes('correct ending')) return 'sentence';
-  if (lower.includes('list of people') || lower.includes('match each statement with the correct person')) return 'person';
+  if (lower.includes('list of people') || lower.includes('list of experts') || lower.includes('match each statement with the correct person') || lower.includes('match each statement with the correct expert')) return 'person';
   if (lower.includes('which paragraph') || lower.includes('which section') || lower.includes('contains the following information')) return 'paragraph';
   if (lower.includes('complete the summary') || lower.includes('using the list of')) return 'summary';
   return 'generic';
