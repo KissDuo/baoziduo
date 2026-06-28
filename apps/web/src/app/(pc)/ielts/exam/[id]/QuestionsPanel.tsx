@@ -248,6 +248,7 @@ function detectMatchKind(instructions: string, qiStart: number, qiEnd: number): 
   if (lower.includes('complete each sentence') || lower.includes('correct ending')) return 'sentence';
   if (lower.includes('list of people') || lower.includes('match each statement with the correct person')) return 'person';
   if (lower.includes('which paragraph') || lower.includes('which section') || lower.includes('contains the following information')) return 'paragraph';
+  if (lower.includes('complete the summary') || lower.includes('using the list of')) return 'summary';
   return 'generic';
 }
 
@@ -491,6 +492,12 @@ export const QuestionsPanel = memo(function QuestionsPanel({
               hint = getSentenceMatchHint(g.options, qiVals[0]!, qiVals[qiVals.length - 1]!);
             } else if (kind === 'person') {
               hint = getPersonMatchHint(g.options, qiVals[0]!, qiVals[qiVals.length - 1]!, inst);
+            } else if (kind === 'summary') {
+              const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+              const range = g.options.length > 0 ? `${L[0]}–${L[g.options.length - 1]}` : '';
+              const ctx = findMatchContext(inst, qiVals[0]!, qiVals[qiVals.length - 1]!) || '';
+              const nbMatch = ctx.match(/NB\s+.+/i);
+              hint = <span>Complete the summary using the list of phrases, <b>{range}</b>, below.<br />Write the correct letter, <b>{range}</b>, in boxes <b>{qiVals[0]}–{qiVals[qiVals.length - 1]}</b> on your answer sheet.{nbMatch && <><br /><b>NB</b>{nbMatch[0].substring(2)}</>}</span>;
             } else if (kind === 'paragraph') {
               hint = getParagraphMatchHint(g.options, section.sectionIndex, qiVals[0]!, qiVals[qiVals.length - 1]!, inst);
             } else {
