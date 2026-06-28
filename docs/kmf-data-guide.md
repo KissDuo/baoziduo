@@ -652,6 +652,66 @@ const rm = l.match(new RegExp(`(?:Questions|boxes)\\s+${qiStart}\\s*[-–]\\s*${
 
 前端 `renderPassage` 通过模式匹配（`/^Do the following statements/`, `/^Complete the/` 等）自动截断正文，后半部分用于 `getStandardHint` / `findMatchContext` 提取各组的提示语。
 
+### ⚠️ 铁律终极：提示语提取唯一标准函数
+
+**禁止**再用临时脚本提取提示语。以后任何涉及 KMF→DB 的导入/修复，**必须**使用以下两个标准函数：
+
+```typescript
+// ═══════════════════════════════════════════════════════
+// 函数1: cleanAddedContent — 清洗 KMF added_content HTML
+// 输入: result.questions[N].question.ext.added_content[M].ex_information
+// 输出: 纯文本提示语，空格正确
+// ═══════════════════════════════════════════════════════
+function cleanAddedContent(html: string): string {
+  return html
+    .replace(/<\/div>\s*<div[^>]*>/gi, ' ')
+    .replace(/<\/div>\s*<b>/gi, ' ')
+    .replace(/<\/b>\s*<div[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// ═══════════════════════════════════════════════════════
+// 函数2: buildSectionInstructions — 从 KMF JSON 构建完整 instructions
+// 输入: KMF JSON 的 result 对象
+// 输出: 标准格式的 instructions 字符串
+// ═══════════════════════════════════════════════════════
+function buildSectionInstructions(kmfResult: any): string {
+  const groups = kmfResult.questions || [];
+  
+  // 文章正文（阅读）—— parent 的 content
+  const parentContent = groups[0]?.parent?.question?.obj?.content || '';
+  let instructions = '';
+  
+  if (parentContent.trim()) {
+    // 阅读：文章 + 题目指令
+    instructions = cleanKmfPassage(parentContent) + '\n\n';
+  }
+  
+  // 所有 group 的提示语（按顺序）
+  const prompts: string[] = [];
+  for (const group of groups) {
+    const addedContent = group.question?.ext?.added_content || [];
+    for (const ac of addedContent) {
+      const text = cleanAddedContent(ac.ex_information || '');
+      if (text && !prompts.includes(text)) {
+        prompts.push(text);
+      }
+    }
+  }
+  
+  // 标准化：补 Questions、清空格逗号
+  instructions += prompts.join('\n\n')
+    .replace(/next to (\d+)/gi, 'next to Questions $1')
+    .replace(/\s+,/g, ',');
+  
+  return instructions;
+}
+```
+
+**铁律**：以后任何从 KMF 写入 DB `instructions` 的操作，一律调用 `buildSectionInstructions(kmfResult)`，不再手写提取逻辑。
+
 ### 铁律0补充：KMF `added_content` 格式清洗规则
 
 1. **先补空格**：KMF 的 `<div>Choose</div><b> ONE WORD ONLY </b>` → 去标签后变成 "ChooseONE WORD ONLY"。必须在去标签前在块级元素间插入空格：`.replace(/<\/div>\s*<div[^>]*>/gi, ' ').replace(/<\/div>\s*<b>/gi, ' ').replace(/<\/b>\s*<div[^>]*>/gi, ' ')`
