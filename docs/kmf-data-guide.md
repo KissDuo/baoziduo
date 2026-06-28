@@ -685,6 +685,28 @@ function extractQuestionTexts(groupContent: string): Map<number, string> {
 
 ## 十二、常见陷阱与错误模式
 
+### ⚠️ 铁律-1（2026-06-28）：每个 KMF group 独立处理，禁止合并匹配组选项
+
+**同一 section 内的不同 KMF group 必须各自独立处理，各自拥有独立的 options JSON。** 禁止因为 Q 号连续就把多个 group 合并成一个、共用同一套 options。
+
+**症状**：同一个 section 内 Q14-17 和 Q23-26 都是 matching 但 options 完全一样（比如都显示 A-F 字母，或都显示同一组人名），实际上应该是不同的组。
+
+**检查方法**：
+```sql
+-- 找出同一 section 内 matching 题有多个 options 组但被错误合并的
+SELECT q.sectionId, q.options, COUNT(*), MIN(q.questionIndex), MAX(q.questionIndex)
+FROM IELTSQuestion q WHERE q.questionType='matching'
+GROUP BY q.sectionId, q.options
+ORDER BY q.sectionId;
+```
+如果同一 section 只有一组 options 但 matching Q 号中间隔了其他题型 → 合并错误。
+
+**修复铁律**：
+1. 遍历 KMF `questions[]` 数组，**每个 group 单独处理**
+2. 每个 group 的 options 来自 `group.answer[]`，**不与其他 group 共享**
+3. Group type 决定 questionType：684/685 → matching(段落字母), 683 → matching(人名/短语), 680 → matching(词库), 686/681 → fill_blank
+4. 禁止按 Q 号范围批量覆盖——必须按 KMF group 逐个更新
+
 ### ⚠️ 铁律0：提示句（instructions）是必须的，永远从 KMF 提取
 
 **每次导入、每次修改数据后，必须检查 `IELTSExamSection.instructions` 是否正确。**
