@@ -25,6 +25,8 @@ kmf-data/
 
 **数据源优先级**：flat file（`c18_t2p2.json`）> 子目录（`c18/xxx.json`）。flat file 文件名明确标注了 Test/Part，sheet_id 不可信（C18 T2P2 的 sheet_id 和 T4P2 的 sheet_id 无固定规律）。两者数据冲突时，以 flat file 为准。
 
+**⚠️ 铁律：DB 损坏时先找已存储的 KMF 数据，不要直接跟用户要 curl**。所有 curl 获取的数据都已存入 `kmf-data/`。DB 数据坏了 ≠ KMF 数据缺失。先在 `kmf-data/` 里找，找不到再问。
+
 ---
 
 ## 二、KMF JSON 顶层结构
