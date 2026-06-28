@@ -11,9 +11,19 @@ interface AIResult {
   translation: string;
   examples: { en: string; zh: string }[];
   forms?: { noun?: string; verb?: string; adj?: string; adv?: string; pastTense?: string; pastParticiple?: string; thirdPerson?: string; plural?: string };
+  commonPhrases?: { phrase: string; translation: string }[];
 }
 
+// Only query phrases for common words (short, basic vocabulary)
+const isCommon = word.length <= 10 && !word.includes('-') && !/[0-9]/.test(word);
+
 async function enrichWord(word: string): Promise<AIResult | null> {
+  const phrasesPart = isCommon ? `,
+  "commonPhrases": [
+    {"phrase": "common phrase using this word (at least 2 words)", "translation": "Chinese translation"},
+    ... (up to 3 most frequently used phrases, e.g. for 'out': 'out of sight', 'out of date', 'work out')
+  ],` : '';
+
   const prompt = `Annotate the English word "${word}" as a dictionary entry. Return ONLY valid JSON:
 
 {
@@ -25,7 +35,7 @@ async function enrichWord(word: string): Promise<AIResult | null> {
     {"en": "English example sentence 1", "zh": "Chinese translation 1"},
     {"en": "English example sentence 2", "zh": "Chinese translation 2"},
     {"en": "English example sentence 3", "zh": "Chinese translation 3"}
-  ],
+  ]${phrasesPart}
   "forms": {
     "noun": "noun form of this word, or null",
     "verb": "verb form of this word, or null",
@@ -49,7 +59,7 @@ async function enrichWord(word: string): Promise<AIResult | null> {
           { role: 'user', content: prompt },
         ],
         temperature: 0.2,
-        max_tokens: 1200,
+        max_tokens: isCommon ? 1800 : 1200,
       }),
     });
 
@@ -205,6 +215,32 @@ async function main() {
         }
         if (Object.keys(formUpdates).length > 0) {
           await p.wordAnnotation.update({ where: { id: ann.id }, data: formUpdates as any });
+        }
+      }
+
+      // Save common phrases as Collocations
+      if (ai.commonPhrases && ai.commonPhrases.length > 0) {
+        for (const cp of ai.commonPhrases) {
+          if (!cp.phrase || !cp.translation || cp.phrase.length < 3) continue;
+          const phrase = cp.phrase.toLowerCase().trim();
+          // Check if collocation already exists
+          const existing = await p.collocation.findFirst({ where: { phrase } });
+          if (!existing) {
+            // Extract component words (remove stop words)
+            const stopWords = new Set(['a','an','the','of','to','for','in','on','at','by','with','from','as','or','and','that','this','is','be','are','was','were','been','no','not','nor','but','per']);
+            const componentWords = [...new Set(phrase.split(/[\s-]+/).filter((w: string) => w.length > 0 && !stopWords.has(w)))];
+            if (componentWords.length >= 2) {
+              try {
+                await p.collocation.create({
+                  data: {
+                    phrase,
+                    translation: cp.translation,
+                    words: { create: componentWords.map((w: string) => ({ word: w })) },
+                  },
+                });
+              } catch { /* duplicate, skip */ }
+            }
+          }
         }
       }
 
