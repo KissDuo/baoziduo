@@ -10,6 +10,7 @@ import { WordPopup } from '@/components/shared/WordPopup';
 const NAV_LINKS = [
   { href: '/articles', key: 'nav.articles', match: '/articles' },
   { href: '/ielts', key: 'nav.ielts', match: '/ielts' },
+  { href: '/listening', key: 'nav.listening', match: '/listening' },
   { href: '/videos', key: 'nav.videos', match: '/videos' },
   { href: '/vocabulary', key: 'nav.vocabulary', match: '/vocabulary' },
 ];
