@@ -10,7 +10,7 @@ const DEEPSEEK_API = 'https://api.deepseek.com/chat/completions';
 
 // whisper-cpp CLI: uses local GGML model
 const WHISPER_BIN = 'whisper-cli';
-const WHISPER_MODEL = process.env.WHISPER_MODEL || path.join(os.tmpdir(), 'ggml-base.bin');
+const WHISPER_MODEL = '/tmp/ggml-base.bin';
 
 async function whisperTranscribe(audioUrl: string): Promise<{ text: string; segments: { start: number; end: number; text: string }[] } | null> {
   console.log(`  Downloading audio: ${audioUrl}`);
