@@ -935,6 +935,26 @@ C19 T4P1 含两个独立的 `[table]`（Q1-Q6 和 Q7-Q10）。分组时必须用
 
 **检测**：`parseTable` 检查首行是否有 `______`（`hasBlank()`）→ 整表无 `<thead>`，全部按 `<tbody>` 渲染。
 
+
+
+### 铁律终极-补充：`cleanQuestionText` 和 rebuild 后验证
+
+**任何 rebuild 操作后，必须对所有 questionText 调用 `cleanQuestionText()`，并全库扫描 `[match]`、`[blank]` 残留。**
+
+```typescript
+function cleanQuestionText(raw: string): string {
+  return raw
+    .replace(/\[match\]\d+\[\/match\]/gi, '')
+    .replace(/\[blank\]\d+\[\/blank\]/gi, '______')
+    .replace(/\[b\]/gi, '**').replace(/\[\/b\]/gi, '**')
+    .replace(/\[br\/?\]/gi, ' ')
+    .replace(/\[\/?(?:center|h\d|strong|insert:\d+|img)\]/gi, '')
+    .replace(/&nbsp;/gi, ' ').replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+```
+
+**杜绝方案**：rebuild 脚本完成后立即跑 `scan-all-br.ts` + `clean-all-br.ts` 验证。禁止"修A坏B"——修一个 section 时不能把已清洗过的 BBCode 重新带回。
 ### 陷阱20：人名匹配提示语用标准字母 A/B/C/D，不用人名首字母
 
 `getPersonMatchHint` 生成 "Match each statement with the correct person, A, B, C or D." 时，字母来自标准序列 `ABCDEFGHIJKLMNOPQRSTUVWXYZ`（按选项数量取），**不能**用 `options.map(o => o[0])` 取人名首字母。
