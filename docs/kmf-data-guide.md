@@ -750,16 +750,22 @@ function cleanAddedContent(html: string): string {
 
 ---
 
-### 陷阱1：`type` 字段是 STRING，不是 number
+### ⚠️ 陷阱1（屡犯！）：`type` 字段是 STRING，不是 number
 
 ```javascript
-// ❌ 错误
-if (group.question.obj.type === 680) ...
+// ❌ 错误 — 已犯 3 次以上
+if (cType === 101) ...      // "101" === 101 → false!
+if (gType === 680) ...      // "680" === 680 → false!
+
 // ✅ 正确
-if (group.question.obj.type === "680") ...
+if (cType == 101) ...       // 宽松相等
+if (cType === "101") ...    // 严格相等 + 字符串
+if (String(cType) === "101") ...
 ```
 
-KMF JSON 中所有 `type`、`business_type`、`logic_type` 等字段都是字符串。用 `===` 严格比较时必须匹配类型。
+KMF JSON 中所有 `type`、`business_type`、`logic_type`、`child.question.obj.type`、`group.question.obj.type` 都是**字符串**。
+
+**防再犯措施**：任何 rebuild 脚本第一行必须写 `// ⚠️ ALL KMF type fields are STRINGS. Use == not ===`。
 
 ### 陷阱2：Group content 指纹匹配可能错配
 
