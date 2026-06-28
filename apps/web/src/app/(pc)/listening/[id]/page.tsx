@@ -31,7 +31,7 @@ export default function ListeningDetailPage() {
   const [checkResult, setCheckResult] = useState<any>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/api/v1/listening/${id}`)
+    fetch(`http://localhost:5201/api/v1/listening/${id}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
@@ -67,7 +67,7 @@ export default function ListeningDetailPage() {
   const checkInput = async () => {
     if (!userInput.trim()) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/v1/listening/${id}/check`, {
+      const res = await fetch(`http://localhost:5201/api/v1/listening/${id}/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sentenceIndex: currentSentenceIdx, userInput }),

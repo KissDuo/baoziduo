@@ -13,7 +13,7 @@ export default function ListeningListPage() {
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/v1/listening')
+    fetch('http://localhost:5201/api/v1/listening')
       .then(r => r.json())
       .then(d => { setTranscripts(d); setLoading(false); })
       .catch(() => setLoading(false));
