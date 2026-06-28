@@ -712,6 +712,12 @@ UI:  "Which <strong>TWO</strong> things..."
 
 **注意**：这些组件的 questionText 段落**不加 `font-bold`**，粗体完全由 `**...**` 标记控制。如果发现 questionText 中还有原始 `[b]` 标签，说明导入时未执行 BBCode 清洗。
 
+**规范化规则**：
+1. `[b] TEXT [/b]` → `**TEXT**`（去多余空格，保留一个空格）
+2. 不可出现 `** **`（双粗体嵌套）或 `****`，统一为 `**TEXT**`
+3. 导入时直接 `.replace(/\[b\]\s*/gi, '**').replace(/\s*\[\/b\]/gi, '**')` 再加后处理去重
+4. 如果 questionText 已有 `** TEXT **`（带空格），不影响 RichText 渲染，但最好规范为 `**TEXT**`
+
 ### 陷阱9：听力 P4 `[note]` 的标题和子标题来自 KMF BBCode
 
 KMF 听力 P4（type 692）的 `content` 中，标题通过 BBCode 标记区分：
