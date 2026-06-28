@@ -209,11 +209,17 @@ export default function IeltsExamPage() {
     // Split into paragraphs by 2+ newlines
     const rawParagraphs = raw.split(/\n{2,}/);
 
-    // Find boundary: first "Questions X-Y" or "Test X" paragraph ends the passage
+    // Find boundary: question instruction patterns that end the passage
     let passageEnd = rawParagraphs.length;
+    const qStartPatterns = [
+      /^Questions\s+\d+/, /^Test\s+\d+$/, /^Do the following statements/,
+      /^Choose the correct letter/, /^Complete each sentence/, /^Complete the (notes|summary|table|form|flow-chart)/,
+      /^Look at the following/, /^Reading Passage \d has/, /^Label the (map|diagram)/,
+      /^Match each/, /^Write the correct letter/,
+    ];
     for (let i = 0; i < rawParagraphs.length; i++) {
       const t = rawParagraphs[i]!.trim();
-      if (/^(Questions\s+\d+|Test\s+\d+$)/.test(t)) { passageEnd = i; break; }
+      if (qStartPatterns.some(p => p.test(t))) { passageEnd = i; break; }
     }
 
     // Filter out purely empty paragraphs (artifacts from boilerplate removal)
@@ -265,6 +271,9 @@ export default function IeltsExamPage() {
         const single = /^[A-Z]$/.test(t);
 
         if (inline || single) {
+          // Don't treat as section marker if "letter" is an article/pronoun followed by lowercase
+          // e.g. "A tree's value" → the "A" is the article "a", not a paragraph marker
+          if (inline && /^[a-z]/.test(inline[2]!)) { textBuf.push(lines[li]!); continue; }
           const letter = inline ? inline[1]! : t;
           const bodyLen = inline ? inline[2]!.length : 0;
           // Section marker = standalone letter OR inline letter with substantial body text (>=30 chars)

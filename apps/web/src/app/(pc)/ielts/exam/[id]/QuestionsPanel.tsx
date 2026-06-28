@@ -46,7 +46,14 @@ function getSummaryGroup(qs: any[]) {
   const first = qs.find((q: any) => q.passageText && q.passageText.trim().match(/^##\s/));
   if (!first) return null;
   const start = first.questionIndex;
-  const group = qs.filter((q: any) => q.questionIndex >= start && q.questionType === 'fill_blank');
+  // Stop at next [table] marker or non-fill_blank question (prevents summary from eating table Qs)
+  let end = Infinity;
+  for (const q of qs) {
+    if (q.questionIndex <= start) continue;
+    if (q.passageText?.trim().startsWith('[table]')) { end = q.questionIndex; break; }
+    if (q.questionType !== 'fill_blank') { end = q.questionIndex; break; }
+  }
+  const group = qs.filter((q: any) => q.questionIndex >= start && q.questionIndex < end && q.questionType === 'fill_blank');
   if (group.length < 2) return null;
   return { questions: group, firstIndex: start };
 }
