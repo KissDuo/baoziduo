@@ -20,8 +20,10 @@ kmf-data/
 ├── _mapping.json           # sheet_id → 题型/题量 对照表
 ├── c18/ c19/ c20/          # 听力原始数据（16+16+16）
 ├── c18-reading/ c19-reading/ c20-reading/  # 阅读原始数据（12+12+12）
-└── c18_t1p1.json ...       # 预处理汇总文件（可选）
+└── c18_t1p1.json ...       # 按 Test/Part 命名的 flat file（文件名可信，优先使用）
 ```
+
+**数据源优先级**：flat file（`c18_t2p2.json`）> 子目录（`c18/xxx.json`）。flat file 文件名明确标注了 Test/Part，sheet_id 不可信（C18 T2P2 的 sheet_id 和 T4P2 的 sheet_id 无固定规律）。两者数据冲突时，以 flat file 为准。
 
 ---
 
@@ -723,7 +725,7 @@ function buildSectionInstructions(kmfResult: any): string {
 
 ### 铁律0补充：KMF `added_content` 格式清洗规则
 
-1. **先补空格**：KMF 的 `<div>Choose</div><b> ONE WORD ONLY </b>` → 去标签后变成 "ChooseONE WORD ONLY"。必须在去标签前在块级元素间插入空格：`.replace(/<\/div>\s*<div[^>]*>/gi, ' ').replace(/<\/div>\s*<b>/gi, ' ').replace(/<\/b>\s*<div[^>]*>/gi, ' ')`
+111：KMF 的 `<div>Choose</div><b> ONE WORD ONLY </b>` → 去标签后变成 "ChooseONE WORD ONLY"。必须在去标签前在块级元素间插入空格：`.replace(/<\/div>\s*<div[^>]*>/gi, ' ').replace(/<\/div>\s*<b>/gi, ' ').replace(/<\/b>\s*<div[^>]*>/gi, ' ')`
 2. 去所有 HTML 标签：`.replace(/<[^>]+>/g, '')`
 3. 合并空白：`.replace(/\s+/g, ' ').trim()`
 4. 补 "Questions"：`.replace(/next to (\d+)/gi, 'next to Questions $1')`
