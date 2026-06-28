@@ -627,9 +627,28 @@ UI:  粗体标题 + 边框内的填空段落
 ```
 
 **Summary 类 passageText 格式规范**：
-- 第一行：`## Title`（前端提取为 box 标题）
+- 第一行：`## Title`（`getSummaryGroup` 正则 `/^##\s/` 检测，`SummaryCompletion` 渲染为居中粗体标题）
 - 第二行：空行或描述句（可选）
-- 后续：段落文本，blank 用 `(N) ______` 格式（N = 题号）
+- 后续：段落文本，blank **必须用 `(N) ______` 格式**（N = 题号）。`SummaryCompletion` 用 `split(/(\(\d+\)\s*_{2,})/)` 匹配，没有 `(N)` 前缀会找不到 blank
+- `getStandardHint` 检测 `raw.startsWith('##')` → 返回 "Complete the summary below." + word limit
+
+### 铁律0-2：`extractWordLimit` 必须同时匹配 `boxes` 和 `Questions`
+
+KMF 阅读指令写的是 `Write your answers in boxes 8–13`，**不是** `Questions 8–13`。前端 `extractWordLimit` 搜索 Q 号范围时必须同时匹配两种格式：
+
+```typescript
+// ✅ 正确
+const rm = l.match(new RegExp(`(?:Questions|boxes)\\s+${qiStart}\\s*[-–]\\s*${qiEnd}`, 'i'));
+// ❌ 只搜 Questions — KMF boxes 格式搜不到
+```
+
+**症状**：fill_blank 的提示语显示 TRUE/FALSE 的长文本（fallback 匹配到了 TF 指令）。
+
+### 铁律0-3：阅读 section 的 `instructions` 格式
+
+格式固定为：`文章正文 + "\n\n" + 所有 group 的指令（用 \n\n 连接）`。
+
+前端 `renderPassage` 通过模式匹配（`/^Do the following statements/`, `/^Complete the/` 等）自动截断正文，后半部分用于 `getStandardHint` / `findMatchContext` 提取各组的提示语。
 
 ### 铁律0补充：KMF `added_content` 格式清洗规则
 
