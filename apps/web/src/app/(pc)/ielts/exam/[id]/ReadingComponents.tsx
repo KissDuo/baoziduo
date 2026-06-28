@@ -44,7 +44,8 @@ export const SummaryCompletion = memo(function SummaryCompletion({
             }
             return <span key={pi} className="text-slate-400">______</span>;
           }
-          return <span key={pi}>{part}</span>;
+          // Use RichText to render **bold**, ●, ○ and other formatting in body
+          return <RichText key={pi} text={part} />;
         })}
       </div>
     </div>
