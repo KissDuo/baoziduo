@@ -614,6 +614,23 @@ AND s.instructions LIKE 'Complete the notes%'
 AND EXISTS (SELECT 1 FROM IELTSQuestion q WHERE q.sectionId = s.id AND q.questionType != 'fill_blank');
 ```
 
+### 铁律0-1：KMF `[center][b]` 标题必须保留
+
+KMF 的 Group content 中 `[center][b]Title[/b][/center]` 是题组的标题（如 Summary 的 "The tennis racket and how it has changed"）。导入时**必须**转为 passageText 首行的 `## Title` 格式，前端 `getSummaryGroup`（正则 `/^##\s/`）和 `SummaryCompletion` 依赖它渲染标题。
+
+```
+KMF: [center][b]The tennis racket...[/b][/center][br/]·text [blank]8[/blank]...
+  ↓
+DB:  "## The tennis racket and how it has changed\n\n·text (8) ______..."
+  ↓
+UI:  粗体标题 + 边框内的填空段落
+```
+
+**Summary 类 passageText 格式规范**：
+- 第一行：`## Title`（前端提取为 box 标题）
+- 第二行：空行或描述句（可选）
+- 后续：段落文本，blank 用 `(N) ______` 格式（N = 题号）
+
 ### 铁律0补充：KMF `added_content` 格式清洗规则
 
 1. 去所有 HTML 标签：`.replace(/<[^>]+>/g, '')`
