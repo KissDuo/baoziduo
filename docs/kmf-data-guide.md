@@ -521,7 +521,51 @@ if group.type === 681 (sentence completion):
 
 ---
 
-## 八、数据校验检查清单
+## 八、前端关键渲染规则
+
+### 8.1 `extractWordLimit` — 字数限制提取
+
+**必须用精确的 word limit 模式匹配**，不能用贪婪 `(.+?)`：
+
+```typescript
+// ✅ 正确：精确匹配已知 word limit 格式
+/write\s+(ONE\s+WORD(?:\s+ONLY)?(?:\s+AND\/OR\s+A\s+NUMBER)?(?:\s+NO\s+MORE\s+THAN\s+\w+(?:\s+\w+)?)?)\b/i
+// ❌ 错误：(.+?) 贪婪捕获后续所有文本
+/write\s+(.+?)(?:\s+for\s+each\s+answer)?\.?$/i
+```
+
+### 8.2 `detectMatchKind` — 匹配类型识别
+
+必须覆盖 KMF 可能用的所有措辞变体：
+
+```typescript
+// 'person' 类型 — 注意 "expert" 也是人名匹配！
+if (lower.includes('list of people') || lower.includes('list of experts')
+    || lower.includes('match each statement with the correct person')
+    || lower.includes('match each statement with the correct expert')) return 'person';
+```
+
+### 8.3 `getPersonMatchHint` — 人名匹配提示语
+
+直接用 KMF 原文（`findMatchContext` 返回的 ctx），自动加粗字母（A, B, C）、题号范围（27-33）、NB 前缀。不再用硬编码模板。
+
+### 8.4 `getSummaryGroup` — Summary 边界检测
+
+遇到 `[table]` marker 或非 `fill_blank` 题型时**必须停止**收集，防止 summary 覆盖 table 题。
+
+### 8.5 `renderPassage` — 段落标记误判
+
+内联标记检测 `^([A-Z])\s+(.+)$` 不匹配以下情况：
+- 字母后紧跟小写字母 → 冠词/代词（如 "A tree"、"I am"）
+- "A" 或 "I" 后紧跟大写字母 → 冠词/代词（如 "A US perspective"）
+
+### 8.6 `SummaryCompletion` — body 用 RichText 渲染
+
+Body 部分必须用 `<RichText>` 渲染（非纯 `<span>`），否则 `**bold**` 子标题和 `●` `○` bullet 无法正确显示。
+
+---
+
+## 九、数据校验检查清单
 
 每次导入/修改后必须检查：
 
@@ -536,7 +580,7 @@ if group.type === 681 (sentence completion):
 
 ---
 
-## 九、已有数据状态
+## 十、已有数据状态
 
 | 书 | 听力 | 阅读 | 文章来源 | 总题数 |
 |----|------|------|----------|--------|
@@ -548,7 +592,7 @@ if group.type === 681 (sentence completion):
 
 ---
 
-## 十、questionText 提取规则
+## 十一、questionText 提取规则
 
 ### 10.1 铁律：type 字段是 STRING
 
@@ -639,7 +683,7 @@ function extractQuestionTexts(groupContent: string): Map<number, string> {
 
 ---
 
-## 十一、常见陷阱与错误模式
+## 十二、常见陷阱与错误模式
 
 ### ⚠️ 铁律0：提示句（instructions）是必须的，永远从 KMF 提取
 
@@ -1093,60 +1137,6 @@ C18 T1 阅读的三个 KMF reading 文件来自 `c18-reading/` 子目录（sheet
 
 **典型症状**：DB section 的 instructions 长度异常短（如 73 字符、只有一句听力提示语），说明被听力数据覆盖。
 
-### 陷阱28（2026-06-28）：● ○ bullet 换行丢失
-
-KMF 用 `[br][br]● text` 来分隔 bullet。`cleanQuestionText` 把 `[br]` 替换为空格后，bullet 可能粘在前一行末尾。`cleanKmfPassage` 把 `[br]` 替换为 `\n` 但如有额外清洗可能丢失换行。
-
-**症状**：bullet 列表项和上一行文字连在一起，没有换行。
-
-**修复**：在最终的 passageText / questionText 上调用 `bulletsOnNewLines()`：
-```typescript
-function bulletsOnNewLines(text: string): string {
-  return text
-    .replace(/([^\n*])([●○·•◦])/g, '$1\n$2')  // * 前不加换行（避免打断 **·** 粗体bullet）
-    .replace(/\n{3,}/g, '\n\n');
-}
-// 覆盖 5 种 bullet: ●(U+25CF) ○(U+25CB) ·(U+00B7) •(U+2022) ◦(U+25E6)
-```
-
-### 陷阱29（2026-06-28）：`\r\n` 未归一化导致 title-body 分隔符断裂 ⚠️ 屡犯
-
-KMF 数据含 `\r\n` 残留。`cleanKmfPassage` 和 `buildSummaryPassage` 在替换 `[br]` → `\n` 后，产生 `\n\r\n` 乱序。`SummaryCompletion` 用 `split('\n')` 解析时，`\r` 变成单独一行，导致：
-- `lines[1]` = `\r` 被当成 hint 渲染
-- `\n\n` 分隔符找不到 → body 从错误位置开始
-- 标题出现两次（一次在 title 提取，一次在 body 首行）
-
-**铁律**：所有清洗函数的**第一步**必须是 `.replace(/\r\n/g, '\n').replace(/\r/g, '')`。
-
-### 陷阱30（2026-06-28）：extractWordLimit 用贪婪 `(.+?)` 捕获过多文本
-
-旧正则 `/write\s+(.+?)(?:\s+for\s+each\s+answer)?\.?$/i` 的 `(.+?)` 把 "ONE WORD ONLY from the passage for each answer. Write your answers in boxes..." 全捕获了。提示语变成 "Write **ONE WORD ONLY FROM THE PASSAGE FOR EACH ANSWER. WRITE YOUR ANSWERS...** for each answer."。
-
-**修复**：用精确的 word limit 模式匹配：
-```typescript
-/write\s+(ONE\s+WORD(?:\s+ONLY)?(?:\s+AND\/OR\s+A\s+NUMBER)?(?:\s+NO\s+MORE\s+THAN\s+\w+(?:\s+\w+)?)?)\b/i
-```
-只匹配已知的 word limit 格式，不贪婪捕获后续文本。
-
-### 陷阱31（2026-06-28）：detectMatchKind 漏掉 "expert" — 人名匹配提示语不加粗
-
-KMF 有时写 "list of experts" / "match each statement with the correct expert" 而非 "people" / "person"。`detectMatchKind` 只匹配 people/person → 走到 generic 分支 → 提示语渲染为纯文本，字母范围不加粗。
-
-**修复**：
-```typescript
-if (lower.includes('list of people') || lower.includes('list of experts')
-    || lower.includes('match each statement with the correct person')
-    || lower.includes('match each statement with the correct expert')) return 'person';
-```
-
-### 陷阱32（2026-06-28）：旧 `cleanKmfGroupContent` strip `[b]` 标签导致子标题丢失粗体
-
-旧函数用 `.replace(/\[\/?(?:center|b|i|h\d|strong)\]/gi, '')` 无差别清除所有 BBCode 标签。type 686 的 `[b]Sub-heading[/b]`（如 "Steam power"、"The Small Blue"）被 strip 成纯文本，前端渲染时子标题不加粗。
-
-**修复**：
-1. `buildSummaryPassage` 区分处理：`[center][b]` / `[center]` → `##` 标题，`[b]` → `**...**` 粗体
-2. `cleanKmfGroupContent` 标记为**废弃**，全部改用 `buildSummaryPassage`
-
 ### 陷阱20：人名匹配提示语用标准字母 A/B/C/D，不用人名首字母
 
 `getPersonMatchHint` 生成 "Match each statement with the correct person, A, B, C or D." 时，字母来自标准序列 `ABCDEFGHIJKLMNOPQRSTUVWXYZ`（按选项数量取），**不能**用 `options.map(o => o[0])` 取人名首字母。
@@ -1173,20 +1163,6 @@ for (const group of kmfData.questions) {
   // ... 按 child 逐个更新
 }
 ```
-
-### 陷阱18：`[br]` 和 `[br/]` 是两种不同标记，都必须清理
-
-KMF 同时使用 `[br]` 和 `[br/]` 两种换行标记。`cleanKmfPassage` 必须两种都处理，且先处理双换行 `[br][br]` / `[br/][br/]` → `\n\n`，再处理单换行。
-
-```typescript
-// ⚠️ 必须同时处理两种
-.replace(/\[br\]\s*\[br\]/gi, '\n\n')   // [br][br]
-.replace(/\[br\/\]\s*\[br\/\]/gi, '\n\n') // [br/][br/]
-.replace(/\[br\]/gi, '\n')                // 单 [br]
-.replace(/\[br\/\]/gi, '\n')              // 单 [br/]
-```
-
-**症状**：passageText 或 questionText 中残留 `[br]` 文字，UI 显示原始 BBCode。
 
 ### 陷阱17：表格 title 行（colspan 合并单元格）和同格多 blank 换行
 
@@ -1227,7 +1203,7 @@ KMF 同一个 sheet 内可能有多个 group（不同题型组），它们的 ch
 
 ---
 
-## 十二、音频
+## 十三、音频
 
 ```
 https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-{book}/T{test}/S{section}.mp3
