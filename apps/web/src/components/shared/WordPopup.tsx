@@ -66,11 +66,21 @@ export function WordPopup({
   // ── Full content ──
   const forms = (word as any).forms;
   const hasForms = forms && (forms.verb || forms.noun || forms.adj || forms.adv || forms.pastTense || forms.pastParticiple);
-  // Random up to 5 collocations for display
+  // Sort A-Z, take up to 10 collocations
   const displayCollocations = word.collocations?.length
-    ? [...word.collocations].sort(() => Math.random() - 0.5).slice(0, 5)
+    ? [...word.collocations].sort((a, b) => a.phrase.localeCompare(b.phrase)).slice(0, 10)
     : null;
   const hasCollocations = displayCollocations && displayCollocations.length > 0;
+
+  // Highlight the searched word within a collocation phrase
+  const highlightPhrase = (phrase: string, query: string) => {
+    const parts = phrase.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+    return parts.map((p, i) =>
+      p.toLowerCase() === query.toLowerCase()
+        ? <strong key={i} className="text-blue-600 font-bold">{p}</strong>
+        : <span key={i}>{p}</span>
+    );
+  };
 
   const wordInfo = (
     <>
@@ -171,7 +181,7 @@ export function WordPopup({
   const collocationPanel = hasCollocations ? (
     <div className="w-56 flex-shrink-0 border-l border-slate-100 pl-3 ml-1">
       <div className="flex items-center justify-between mb-2">
-        <h4 className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Collocations</h4>
+        <h4 className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">{t('popup.collocations')}</h4>
         <button onClick={onClose} className="text-slate-300 hover:text-slate-500 p-0.5 rounded-full">
           <X size={14} />
         </button>
@@ -179,7 +189,7 @@ export function WordPopup({
       <div className="space-y-1.5">
         {displayCollocations.map((c, i) => (
           <div key={i} className="text-xs leading-relaxed">
-            <span className="text-slate-700 font-medium">{c.phrase}</span>
+            <span className="text-slate-700 font-medium">{highlightPhrase(c.phrase, word.word)}</span>
             <span className="text-slate-400 mx-1">—</span>
             <span className="text-slate-500">{c.translation}</span>
           </div>

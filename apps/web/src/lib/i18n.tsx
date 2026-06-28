@@ -193,6 +193,7 @@ const zh: Record<string, string> = {
   'popup.adv': '副词',
   'popup.past': '过去式',
   'popup.past_participle': '过去分词',
+  'popup.collocations': '常用搭配',
 
   'common.retry': '重试',
   'common.back': '返回',
@@ -397,6 +398,7 @@ const en: Record<string, string> = {
   'popup.adv': 'adv.',
   'popup.past': 'past',
   'popup.past_participle': 'p.p.',
+  'popup.collocations': 'Collocations',
 
   'common.retry': 'Retry',
   'common.back': 'Back',
