@@ -203,7 +203,7 @@ async function main() {
           }
           const tags = await p.wordAnnotationTag.findMany({ where: { wordAnnotationId: ann.id } });
           for (const t of tags) {
-            await p.wordAnnotationTag.upsert({ where: { wordAnnotationId_tagId: { wordAnnotationId: formAnn.id, tagId: t.tagId } }, create: { wordAnnotationId: formAnn.id, tagId: t.tagId }, update: {} });
+            try { await p.wordAnnotationTag.upsert({ where: { wordAnnotationId_tagId: { wordAnnotationId: formAnn.id, tagId: t.tagId } }, create: { wordAnnotationId: formAnn.id, tagId: t.tagId }, update: {} }); } catch { /* concurrent upsert, skip */ }
           }
           formUpdates[field + 'Id'] = formAnn.id;
           // Set reverse link: form word points back to current word
