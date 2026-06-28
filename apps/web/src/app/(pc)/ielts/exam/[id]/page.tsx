@@ -271,9 +271,15 @@ export default function IeltsExamPage() {
         const single = /^[A-Z]$/.test(t);
 
         if (inline || single) {
-          // Don't treat as section marker if "letter" is an article/pronoun followed by lowercase
-          // e.g. "A tree's value" → the "A" is the article "a", not a paragraph marker
-          if (inline && /^[a-z]/.test(inline[2]!)) { textBuf.push(lines[li]!); continue; }
+          // Don't treat as section marker if "letter" is an article/pronoun:
+          // e.g. "A tree's value" → "A" is the article, not a paragraph marker
+          // e.g. "A US perspective" → "A" + uppercase = article before proper noun
+          if (inline) {
+            const body = inline[2]!;
+            if (/^[a-z]/.test(body)) { textBuf.push(lines[li]!); continue; }
+            // "A" or "I" followed by uppercase → article/pronoun (e.g. "A US", "A European")
+            if (/^[AI]$/.test(inline[1]!) && /^[A-Z]/.test(body)) { textBuf.push(lines[li]!); continue; }
+          }
           const letter = inline ? inline[1]! : t;
           const bodyLen = inline ? inline[2]!.length : 0;
           // Section marker = standalone letter OR inline letter with substantial body text (>=30 chars)
