@@ -68,7 +68,7 @@ export function WordPopup({
   const hasForms = forms && (forms.verb || forms.noun || forms.adj || forms.adv || forms.pastTense || forms.pastParticiple);
   // Sort A-Z, take up to 10 collocations
   const displayCollocations = word.collocations?.length
-    ? [...word.collocations].sort((a, b) => a.phrase.localeCompare(b.phrase)).slice(0, 10)
+    ? [...word.collocations].sort((a, b) => a.phrase.localeCompare(b.phrase)).slice(0, 15)
     : null;
   const hasCollocations = displayCollocations && displayCollocations.length > 0;
 
