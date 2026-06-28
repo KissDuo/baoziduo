@@ -935,6 +935,24 @@ C19 T4P1 含两个独立的 `[table]`（Q1-Q6 和 Q7-Q10）。分组时必须用
 
 **检测**：`parseTable` 检查首行是否有 `______`（`hasBlank()`）→ 整表无 `<thead>`，全部按 `<tbody>` 渲染。
 
+### 陷阱19：同一 section 多个匹配组时，禁止跨组混淆数据
+
+一个阅读 section 可含多个匹配组（如 C18 T3P1：Q1-4 段落匹配 + Q9-13 人名匹配）。重建时必须按 KMF group 逐个处理，**禁止**用 Q 号范围批量覆盖。
+
+段落匹配（684）→ options 是字母 A-H，人名匹配（683）→ options 是人名列表。两者互换会导致选项全错。
+
+```typescript
+// ✅ 正确：按 KMF group 逐个重建
+for (const group of kmfData.questions) {
+  if (gType === '684') {
+    options = groupAnswers.map(a => a.letter);  // 字母
+  } else if (gType === '683') {
+    options = groupAnswers.map(a => a.content); // 人名
+  }
+  // ... 按 child 逐个更新
+}
+```
+
 ### 陷阱18：`[br]` 和 `[br/]` 是两种不同标记，都必须清理
 
 KMF 同时使用 `[br]` 和 `[br/]` 两种换行标记。`cleanKmfPassage` 必须两种都处理，且先处理双换行 `[br][br]` / `[br/][br/]` → `\n\n`，再处理单换行。
