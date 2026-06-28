@@ -320,10 +320,11 @@ function getPersonMatchHint(
 ): React.ReactNode {
   const ctx = findMatchContext(instructions, qiStart, qiEnd) || '';
   const nbMatch = ctx.match(/NB\s+.+/i);
-  const people = options.map(o => o.trim()[0]).filter(Boolean);
-  const peopleList = people.length > 1
-    ? people.slice(0, -1).join(', ') + ' or ' + people[people.length - 1] + '.'
-    : people[0] + '.';
+  const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const letters = options.map((_, i) => L[i]);
+  const peopleList = letters.length > 1
+    ? letters.slice(0, -1).join(', ') + ' or ' + letters[letters.length - 1] + '.'
+    : letters[0] + '.';
   return (
     <span>
       Look at the following statements (Questions {qiStart}–{qiEnd}) and the list of people below.<br />
