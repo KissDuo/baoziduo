@@ -370,7 +370,7 @@ function getListeningMatchHint(instructions: string, qiStart: number, qiEnd: num
   const ctx = findMatchContext(instructions, qiStart, qiEnd);
   if (!ctx) return null;
   // Match: "Choose FOUR answers from the box and write the correct letter, A-F, next to Questions 25-28."
-  const m = ctx.match(/choose\s+(\w+)\s+answers?\s+from\s+the\s+box\s+and\s+write\s+the\s+correct\s+letter,\s*([A-Z])-([A-Z]),?\s*next\s+to\s+Questions\s+(\d+)[-–](\d+)/i);
+  const m = ctx.match(/choose\s+(\w+)\s+answers?\s+from\s+the\s+box\s+and\s+write\s+the\s+correct\s+letter,\s*([A-Z])[-–]([A-Z]),?\s*next\s+to\s+Questions\s+(\d+)[-–](\d+)/i);
   if (m) {
     const count = m[1]!;  // FOUR
     const startLetter = m[2]!; // A
