@@ -417,8 +417,9 @@ function buildSummaryPassage(gContent: string): string {
   let pt = gContent
     // 0. ⚠️ 先归一化换行符
     .replace(/\r\n/g, '\n').replace(/\r/g, '')
-    // 1. [center][b]Title[/b][/center] → ## Title
+    // 1. [center][b]Title[/b][/center] 或 [center]Title[/center] → ## Title
     .replace(/\[center\]\[b\](.+?)\[\/b\]\[\/center\]/gi, '## $1')
+    .replace(/\[center\](.+?)\[\/center\]/gi, '## $1')
     // 2. ⚠️ 保留 [b] 子标题为 **bold**（如 "The Small Blue"），不要 strip！
     .replace(/\[b\](.+?)\[\/b\]/gi, '**$1**')
     // 3. [blank]N[/blank] → (N) ______

@@ -170,8 +170,8 @@ function extractWordLimit(instructions: string, qiStart: number, qiEnd: number):
       // Reading: "Choose ONE WORD from the passage"
       let m = lines[j]!.match(/choose\s+(.+?)\s+from\s+the\s+passage/i);
       if (m) return m[1]!.trim().toUpperCase();
-      // Listening: "Write ONE WORD AND/OR A NUMBER for each answer" or "Write ONE WORD ONLY."
-      m = lines[j]!.match(/write\s+(.+?)(?:\s+for\s+each\s+answer)?\.?$/i);
+      // Listening/Reading: "Write ONE WORD ONLY from the passage for each answer."
+      m = lines[j]!.match(/write\s+(.+?)(?:\s+from\s+the\s+passage)?(?:\s+for\s+each\s+answer)?\.?$/i);
       if (m) return m[1]!.trim().toUpperCase();
     }
   }
