@@ -61,180 +61,160 @@ export function WordPopup({
     );
   }
 
+  const popupWidth = word?.collocations?.length ? 'w-[640px]' : 'w-[440px]';
+
   // ── Full content ──
   const forms = (word as any).forms;
   const hasForms = forms && (forms.verb || forms.noun || forms.adj || forms.adv || forms.pastTense || forms.pastParticiple);
-  const content = (
+  // Random up to 5 collocations for display
+  const displayCollocations = word.collocations?.length
+    ? [...word.collocations].sort(() => Math.random() - 0.5).slice(0, 5)
+    : null;
+  const hasCollocations = displayCollocations && displayCollocations.length > 0;
+
+  const wordInfo = (
     <>
       {/* Word header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
-          <h3 className="text-2xl font-extrabold text-slate-900">{word.word}</h3>
+          <h3 className="text-xl font-extrabold text-slate-900">{word.word}</h3>
           {(word.phoneticUk || word.phoneticUs || word.phonetic) && (
-            <div className="flex items-center gap-3 mt-0.5 text-sm text-slate-500 flex-wrap">
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 flex-wrap">
               {word.phoneticUk && <span>英 {word.phoneticUk}</span>}
               {word.phoneticUs && <span>美 {word.phoneticUs}</span>}
               {!word.phoneticUk && !word.phoneticUs && word.phonetic && <span>{word.phonetic}</span>}
             </div>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100 flex-shrink-0"
-        >
-          <X size={18} />
-        </button>
+        {!hasCollocations && (
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 flex-shrink-0">
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* Part of speech + translation */}
       <div className="flex items-center gap-2 mb-2">
         {word.partOfSpeech && (
-          <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded">
-            {word.partOfSpeech}
-          </span>
+          <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded">{word.partOfSpeech}</span>
         )}
-        <span className="text-base font-medium text-slate-800">{word.translation}</span>
+        <span className="text-sm font-medium text-slate-800">{word.translation}</span>
       </div>
 
       {/* Tags */}
       {word.tags && word.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
+        <div className="flex flex-wrap gap-1 mb-2">
           {word.tags.map(tag => (
             <span key={tag} className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{tag}</span>
           ))}
         </div>
       )}
 
-      {/* Noun-specific: plural form */}
+      {/* Plural */}
       {word.plural && (
-        <div className="mb-3">
-          <p className="text-xs text-slate-400 mb-1">{t('popup.plural')}</p>
+        <div className="mb-2">
+          <p className="text-[11px] text-slate-400 mb-0.5">{t('popup.plural')}</p>
           <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-medium">{word.plural}</span>
         </div>
       )}
 
-      {/* Verb-specific: 3rd-person singular */}
+      {/* 3rd-person singular */}
       {word.thirdPersonSingular && (
-        <div className="mb-3">
-          <p className="text-xs text-slate-400 mb-1">{t('popup.third_singular')}</p>
+        <div className="mb-2">
+          <p className="text-[11px] text-slate-400 mb-0.5">{t('popup.third_singular')}</p>
           <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-medium">{word.thirdPersonSingular}</span>
         </div>
       )}
 
-      {/* Word Forms (categorized) */}
+      {/* Word Forms */}
       {hasForms && (
-        <div className="mb-3">
-          <p className="text-xs text-slate-400 mb-1.5">{t('popup.forms_title')}</p>
-          <div className="space-y-1">
-            {forms.verb && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.verb')}</span>
-                <span className="font-medium text-slate-700">{forms.verb.word}</span>
-                <span className="text-slate-500">{forms.verb.translation}</span>
-              </div>
-            )}
-            {forms.noun && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.noun')}</span>
-                <span className="font-medium text-slate-700">{forms.noun.word}</span>
-                <span className="text-slate-500">{forms.noun.translation}</span>
-              </div>
-            )}
-            {forms.adj && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.adj')}</span>
-                <span className="font-medium text-slate-700">{forms.adj.word}</span>
-                <span className="text-slate-500">{forms.adj.translation}</span>
-              </div>
-            )}
-            {forms.adv && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.adv')}</span>
-                <span className="font-medium text-slate-700">{forms.adv.word}</span>
-                <span className="text-slate-500">{forms.adv.translation}</span>
-              </div>
-            )}
-            {forms.pastTense && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.past')}</span>
-                <span className="font-medium text-slate-700">{forms.pastTense.word}</span>
-                <span className="text-slate-500">{forms.pastTense.translation}</span>
-              </div>
-            )}
-            {forms.pastParticiple && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-400 w-12 text-right flex-shrink-0">{t('popup.past_participle')}</span>
-                <span className="font-medium text-slate-700">{forms.pastParticiple.word}</span>
-                <span className="text-slate-500">{forms.pastParticiple.translation}</span>
-              </div>
-            )}
+        <div className="mb-2">
+          <p className="text-[11px] text-slate-400 mb-1">{t('popup.forms_title')}</p>
+          <div className="space-y-0.5">
+            {forms.verb && <div className="flex items-center gap-1.5 text-xs"><span className="text-slate-400 w-10 text-right flex-shrink-0">{t('popup.verb')}</span><span className="font-medium text-slate-700">{forms.verb.word}</span><span className="text-slate-500">{forms.verb.translation}</span></div>}
+            {forms.noun && <div className="flex items-center gap-1.5 text-xs"><span className="text-slate-400 w-10 text-right flex-shrink-0">{t('popup.noun')}</span><span className="font-medium text-slate-700">{forms.noun.word}</span><span className="text-slate-500">{forms.noun.translation}</span></div>}
+            {forms.adj && <div className="flex items-center gap-1.5 text-xs"><span className="text-slate-400 w-10 text-right flex-shrink-0">{t('popup.adj')}</span><span className="font-medium text-slate-700">{forms.adj.word}</span><span className="text-slate-500">{forms.adj.translation}</span></div>}
+            {forms.adv && <div className="flex items-center gap-1.5 text-xs"><span className="text-slate-400 w-10 text-right flex-shrink-0">{t('popup.adv')}</span><span className="font-medium text-slate-700">{forms.adv.word}</span><span className="text-slate-500">{forms.adv.translation}</span></div>}
+            {forms.pastTense && <div className="flex items-center gap-1.5 text-xs"><span className="text-slate-400 w-10 text-right flex-shrink-0">{t('popup.past')}</span><span className="font-medium text-slate-700">{forms.pastTense.word}</span><span className="text-slate-500">{forms.pastTense.translation}</span></div>}
+            {forms.pastParticiple && <div className="flex items-center gap-1.5 text-xs"><span className="text-slate-400 w-10 text-right flex-shrink-0">{t('popup.past_participle')}</span><span className="font-medium text-slate-700">{forms.pastParticiple.word}</span><span className="text-slate-500">{forms.pastParticiple.translation}</span></div>}
           </div>
         </div>
       )}
 
-      {/* Collocations (常用搭配) */}
-      {word.collocations && word.collocations.length > 0 && (
-        <div className="mb-3">
-          <h4 className="text-xs font-medium text-slate-500 mb-1.5">Collocations</h4>
-          <div className="space-y-1">
-            {word.collocations.map((c, i) => (
-              <div key={i} className="text-sm">
-                <span className="text-slate-800 font-medium">{c.phrase}</span>
-                <span className="text-slate-400 mx-1.5">{'—'}</span>
-                <span className="text-slate-500">{c.translation}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Examples from AI */}
+      {/* Examples */}
       {word.examples && word.examples.length > 0 && (
-        <div className="space-y-2 mb-3">
+        <div className="space-y-1.5">
           {word.examples.map((ex, i) => (
-            <div key={i} className="bg-slate-50 rounded-lg p-2.5">
-              <p className="text-sm text-slate-700 leading-relaxed">
+            <div key={i} className="bg-slate-50 rounded-lg p-2">
+              <p className="text-xs text-slate-700 leading-relaxed">
                 {ex.en.split(new RegExp(`(${word.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')).map((part: any, j: number) =>
                   part.toLowerCase() === word.word.toLowerCase()
                     ? <strong key={j} className="text-blue-600 font-bold">{part}</strong>
                     : part
                 )}
               </p>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">{ex.zh}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{ex.zh}</p>
             </div>
           ))}
         </div>
       )}
 
-
       {/* Placeholder */}
       {word.placeholder && (
-        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-2.5 py-1.5 mb-3">
+        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-2.5 py-1.5 mt-2">
           {word.message || 'AI generation failed, please retry'}
         </p>
       )}
-
-      {/* Action button */}
-      <div className="border-t border-slate-100 pt-3 mt-1">
-        {inVocabulary ? (
-          <button
-            onClick={onRemoveFromVocabulary}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-          >
-            <BookmarkCheck size={16} />
-{t('popup.remove_vocab')}
-          </button>
-        ) : (
-          <button
-            onClick={onAddToVocabulary}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
-          >
-            <BookmarkPlus size={16} />
-{t('popup.add_vocab')}
-          </button>
-        )}
-      </div>
     </>
+  );
+
+  const collocationPanel = hasCollocations ? (
+    <div className="w-56 flex-shrink-0 border-l border-slate-100 pl-3 ml-1">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Collocations</h4>
+        <button onClick={onClose} className="text-slate-300 hover:text-slate-500 p-0.5 rounded-full">
+          <X size={14} />
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        {displayCollocations.map((c, i) => (
+          <div key={i} className="text-xs leading-relaxed">
+            <span className="text-slate-700 font-medium">{c.phrase}</span>
+            <span className="text-slate-400 mx-1">—</span>
+            <span className="text-slate-500">{c.translation}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
+  const actionButton = (
+    <div className="border-t border-slate-100 pt-2.5 mt-2">
+      {inVocabulary ? (
+        <button onClick={onRemoveFromVocabulary} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+          <BookmarkCheck size={16} />{t('popup.remove_vocab')}
+        </button>
+      ) : (
+        <button onClick={onAddToVocabulary} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors">
+          <BookmarkPlus size={16} />{t('popup.add_vocab')}
+        </button>
+      )}
+    </div>
+  );
+
+  const content = hasCollocations ? (
+    <div>
+      <div className="flex items-start">
+        <div className="flex-1 min-w-0">{wordInfo}</div>
+        {collocationPanel}
+      </div>
+      {actionButton}
+    </div>
+  ) : (
+    <div>
+      {wordInfo}
+      {actionButton}
+    </div>
   );
 
   // ── Mobile: Bottom sheet ──
@@ -255,7 +235,7 @@ export function WordPopup({
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
-        className="fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 w-[440px] min-h-[220px]"
+        className={`fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 min-h-[220px] ${popupWidth}`}
         style={position ? (position.useBottom ? { left: `${position.x}px`, bottom: `${position.y}px` } : { left: `${position.x}px`, top: `${position.y}px` }) : undefined}
       >
         {content}
