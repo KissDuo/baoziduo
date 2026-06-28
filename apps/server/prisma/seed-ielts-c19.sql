@@ -587,7 +587,7 @@ VALUES (1903, '剑桥雅思 19 - Test 3 听力', 'listening', TRUE, 'intermediat
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19031, 1903, 1, 'Part 1', 'Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.\n\nComplete the table below. Write ONE WORD ONLY for each answer.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S1.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
-(19032, 1903, 2, 'Part 2', 'Choose the correct letter, A, B or C .', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S2.mp3', NULL, NOW());
+(19032, 1903, 2, 'Part 2', 'What information is given about each of the following festival workshops? Choose SIX answers from the box and write the correct letter, A–H, next to Questions 11–16.\n\nChoose TWO letters, A–E .', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S2.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
 (19033, 1903, 3, 'Part 3', 'Choose the correct letter, A, B or C .\n\nComplete the flowchart below. Choose FIVE answers from the box and write the correct letter, A–H, next to Questions 26–30.', 'https://yxzm-audio.oss-cn-beijing.aliyuncs.com/Cambridge-IELTS-19/T3/S3.mp3', NULL, NOW());
 INSERT INTO IELTSExamSection (id, examId, sectionIndex, title, instructions, audioUrl, imageUrl, createdAt) VALUES
