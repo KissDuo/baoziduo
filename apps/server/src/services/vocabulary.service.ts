@@ -309,6 +309,13 @@ export class VocabularyService {
       const pastTense = a.pastTenseId ? await prisma.wordAnnotation.findUnique({ where: { id: a.pastTenseId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
       const pastParticiple = a.pastParticipleId ? await prisma.wordAnnotation.findUnique({ where: { id: a.pastParticipleId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
 
+      // Collocations for this word
+      const colRows = await prisma.collocationWord.findMany({
+        where: { word: a.word },
+        include: { collocation: { select: { phrase: true, translation: true } } },
+      });
+      const collocations = colRows.length > 0 ? colRows.map(cw => ({ phrase: cw.collocation.phrase, translation: cw.collocation.translation })) : undefined;
+
       return {
         word: a.word,
         phoneticUk: a.phoneticUk,
@@ -324,6 +331,7 @@ export class VocabularyService {
           noun, verb, adj, adv,
           pastTense, pastParticiple,
         },
+        collocations,
       };
     }));
 
