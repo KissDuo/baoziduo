@@ -382,6 +382,8 @@ IELTSQuestion.questionIndex
 ```typescript
 function cleanKmfPassage(raw: string): string {
   return raw
+    // 0. ⚠️ 必须先归一化换行符！KMF 数据含 \r\n 残留，不先处理会导致 \n\r\n 乱序
+    .replace(/\r\n/g, '\n').replace(/\r/g, '')
     // 1. [p:X] → 段落字母单独成行
     .replace(/\[p:([a-z])\]/gi, (_, l) => `\n\n${l.toUpperCase()}\n`)
     .replace(/\[P:([a-z])\]/gi, (_, l) => `\n\n${l.toUpperCase()}\n`)  // 大写变体
@@ -395,47 +397,76 @@ function cleanKmfPassage(raw: string): string {
     .replace(/\[insert:\d+\]/gi, '')
     // 5. 去除 BBCode 格式化标签
     .replace(/\[\/?(?:center|b|i|h\d|strong)\]/gi, '')
-    // 5. 去除 [insert:N] 标记
-    .replace(/\[insert:\d+\]/gi, '')
     // 6. 修复损坏标签 [xxx yyy] → xxx yyy
     .replace(/\[(\w+\s+\w+)\]/gi, '$1')
     // 7. HTML 实体解码
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"')
     // 8. 清理残留 HTML 标签
     .replace(/<[^>]+>/g, '')
     // 9. 规范化空白
-    .replace(/\r\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 ```
 
-### 6.2 `cleanKmfGroupContent()` — 题组内容（填空 passageText）
+### 6.2 `buildSummaryPassage()` — type 686/692 填空 passageText ⭐ 关键
 
 ```typescript
-function cleanKmfGroupContent(raw: string): string {
-  return raw
-    // [center][b]Title[/b][/center] → ## Title
+function buildSummaryPassage(gContent: string): string {
+  let pt = gContent
+    // 0. ⚠️ 先归一化换行符
+    .replace(/\r\n/g, '\n').replace(/\r/g, '')
+    // 1. [center][b]Title[/b][/center] → ## Title
     .replace(/\[center\]\[b\](.+?)\[\/b\]\[\/center\]/gi, '## $1')
-    // [blank]N[/blank] → (N) ______
+    // 2. ⚠️ 保留 [b] 子标题为 **bold**（如 "The Small Blue"），不要 strip！
+    .replace(/\[b\](.+?)\[\/b\]/gi, '**$1**')
+    // 3. [blank]N[/blank] → (N) ______
     .replace(/\[blank\](\d+)\[\/blank\]/gi, '($1) ______')
-    // 其余同 cleanKmfPassage
-    .replace(/\[br\/\]\s*\[br\/\]/gi, '\n\n')
-    .replace(/\[br\/\]/gi, '\n')
-    .replace(/\[\/?(?:center|b|i|h\d|strong)\]/gi, '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\r\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+    // 4. 换行处理
+    .replace(/\[br\/\]\s*\[br\/\]/gi, '\n\n').replace(/\[br\]\s*\[br\]/gi, '\n\n')
+    .replace(/\[br\/\]/gi, '\n').replace(/\[br\]/gi, '\n')
+    // 5. 清理其余 BBCode/HTML
+    .replace(/\[\/?(?:center|i|h\d|strong)\]/gi, '')
+    .replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ')
+    .replace(/\n{3,}/g, '\n\n').trim();
+
+  // 6. ⚠️ 确保 bullet 换行
+  pt = bulletsOnNewLines(pt);
+
+  // 7. ⚠️ 紧凑间距：title-body 保留 \n\n，body 内用单 \n
+  const nl2 = pt.indexOf('\n\n');
+  if (nl2 >= 0) {
+    const titlePart = pt.substring(0, nl2);
+    let bodyPart = pt.substring(nl2 + 2);
+    bodyPart = bodyPart.replace(/\n\n/g, '\n');
+    pt = titlePart + '\n\n' + bodyPart;
+  }
+
+  return pt;
+}
+
+// ⚠️ bullet 换行函数：确保 ● ○ · • ◦ 都在自己行首
+function bulletsOnNewLines(text: string): string {
+  return text
+    .replace(/([^\n*])([●○·•◦])/g, '$1\n$2')  // * 前不加换行（避免打断 **·** 粗体bullet）
+    .replace(/\n{3,}/g, '\n\n');
 }
 ```
 
-### 6.3 HTML 表格 → 管道格式
+**铁律**：
+- `[b]` 子标题 **必须保留为 `**...**`**，不能 strip！否则蝴蝶表里的 "The Small Blue" 等子标题丢失粗体
+- `[center][b]` 标题 → `##`，`[b]` 子标题 → `**...**`，两种处理不同
+- **必须先 `\r\n` → `\n` 归一化**，否则 `\n\r\n` 乱序导致 SummaryCompletion 解析失败
+- title-body 之间必须保留 `\n\n`（一个空行），body 内部用单 `\n`
+- 最终输出前调用 `bulletsOnNewLines()`
+```
+
+### 6.3 `cleanKmfGroupContent()` — 已废弃，用 `buildSummaryPassage()` 替代
+
+旧函数问题：strips `[b]` 标签导致子标题丢失粗体；不处理 bullet 换行；不处理 `\r` 残留。**所有 type 686/692 passageText 构建必须用上面的 `buildSummaryPassage()`。**
+
+### 6.4 HTML 表格 → 管道格式
 
 KMF 的 HTML `<table>` 需转换为管道格式：
 ```
