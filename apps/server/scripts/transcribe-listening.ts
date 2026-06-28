@@ -33,11 +33,30 @@ async function whisperTranscribe(audioUrl: string): Promise<{ text: string; segm
     // whisper-cpp outputs a .json file with segments
     const jsonPath = audioPath + '.json'; // whisper-cli appends .json to the full path
     const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+    // Filter out IELTS narrator instructions and blank audio markers
+    const NOISE_PATTERNS = [
+      /you will hear/i, /you have some time/i, /look at questions/i,
+      /the end of (part|section|this test)/i, /seconds to check/i,
+      /BLANK.?AUDIO/i, /now listen/i, /first you have/i,
+      /^IELTS/i, /^Cambridge/i, /published by/i,
+      /^\s*Part\s*\d/i, /^\s*Section\s*\d/i, /^\s*Test\s*\d/i,
+      /complete the (notes|summary|table|form|sentences)/i,
+      /write (one|no|two|three|\d+)/i, /questions?\s*\d+.*\d+/i,
+      /before you (listen|hear)/i, /now you have/i, /that is the end/i,
+      /check your answers/i, /you now have/i,
+    ];
+
     const segments = (jsonData.transcription || []).map((s: any) => ({
       start: (s.offsets?.from || 0) / 1000,
       end: (s.offsets?.to || 0) / 1000,
       text: (s.text || '').trim(),
-    })).filter((s: any) => s.text.length > 0);
+    })).filter((s: any) => {
+      if (s.text.length === 0) return false;
+      for (const pat of NOISE_PATTERNS) {
+        if (pat.test(s.text)) return false;
+      }
+      return true;
+    });
 
     // Cleanup
     try { fs.unlinkSync(audioPath); fs.unlinkSync(jsonPath); } catch {}
