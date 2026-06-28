@@ -328,18 +328,50 @@ function getPersonMatchHint(
   options: string[], qiStart: number, qiEnd: number, instructions: string
 ): React.ReactNode {
   const ctx = findMatchContext(instructions, qiStart, qiEnd) || '';
-  const nbMatch = ctx.match(/NB\s+.+/i);
+  // Use KMF context text directly, apply bold to letters, Q numbers, and NB
+  if (ctx) {
+    // Split by NB to handle separately
+    const nbIdx = ctx.search(/\bNB\s+/i);
+    const mainText = nbIdx >= 0 ? ctx.substring(0, nbIdx).trim() : ctx;
+    const nbText = nbIdx >= 0 ? ctx.substring(nbIdx) : '';
+
+    // Boldify letter ranges: "A, B or C" → "<b>A</b>, <b>B</b> or <b>C</b>"
+    const boldify = (text: string): React.ReactNode[] => {
+      const parts = text.split(/(\b[A-Z]\b)/g);
+      return parts.map((p, i) => /^[A-Z]$/.test(p) ? <b key={i}>{p}</b> : <span key={i}>{p}</span>);
+    };
+
+    // Boldify question ranges: "27-33" or "27–33"
+    const boldifyAll = (text: string): React.ReactNode => {
+      const segs = text.split(/(\d+\s*[-–]\s*\d+)/g);
+      return (
+        <span>
+          {segs.map((seg, i) => {
+            if (/^\d+\s*[-–]\s*\d+$/.test(seg)) return <b key={i}>{seg}</b>;
+            // Boldify letters within this segment
+            const subParts = seg.split(/(\b[A-Z]\b)/g);
+            return <span key={i}>{subParts.map((p, j) => /^[A-Z]$/.test(p) ? <b key={j}>{p}</b> : <span key={j}>{p}</span>)}</span>;
+          })}
+        </span>
+      );
+    };
+
+    return (
+      <span>
+        {boldifyAll(mainText)}<br />
+        {nbText && <><b>NB</b>{nbText.substring(2)}</>}
+      </span>
+    );
+  }
+
+  // Fallback
   const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const letters = options.map((_, i) => L[i]);
-  const peopleList = letters.length > 1
-    ? letters.slice(0, -1).join(', ') + ' or ' + letters[letters.length - 1] + '.'
-    : letters[0] + '.';
   const boldLetters = letters.map((l, i) => <span key={i}><b>{l}</b>{i < letters.length - 2 ? ', ' : i === letters.length - 2 ? ' or ' : ''}</span>);
   return (
     <span>
       Look at the following statements (Questions {qiStart}–{qiEnd}) and the list of people below.<br />
-      Match each statement with the correct person, {boldLetters}.<br />
-      {nbMatch && <><b>NB</b>{nbMatch[0].substring(2)}</>}
+      Match each statement with the correct person, {boldLetters}.
     </span>
   );
 }
