@@ -171,7 +171,8 @@ function extractWordLimit(instructions: string, qiStart: number, qiEnd: number):
       let m = lines[j]!.match(/choose\s+(.+?)\s+from\s+the\s+passage/i);
       if (m) return m[1]!.trim().toUpperCase();
       // Listening/Reading: "Write ONE WORD ONLY from the passage for each answer."
-      m = lines[j]!.match(/write\s+(.+?)(?:\s+from\s+the\s+passage)?(?:\s+for\s+each\s+answer)?\.?$/i);
+      // Use precise word-limit patterns to avoid capturing trailing text
+      m = lines[j]!.match(/write\s+(ONE\s+WORD(?:\s+ONLY)?(?:\s+AND\/OR\s+A\s+NUMBER)?(?:\s+NO\s+MORE\s+THAN\s+\w+(?:\s+\w+)?)?)\b/i);
       if (m) return m[1]!.trim().toUpperCase();
     }
   }
