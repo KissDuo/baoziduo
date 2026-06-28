@@ -172,6 +172,22 @@ export function WordPopup({
         </div>
       )}
 
+      {/* Collocations (常用搭配) */}
+      {word.collocations && word.collocations.length > 0 && (
+        <div className="mb-3">
+          <h4 className="text-xs font-medium text-slate-500 mb-1.5">Collocations</h4>
+          <div className="space-y-1">
+            {word.collocations.map((c, i) => (
+              <div key={i} className="text-sm">
+                <span className="text-slate-800 font-medium">{c.phrase}</span>
+                <span className="text-slate-400 mx-1.5">{'—'}</span>
+                <span className="text-slate-500">{c.translation}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Examples from AI */}
       {word.examples && word.examples.length > 0 && (
         <div className="space-y-2 mb-3">

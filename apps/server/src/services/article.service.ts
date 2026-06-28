@@ -308,6 +308,15 @@ export class ArticleService {
       const pastTense = a.pastTenseId ? await prisma.wordAnnotation.findUnique({ where: { id: a.pastTenseId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
       const pastParticiple = a.pastParticipleId ? await prisma.wordAnnotation.findUnique({ where: { id: a.pastParticipleId }, select: { word: true, translation: true, partOfSpeech: true } }) : null;
 
+      // Get collocations (常用搭配) that contain this word
+      const collocationRows = await prisma.collocationWord.findMany({
+        where: { word },
+        include: { collocation: { select: { phrase: true, translation: true } } },
+      });
+      const collocations = collocationRows.length > 0
+        ? collocationRows.map(cw => ({ phrase: cw.collocation.phrase, translation: cw.collocation.translation }))
+        : undefined;
+
       return {
         word: annotation.word,
         phoneticUk: (annotation as any).phoneticUk || null,
@@ -322,6 +331,7 @@ export class ArticleService {
         thirdPersonSingular: a.thirdPersonSingular || undefined,
         books: books.length > 0 ? books : undefined,
         forms: { noun, verb, adj, adv, pastTense, pastParticiple },
+        collocations,
       };
     }
 

@@ -52,6 +52,8 @@ export interface WordAnnotationResponse {
     pastTense?: { word: string; translation: string; partOfSpeech: string | null } | null;
     pastParticiple?: { word: string; translation: string; partOfSpeech: string | null } | null;
   };
+  // Collocations (常用搭配)
+  collocations?: { phrase: string; translation: string }[];
 }
 
 export const articleService = {

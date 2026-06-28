@@ -214,6 +214,34 @@ model WordAnnotation {
   userVocabulary  UserVocabulary[]
   tags            WordAnnotationTag[]
   vocabularyWords VocabularyWord[]
+  collocationWords CollocationWord[]  // 反查：该单词属于哪些搭配
+}
+
+// ========================
+// COLLOCATIONS (常用搭配/短语)
+// ========================
+
+model Collocation {
+  id           Int       @id @default(autoincrement())
+  phrase       String    @db.VarChar(500)
+  translation  String    @db.VarChar(500)
+  examplesJson String?   @db.Text
+  createdAt    DateTime  @default(now())
+
+  words        CollocationWord[]
+}
+
+model CollocationWord {
+  id               Int             @id @default(autoincrement())
+  collocationId    Int
+  collocation      Collocation     @relation(fields: [collocationId], references: [id], onDelete: Cascade)
+  word             String          @db.VarChar(255)
+  wordAnnotationId Int?
+  wordAnnotation   WordAnnotation? @relation(fields: [wordAnnotationId], references: [id])
+
+  @@unique([collocationId, word])
+  @@index([word])
+  @@index([wordAnnotationId])
 }
 
 model WordTag {
