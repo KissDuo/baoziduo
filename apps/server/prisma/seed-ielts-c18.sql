@@ -150,17 +150,17 @@ INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText,
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (18022, 14, 'multiple_choice', 'What are the team still hoping to find?', '["A. the facilities for cyclists","B. the impact on the environment","C. the encouragement of good relations between residents","D. the low cost of all the accommodation","E. the rural location"]', 'C. the encouragement of good relations between residents', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 15, 'map_labelling', 'Jump for joy', '["A","B","C","D","E","F","G","H","I"]', 'G', NULL, NULL, 1, NULL, NOW());
+(18022, 15, 'map_labelling', 'School', '["A","B","C","D","E","F","G","H","I"]', 'G', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 16, 'map_labelling', '1874', '["A","B","C","D","E","F","G","H","I"]', 'C', NULL, NULL, 1, NULL, NOW());
+(18022, 16, 'map_labelling', 'Sports centre', '["A","B","C","D","E","F","G","H","I"]', 'C', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 17, 'map_labelling', '1875', '["A","B","C","D","E","F","G","H","I"]', 'D', NULL, NULL, 1, NULL, NOW());
+(18022, 17, 'map_labelling', 'Clinic', '["A","B","C","D","E","F","G","H","I"]', 'D', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 18, 'map_labelling', '1877', '["A","B","C","D","E","F","G","H","I"]', 'B', NULL, NULL, 1, NULL, NOW());
+(18022, 18, 'map_labelling', 'Community centre', '["A","B","C","D","E","F","G","H","I"]', 'B', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 19, 'map_labelling', '1878', '["A","B","C","D","E","F","G","H","I"]', 'H', NULL, NULL, 1, NULL, NOW());
+(18022, 19, 'map_labelling', 'Supermarket', '["A","B","C","D","E","F","G","H","I"]', 'H', NULL, NULL, 1, NULL, NOW());
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
-(18022, 20, 'map_labelling', '1880', '["A","B","C","D","E","F","G","H","I"]', 'A', NULL, NULL, 1, NULL, NOW());
+(18022, 20, 'map_labelling', 'Playground', '["A","B","C","D","E","F","G","H","I"]', 'A', NULL, NULL, 1, NULL, NOW());
 
 INSERT INTO IELTSQuestion (sectionId, questionIndex, questionType, questionText, options, correctAnswer, acceptableAnswers, passageText, score, answerExplanation, createdAt) VALUES
 (18023, 21, 'multiple_choice', 'Why do the students think the Laki eruption of 1783 is so important?', '["A. It was the most severe eruption in modern times.","B. It led to the formal study of volcanoes.","C. It had a profound effect on society."]', 'C. It had a profound effect on society.', NULL, NULL, 1, NULL, NOW());
