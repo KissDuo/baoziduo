@@ -175,6 +175,37 @@ export const MatchingGroup = memo(function MatchingGroup({
         <div className="space-y-2.5 min-w-0">
           {items.map((item) => {
             const selected = answers[item.qid] || '';
+            const hasInlineBlank = item.text && item.text.includes('______');
+
+            // Inline blank: split text at ______ and render drag zone inline in the sentence
+            if (hasInlineBlank) {
+              const parts = item.text.split('______');
+              return (
+                <div key={item.qid} className="text-sm text-slate-700 leading-8 py-1">
+                  <b className="text-xs text-slate-600 mr-1">{item.qi}</b>
+                  {parts.map((part, pi) => (
+                    <span key={pi}>
+                      {part}
+                      {pi < parts.length - 1 && (
+                        <span
+                          onDrop={(e) => { e.preventDefault(); if (dragging) { onSave(item.qid, dragging); setDragging(null); dragFromQidRef.current = null; } }}
+                          onDragOver={(e) => e.preventDefault()}
+                          className={`inline-flex items-center justify-center border-2 border-dashed rounded px-2 py-0.5 text-sm font-medium min-w-[60px] h-7 align-baseline transition-colors mx-1 ${
+                            selected ? 'border-primary-400 bg-primary-50 text-primary-700' : 'border-slate-300 text-slate-400'
+                          } ${dragging ? 'border-primary-500 bg-primary-100' : ''}`}
+                        >
+                          {selected ? (
+                            <span draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', ''); setDragging(selected); dragFromQidRef.current = item.qid; }} onDragEnd={() => { setDragging(null); dragFromQidRef.current = null; }} onClick={() => { onSave(item.qid, ''); }} className="cursor-pointer hover:text-red-500 transition-colors" title="Click to remove, or drag back to box">{selected}</span>
+                          ) : '______'}
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              );
+            }
+
+            // Standard layout: text left, drag zone right
             return (
               <div key={item.qid} className="flex items-start gap-2 text-sm flex-wrap">
                 <span className="text-slate-500 shrink-0 w-5 text-right text-xs">{item.qi}</span>
