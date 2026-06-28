@@ -935,6 +935,15 @@ C19 T4P1 含两个独立的 `[table]`（Q1-Q6 和 Q7-Q10）。分组时必须用
 
 **检测**：`parseTable` 检查首行是否有 `______`（`hasBlank()`）→ 整表无 `<thead>`，全部按 `<tbody>` 渲染。
 
+### 陷阱20：人名匹配提示语用标准字母 A/B/C/D，不用人名首字母
+
+`getPersonMatchHint` 生成 "Match each statement with the correct person, A, B, C or D." 时，字母来自标准序列 `ABCDEFGHIJKLMNOPQRSTUVWXYZ`（按选项数量取），**不能**用 `options.map(o => o[0])` 取人名首字母。
+
+```
+❌ options = ["Anna", "Markus", "Chris", "Felix"] → "C, M, A or F"
+✅ 按选项数量取标准字母 → "A, B, C or D"
+```
+
 ### 陷阱19：同一 section 多个匹配组时，禁止跨组混淆数据
 
 一个阅读 section 可含多个匹配组（如 C18 T3P1：Q1-4 段落匹配 + Q9-13 人名匹配）。重建时必须按 KMF group 逐个处理，**禁止**用 Q 号范围批量覆盖。
