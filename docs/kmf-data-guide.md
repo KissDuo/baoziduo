@@ -968,6 +968,13 @@ function cleanQuestionText(raw: string): string {
     .replace(/&nbsp;/gi, ' ').replace(/<[^>]+>/g, '')
     .replace(/\s+/g, ' ').trim();
 }
+
+// ⚠️ 铁律：● 和 ○ 之前必须确保换行（KMF 的 [br] 被清掉后可能丢失）
+function bulletsOnNewLines(text: string): string {
+  return text
+    .replace(/([^\n])([●○])/g, '$1\n$2')
+    .replace(/\n{3,}/g, '\n\n');
+}
 ```
 
 **杜绝方案**：rebuild 脚本完成后立即跑 `scan-all-br.ts` + `clean-all-br.ts` 验证。禁止"修A坏B"——修一个 section 时不能把已清洗过的 BBCode 重新带回。
@@ -1052,6 +1059,19 @@ C18 T1 阅读的三个 KMF reading 文件来自 `c18-reading/` 子目录（sheet
 4. 只有在子目录找不到时，才尝试 flat file（且必须验证 subject/mode）
 
 **典型症状**：DB section 的 instructions 长度异常短（如 73 字符、只有一句听力提示语），说明被听力数据覆盖。
+
+### 陷阱28（2026-06-28）：● ○ bullet 换行丢失
+
+KMF 用 `[br][br]● text` 来分隔 bullet。`cleanQuestionText` 把 `[br]` 替换为空格后，bullet 可能粘在前一行末尾。`cleanKmfPassage` 把 `[br]` 替换为 `\n` 但如有额外清洗可能丢失换行。
+
+**症状**：bullet 列表项和上一行文字连在一起，没有换行。
+
+**修复**：在最终的 passageText / questionText 上调用 `bulletsOnNewLines()`：
+```typescript
+function bulletsOnNewLines(text: string): string {
+  return text.replace(/([^\n])([●○])/g, '$1\n$2').replace(/\n{3,}/g, '\n\n');
+}
+```
 
 ### 陷阱20：人名匹配提示语用标准字母 A/B/C/D，不用人名首字母
 
