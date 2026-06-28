@@ -969,11 +969,11 @@ function cleanQuestionText(raw: string): string {
     .replace(/\s+/g, ' ').trim();
 }
 
-// ⚠️ 铁律：bullet 符号（● ○ ·）之前必须确保换行（KMF 的 [br] 被清掉后可能丢失）
+// ⚠️ 铁律：bullet 符号（● ○ · • ◦）之前必须确保换行（KMF 的 [br] 被清掉后可能丢失）
 // 但不匹配前面是 * 的情况（避免打断 **·** 粗体 bullet）
 function bulletsOnNewLines(text: string): string {
   return text
-    .replace(/([^\n*])([●○·])/g, '$1\n$2')
+    .replace(/([^\n*])([●○·•◦])/g, '$1\n$2')
     .replace(/\n{3,}/g, '\n\n');
 }
 ```
