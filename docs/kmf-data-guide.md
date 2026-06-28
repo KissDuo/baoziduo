@@ -383,7 +383,9 @@ function cleanKmfPassage(raw: string): string {
     // 3. [br/] 或 [br] → 换行
     .replace(/\[br\/\]/gi, '\n')
     .replace(/\[br\]/gi, '\n')                   // ⚠️ 必须两种都处理
-    // 4. 去除 BBCode 格式化标签
+    // 4. 去除 [insert:N] 标记（KMF 内部用）
+    .replace(/\[insert:\d+\]/gi, '')
+    // 5. 去除 BBCode 格式化标签
     .replace(/\[\/?(?:center|b|i|h\d|strong)\]/gi, '')
     // 5. 去除 [insert:N] 标记
     .replace(/\[insert:\d+\]/gi, '')
