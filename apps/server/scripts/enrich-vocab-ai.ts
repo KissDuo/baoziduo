@@ -14,10 +14,9 @@ interface AIResult {
   commonPhrases?: { phrase: string; translation: string }[];
 }
 
-// Only query phrases for common words (short, basic vocabulary)
-const isCommon = word.length <= 10 && !word.includes('-') && !/[0-9]/.test(word);
-
 async function enrichWord(word: string): Promise<AIResult | null> {
+  // Only query phrases for common words (short, basic vocabulary)
+  const isCommon = word.length <= 10 && !word.includes('-') && !/[0-9]/.test(word);
   const phrasesPart = isCommon ? `,
   "commonPhrases": [
     {"phrase": "common phrase using this word (at least 2 words)", "translation": "Chinese translation"},
