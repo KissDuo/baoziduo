@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [resetNewPassword, setResetNewPassword] = useState('');
   const [resetSending, setResetSending] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [cooldownDays, setCooldownDays] = useState<number | null>(null);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +68,9 @@ export default function LoginPage() {
       });
       setResetSuccess(true);
     } catch (err: any) {
+      if (err.code === 'RESET_COOLDOWN' && err.remainingDays) {
+        setCooldownDays(err.remainingDays);
+      }
       setError(err.message || t('auth.login_failed'));
     } finally {
       setLoading(false);
@@ -133,6 +137,11 @@ export default function LoginPage() {
                   <input type="password" value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)}
                     className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" required placeholder={t('auth.register_pw_ph')} minLength={8} />
                 </div>
+                <p className="text-xs text-slate-400">
+                  {cooldownDays && cooldownDays > 0
+                    ? `修改密码需要间隔7天，再过 ${cooldownDays} 天可以修改`
+                    : '修改密码需要间隔7天'}
+                </p>
                 <button type="submit" disabled={loading}
                   className="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors">
                   {loading ? t('auth.login_loading') : '重置密码'}

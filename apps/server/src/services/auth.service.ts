@@ -178,6 +178,24 @@ export class AuthService {
       throw new AppError(401, 'Invalid or expired verification code', 'INVALID_CODE');
     }
 
+    // Check 7-day cooldown
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new AppError(404, 'No account found with this email', 'EMAIL_NOT_FOUND');
+    }
+
+    if (user.lastPasswordResetAt) {
+      const daysSince = (Date.now() - user.lastPasswordResetAt.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSince < 7) {
+        const remainingDays = Math.ceil(7 - daysSince);
+        throw new AppError(429,
+          `Password can only be reset once every 7 days. ${remainingDays} day(s) remaining.`,
+          'RESET_COOLDOWN',
+          { remainingDays }
+        );
+      }
+    }
+
     // Mark code as used
     await prisma.emailCode.update({ where: { id: emailCode.id }, data: { used: true } });
 
@@ -185,7 +203,7 @@ export class AuthService {
     const passwordHash = await hashPassword(newPassword);
     await prisma.user.update({
       where: { email },
-      data: { passwordHash },
+      data: { passwordHash, lastPasswordResetAt: new Date() },
     });
 
     return { ok: true };

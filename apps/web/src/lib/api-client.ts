@@ -48,7 +48,8 @@ class ApiClient {
         throw new ApiError(401, 'Please login first', 'AUTH_REQUIRED');
       }
       const body = await res.json().catch(() => ({}));
-      throw new ApiError(res.status, body.error || 'Request failed', body.code);
+      const { error, code, ...extra } = body;
+      throw new ApiError(res.status, error || 'Request failed', code, extra);
     }
 
     return res.json();
@@ -81,10 +82,12 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string
+    public code?: string,
+    extra?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'ApiError';
+    if (extra) Object.assign(this, extra);
   }
 }
 

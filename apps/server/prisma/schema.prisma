@@ -16,6 +16,7 @@ model User {
   email             String?   @unique @db.VarChar(255)
   phone             String?   @unique @db.VarChar(20)
   passwordHash      String?   @db.VarChar(255)
+  lastPasswordResetAt DateTime?
   nickname          String    @db.VarChar(100)
   avatarUrl         String?   @db.VarChar(500)
 
