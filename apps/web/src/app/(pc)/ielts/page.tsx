@@ -145,10 +145,10 @@ export default function IeltsPage() {
             </div>
             <div className="flex items-center gap-3">
               {exam.type === 'listening' && (
-                <Link href={`/listening`} onClick={e => e.stopPropagation()}
+                <button onClick={e => { e.stopPropagation(); e.preventDefault(); window.location.href = '/listening'; }}
                   className="px-3 py-1.5 text-xs font-medium text-primary-600 border border-primary-300 rounded-lg hover:bg-primary-50 transition-colors">
                   🎧 精听
-                </Link>
+                </button>
               )}
               <div className="text-primary-600 text-2xl">
                 {exam.type === 'listening' ? '🔜' : '→'}
