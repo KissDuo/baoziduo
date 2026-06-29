@@ -209,17 +209,11 @@ export default function ListeningDetailPage() {
           <div className="text-center mb-4">
             <span className="text-sm text-slate-500">
               句子{' '}
-              <input
-                type="number"
+              <JumpInput
+                value={currentSentenceIdx + 1}
                 min={1}
                 max={data.sentences.length}
-                value={currentSentenceIdx + 1}
-                onChange={e => {
-                  const v = parseInt(e.target.value, 10);
-                  if (v >= 1 && v <= data.sentences.length) setCurrentSentenceIdx(v - 1);
-                }}
-                onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                className="w-12 text-center border border-slate-200 rounded px-1 py-0.5 text-primary-600 font-medium outline-none focus:border-primary-400"
+                onChange={v => setCurrentSentenceIdx(v - 1)}
               />
               {' '}/ {data.sentences.length}
             </span>
@@ -284,6 +278,33 @@ export default function ListeningDetailPage() {
         </div>
       )})()}
     </div>
+  );
+}
+
+function JumpInput({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (v: number) => void }) {
+  const [local, setLocal] = useState(String(value));
+
+  // Sync external value changes
+  useEffect(() => {
+    setLocal(String(value));
+  }, [value]);
+
+  const commit = () => {
+    const v = parseInt(local, 10);
+    if (isNaN(v) || v < min) onChange(min);
+    else if (v > max) onChange(max);
+    else onChange(v);
+  };
+
+  return (
+    <input
+      type="number"
+      value={local}
+      onChange={e => setLocal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e => { if (e.key === 'Enter') { commit(); e.currentTarget.blur(); } }}
+      className="w-12 text-center border border-slate-200 rounded px-1 py-0.5 text-primary-600 font-medium outline-none focus:border-primary-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+    />
   );
 }
 
