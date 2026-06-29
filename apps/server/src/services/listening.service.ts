@@ -56,6 +56,7 @@ export async function getTranscript(id: number) {
           endTime: true,
           text: true,
           translation: true,
+          audioUrl: true,
         },
       },
     },
@@ -73,10 +74,7 @@ export async function getTranscript(id: number) {
     sourceUrl: transcript.sourceUrl,
     status: transcript.status,
     isDictation,
-    sentences: transcript.sentences.map(s => ({
-      ...s,
-      audioUrl: s.audioUrl || undefined,
-    })),
+    sentences: transcript.sentences,
   };
 }
 
