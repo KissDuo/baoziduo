@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { ieltsService } from '@/services/ielts.service';
+import { SocialSidebar } from '@/components/pc/social-sidebar';
 import type { IeltsExamItem } from '@/services/ielts.service';
 
 type IeltsType = 'listening' | 'reading';
@@ -58,6 +59,7 @@ export default function IeltsPage() {
 
   return (
     <div className="max-w-5xl mx-auto pt-2">
+      <SocialSidebar />
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">雅思模拟考试</h1>
         <p className="text-slate-500">真实还原雅思机考界面，阅读+听力全真模拟</p>

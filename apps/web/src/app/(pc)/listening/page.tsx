@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/lib/i18n';
+import { SocialSidebar } from '@/components/pc/social-sidebar';
 
 interface TranscriptItem {
   id: number; title: string; category: string; sentenceCount: number;
@@ -36,6 +37,7 @@ export default function ListeningListPage() {
 
   return (
     <div className="max-w-4xl mx-auto pt-2 px-6 pb-6">
+      <SocialSidebar />
       <h1 className="text-2xl font-bold text-slate-900 mb-6">精听练习</h1>
 
       {loading && <div className="text-center py-8 text-slate-400">Loading...</div>}

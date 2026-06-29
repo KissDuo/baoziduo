@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { X, BookOpen, List } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
+import { SocialSidebar } from './social-sidebar';
 import { articleService } from '@/services/article.service';
 import { vocabStudyService, type VocabBook } from '@/services/vocabulary.service';
 import type { UserVocabulary } from '@english/shared';
@@ -16,6 +17,7 @@ export default function PCVocabularyPage() {
 
   return (
     <div className="max-w-4xl mx-auto pt-2 pb-8 px-4">
+      <SocialSidebar />
       <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('vocab.title')}</h1>
       <p className="text-xs text-slate-400 mb-5">{t('vocab.overlap_hint')}</p>
 
