@@ -50,7 +50,11 @@ export default function LoginPage() {
       await api.post('/auth/forgot-password/send-code', { email: resetEmail });
       setResetStep('code');
     } catch (err: any) {
-      setError(err.message || t('auth.send_failed'));
+      if (err.code === 'EMAIL_QUOTA_EXCEEDED') {
+        setError(t('email.quota_exceeded'));
+      } else {
+        setError(err.message || t('auth.send_failed'));
+      }
     } finally {
       setResetSending(false);
     }
@@ -139,8 +143,8 @@ export default function LoginPage() {
                 </div>
                 <p className="text-xs text-slate-400">
                   {cooldownDays && cooldownDays > 0
-                    ? `修改密码需要间隔7天，再过 ${cooldownDays} 天可以修改`
-                    : '修改密码需要间隔7天'}
+                    ? t('email.reset_hint_days', { n: String(cooldownDays) })
+                    : t('email.reset_hint')}
                 </p>
                 <button type="submit" disabled={loading}
                   className="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors">

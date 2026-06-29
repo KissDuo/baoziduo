@@ -221,6 +221,10 @@ const zh: Record<string, string> = {
 
   'notfound.message': '该页面已消失在太空中了 🚀',
 
+  'email.quota_exceeded': '网站目前为Beta阶段，当日注册及修改密码次数达到上限，请于明日再试',
+  'email.reset_hint': '修改密码需要间隔7天',
+  'email.reset_hint_days': '修改密码需要间隔7天，再过 {n} 天可以修改',
+
   'desktop.title': '请使用电脑访问',
   'desktop.desc': '本网站仅支持电脑端访问，请使用电脑浏览器打开以获得最佳体验。',
 
@@ -445,6 +449,10 @@ const en: Record<string, string> = {
   'common.retry_label': 'Retry',
 
   'notfound.message': 'This page has vanished into space 🚀',
+
+  'email.quota_exceeded': 'The site is currently in Beta. Daily registration and password reset limit reached. Please try again tomorrow.',
+  'email.reset_hint': 'Password can be reset once every 7 days',
+  'email.reset_hint_days': 'Password can be reset once every 7 days, {n} day(s) remaining',
 
   'desktop.title': 'Desktop Only',
   'desktop.desc': 'This site is designed for desktop browsers. Please open it on a computer for the best experience.',

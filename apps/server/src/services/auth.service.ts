@@ -5,6 +5,30 @@ import prisma from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 export class AuthService {
+  // ── Daily email quota helpers ──
+  private async checkAndIncrementQuota(type: 'register' | 'reset') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let quota = await prisma.dailyEmailQuota.findUnique({ where: { date: today } });
+    if (!quota) {
+      quota = await prisma.dailyEmailQuota.create({ data: { date: today } });
+    }
+
+    const total = quota.registerCount + quota.resetCount;
+    if (total >= 99) {
+      throw new AppError(429, 'Daily email quota exceeded', 'EMAIL_QUOTA_EXCEEDED');
+    }
+
+    // Increment
+    await prisma.dailyEmailQuota.update({
+      where: { id: quota.id },
+      data: type === 'register'
+        ? { registerCount: { increment: 1 } }
+        : { resetCount: { increment: 1 } },
+    });
+  }
+
   // ── Send Email Verification Code ──
   async sendEmailCode(email: string) {
     // Check if email already registered
@@ -12,6 +36,8 @@ export class AuthService {
     if (existing) {
       throw new AppError(409, 'Email already registered', 'EMAIL_EXISTS');
     }
+
+    await this.checkAndIncrementQuota('register');
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -150,6 +176,8 @@ export class AuthService {
     if (!user) {
       throw new AppError(404, 'No account found with this email', 'EMAIL_NOT_FOUND');
     }
+
+    await this.checkAndIncrementQuota('reset');
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 

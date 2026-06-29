@@ -79,6 +79,14 @@ model EmailCode {
   @@index([email, code])
 }
 
+model DailyEmailQuota {
+  id            Int      @id @default(autoincrement())
+  date          DateTime @unique @db.Date
+  registerCount Int      @default(0)
+  resetCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+}
+
 // ========================
 // AI USAGE QUOTAS
 // ========================

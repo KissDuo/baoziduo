@@ -43,6 +43,8 @@ export default function RegisterPage() {
     } catch (err: any) {
       if (err.code === 'EMAIL_EXISTS') {
         setError(t('auth.email_exists'));
+      } else if (err.code === 'EMAIL_QUOTA_EXCEEDED') {
+        setError(t('email.quota_exceeded'));
       } else {
         setError(err.message || t('auth.send_failed'));
       }
