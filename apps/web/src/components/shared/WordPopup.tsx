@@ -115,12 +115,18 @@ export function WordPopup({
       {(word as any).relatedWords && (word as any).relatedWords.length > 0 && (
         <div className="mb-2">
           <p className="text-[11px] text-slate-400 mb-1">{t('popup.related_words')}</p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="space-y-0.5">
             {(word as any).relatedWords.map((rw: any, i: number) => (
-              <span key={i} className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
-                <span className="font-medium">{rw.word}</span>
-                {rw.translation && <span className="text-slate-400 ml-1">{rw.translation}</span>}
-              </span>
+              <div key={i}
+                onClick={() => {
+                  // Trigger search for this word via custom event
+                  window.dispatchEvent(new CustomEvent('wordpopup:search', { detail: rw.word }));
+                }}
+                className="flex items-center gap-2 text-xs px-2 py-1 rounded hover:bg-slate-100 cursor-pointer transition-colors group">
+                <span className="font-medium text-slate-700 group-hover:text-primary-600">{rw.word}</span>
+                {rw.translation && <span className="text-slate-400 flex-1 text-right">{rw.translation}</span>}
+                <span className="text-[10px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">🔍</span>
+              </div>
             ))}
           </div>
         </div>

@@ -168,6 +168,29 @@ function SearchBox() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Listen for word search events from WordPopup (related word clicks)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const word = (e as CustomEvent).detail;
+      setQuery(word);
+      setOpen(false);
+      setSelected(null);
+      // Trigger search for this word
+      api.get<any[]>('/vocabulary/search', { q: word }).then(data => {
+        if (data && data.length > 0) {
+          setSelected(data[0]);
+        } else {
+          // Not found locally, try AI search
+          api.post<any>('/vocabulary/ai-search', { q: word }).then(result => {
+            if (result && !result.error) setSelected(result);
+          });
+        }
+      });
+    };
+    window.addEventListener('wordpopup:search', handler);
+    return () => window.removeEventListener('wordpopup:search', handler);
+  }, []);
+
   return (
     <div ref={ref} className="relative flex-1 min-w-0 ml-6 mr-4">
       <div className="flex">
