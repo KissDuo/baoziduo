@@ -92,7 +92,7 @@ export default function ListeningDetailPage() {
     if (!currentSentence) return;
     const answerWords = currentSentence.text.split(/\s+/);
     const results = answerWords.map((aw: string, i: number) =>
-      (userWords[i] || '').toLowerCase().trim() === aw.toLowerCase().replace(/[^a-z]/g, '')
+      (userWords[i] || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '') === aw.toLowerCase().replace(/[^a-z0-9]/g, '')
     );
     setCheckResult(results);
   };
@@ -206,7 +206,8 @@ export default function ListeningDetailPage() {
           {showAnswer && (
             <div className="mt-3 p-3 bg-slate-50 rounded-lg">
               <p className="text-sm text-slate-800 font-medium">{currentSentence.text}</p>
-              <p className="text-xs text-slate-500 mt-1">{currentSentence.translation}</p>
+              {/* Only show translation for IELTS listening, not dictation */}
+              {!isDictation && <p className="text-xs text-slate-500 mt-1">{currentSentence.translation}</p>}
             </div>
           )}
 
