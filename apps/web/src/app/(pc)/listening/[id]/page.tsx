@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 
@@ -88,48 +88,51 @@ export default function ListeningDetailPage() {
     setShowAnswer(false);
   }, [currentSentenceIdx, data]);
 
-  const confirmAnswer = () => {
-    if (!currentSentence) return;
-    const answerWords = currentSentence.text.split(/\s+/);
+  const confirmAnswer = useCallback(() => {
+    const s = data?.sentences[currentSentenceIdx];
+    if (!s) return;
+    const answerWords = s.text.split(/\s+/);
     const results = answerWords.map((aw: string, i: number) =>
       (userWords[i] || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '') === aw.toLowerCase().replace(/[^a-z0-9]/g, '')
     );
     setCheckResult(results);
-  };
+  }, [data, currentSentenceIdx, userWords]);
 
-  const goNext = () => {
+  const goNext = useCallback(() => {
     if (!data) return;
     if (currentSentenceIdx < data.sentences.length - 1) {
       setCurrentSentenceIdx(currentSentenceIdx + 1);
     }
-  };
+  }, [data, currentSentenceIdx]);
 
-  const goPrev = () => {
+  const goPrev = useCallback(() => {
     if (currentSentenceIdx > 0) {
       setCurrentSentenceIdx(currentSentenceIdx - 1);
     }
-  };
+  }, [currentSentenceIdx]);
+
+  // Ref to always have latest callbacks for keyboard handler
+  const actionsRef = useRef({ confirmAnswer, goNext, goPrev });
+  actionsRef.current = { confirmAnswer, goNext, goPrev };
 
   // Keyboard shortcuts (sentence mode only)
   useEffect(() => {
     if (mode !== 'sentence') return;
     const handler = (e: KeyboardEvent) => {
-      // Don't fire when focus is in a word input (except for Enter)
-      const isInputFocused = document.activeElement?.tagName === 'INPUT';
       if (e.key === 'Enter') {
         e.preventDefault();
-        confirmAnswer();
+        actionsRef.current.confirmAnswer();
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
-        goNext();
+        actionsRef.current.goNext();
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        goPrev();
+        actionsRef.current.goPrev();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [mode, currentSentence, userWords, currentSentenceIdx, data]);
+  }, [mode]);
 
   const handleWordKeyDown = (e: React.KeyboardEvent, idx: number) => {
     if (e.key === ' ' || e.key === 'Tab') {
