@@ -7,6 +7,7 @@ import {
   sendSmsCodeSchema,
   loginSmsVerifySchema,
   sendEmailCodeSchema,
+  forgotPasswordSchema,
 } from '@english/shared';
 
 const router = Router();
@@ -28,6 +29,14 @@ router.post('/sms/send', validate(sendSmsCodeSchema), (req, res, next) =>
 );
 router.post('/login/sms/verify', validate(loginSmsVerifySchema), (req, res, next) =>
   authController.loginBySms(req, res, next)
+);
+
+// Forgot password
+router.post('/forgot-password/send-code', validate(sendEmailCodeSchema), (req, res, next) =>
+  authController.sendForgotPasswordCode(req, res, next)
+);
+router.post('/forgot-password/reset', validate(forgotPasswordSchema), (req, res, next) =>
+  authController.resetPassword(req, res, next)
 );
 
 // Token management

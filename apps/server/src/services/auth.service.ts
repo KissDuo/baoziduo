@@ -143,6 +143,54 @@ export class AuthService {
     return this.issueTokens(stored.userId, stored.user.email ?? undefined);
   }
 
+  // ── Forgot Password: Send Code ──
+  async sendForgotPasswordCode(email: string) {
+    // Must be a registered email
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new AppError(404, 'No account found with this email', 'EMAIL_NOT_FOUND');
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await prisma.emailCode.create({
+      data: {
+        email,
+        code,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min
+      },
+    });
+
+    await sendVerificationEmail(email, code);
+
+    return { ok: true };
+  }
+
+  // ── Forgot Password: Reset ──
+  async resetPassword(email: string, code: string, newPassword: string) {
+    // Verify code
+    const emailCode = await prisma.emailCode.findFirst({
+      where: { email, code, used: false },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!emailCode || emailCode.expiresAt < new Date()) {
+      throw new AppError(401, 'Invalid or expired verification code', 'INVALID_CODE');
+    }
+
+    // Mark code as used
+    await prisma.emailCode.update({ where: { id: emailCode.id }, data: { used: true } });
+
+    // Update password
+    const passwordHash = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { email },
+      data: { passwordHash },
+    });
+
+    return { ok: true };
+  }
+
   // ── Logout ──
   async logout(refreshToken: string) {
     await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });

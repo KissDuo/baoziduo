@@ -117,6 +117,26 @@ export class AuthController {
     }
   }
 
+  async sendForgotPasswordCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      const result = await authService.sendForgotPasswordCode(email);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, code, newPassword } = req.body;
+      const result = await authService.resetPassword(email, code, newPassword);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
       const token = req.cookies?.refresh_token;

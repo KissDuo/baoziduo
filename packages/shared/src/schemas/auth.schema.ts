@@ -33,6 +33,13 @@ export const loginSmsVerifySchema = z.object({
   code: z.string().length(6),
 });
 
+// ── Forgot Password ──
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  code: z.string().length(6, 'Verification code must be 6 digits'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
 // ── Response types ──
 export const userResponseSchema = z.object({
   id: z.number(),
@@ -56,5 +63,6 @@ export type RegisterSmsInput = z.infer<typeof registerSmsSchema>;
 export type LoginEmailInput = z.infer<typeof loginEmailSchema>;
 export type SendSmsCodeInput = z.infer<typeof sendSmsCodeSchema>;
 export type LoginSmsVerifyInput = z.infer<typeof loginSmsVerifySchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type UserResponse = z.infer<typeof userResponseSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
