@@ -15,7 +15,7 @@ export default function PCVocabularyPage() {
   const [tab, setTab] = useState<'study' | 'mywords'>('study');
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
+    <div className="max-w-4xl mx-auto pt-2 pb-8 px-4">
       <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('vocab.title')}</h1>
       <p className="text-xs text-slate-400 mb-5">{t('vocab.overlap_hint')}</p>
 

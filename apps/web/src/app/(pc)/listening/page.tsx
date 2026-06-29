@@ -35,7 +35,7 @@ export default function ListeningListPage() {
   const catLabel = (cat: string) => cat === 'all' ? t('listening.cat.all') : t(CATEGORY_LABELS[cat] || cat);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto pt-2 px-6 pb-6">
       <h1 className="text-2xl font-bold text-slate-900 mb-6">精听练习</h1>
 
       {loading && <div className="text-center py-8 text-slate-400">Loading...</div>}
