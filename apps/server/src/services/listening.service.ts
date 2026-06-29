@@ -2,6 +2,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const DICTATION_TITLES: Record<string, string> = {
+  numbers: '数字精听',
+  names: '人名精听',
+  places: '地名精听',
+  mixed: '混合精听',
+};
+function getDictationTitle(cat: string | null) { return DICTATION_TITLES[cat || ''] || cat || 'Dictation'; }
+
 function normalizeText(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9\s']/g, '').replace(/\s+/g, ' ').trim();
 }
@@ -24,7 +32,7 @@ export async function listTranscripts(category?: string) {
   return transcripts.map(t => ({
     id: t.id,
     sectionId: t.sectionId,
-    title: t.section.exam.title + ' - ' + t.section.title,
+    title: t.section ? (t.section.exam.title + ' - ' + t.section.title) : getDictationTitle(t.category),
     category: t.category,
     sentenceCount: t._count.sentences,
     sourceUrl: t.sourceUrl,
@@ -55,13 +63,20 @@ export async function getTranscript(id: number) {
 
   if (!transcript) return null;
 
+  // Check if dictation (no section): include per-sentence audioUrl
+  const isDictation = !transcript.sectionId;
+
   return {
     id: transcript.id,
-    title: transcript.section.exam.title + ' - ' + transcript.section.title,
+    title: transcript.section ? (transcript.section.exam.title + ' - ' + transcript.section.title) : getDictationTitle(transcript.category),
     category: transcript.category,
     sourceUrl: transcript.sourceUrl,
     status: transcript.status,
-    sentences: transcript.sentences,
+    isDictation,
+    sentences: transcript.sentences.map(s => ({
+      ...s,
+      audioUrl: s.audioUrl || undefined,
+    })),
   };
 }
 
