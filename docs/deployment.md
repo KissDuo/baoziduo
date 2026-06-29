@@ -81,22 +81,41 @@
 | Docker + Node 18 Alpine | ❌ | Docker Hub 被墙 + Docker 太老 |
 | Node 18 glibc-217 二进制 | 🔄 | 已下载，待传到服务器 |
 
-## 六、当前进度（2026-06-29 18:30）
+## 六、当前进度（2026-06-29 20:00）
 
-**已完成**:
-- [x] 服务器环境检查
+### 已完成
+- [x] 服务器环境检查完毕
 - [x] pnpm、pm2 安装
 - [x] 项目代码 clone 到 `/root/english-learning-platform/`
-- [x] 本地构建成功（server dist + web standalone）
-- [x] 构建产物已传至服务器（dist/ + .next/standalone/）
-- [x] Node 18 glibc-217 二进制下载到本地 `/tmp/node18-glibc217.tar.xz`
+- [x] 本地构建成功（server dist + web standalone + packages/shared dist）
+- [x] Node 18 glibc-217 二进制安装到 `/opt/node-v18.20.8-linux-x64-glibc-217/` ✅
+- [x] 构建产物已传至服务器
+- [x] Prisma client + Linux 引擎 (rhel-openssl-1.0.x) 已部署
+- [x] Server .env 和 Web .env.local 已配置
 
-**待完成**:
-- [ ] SCP Node 18 二进制到服务器并解压
-- [ ] 配置 PATH 使用 Node 18
-- [ ] 用 PM2 启动后端（port 5201）+ 前端（port 5200）
-- [ ] 开放阿里云安全组端口
-- [ ] 验证访问
+### 当前阻塞问题
+
+**核心问题：1GB 内存导致 npm/pnpm install 被 OOM Kill**
+
+npm install 在任何有较多依赖的目录都会触发 ENOMEM，子进程被杀。
+
+**次生问题：pnpm → npm 的 node_modules 转换**
+
+- 开发环境用 pnpm（软链接），服务器上用 npm（扁平安装）
+- 两种结构不兼容，npm install 会破坏 pnpm 的 node_modules
+- SCP 传输 pnpm 软链接会丢失依赖（因为链接指向的 pnpm store 不在服务器上）
+- `tar -h` 跟随软链接导出 128MB，但嵌套依赖仍有遗漏
+
+**Express/CJS-ESM 兼容**
+
+- Express 4.x 是 CJS 模块，Node 18 ESM 模式需要 `--experimental-specifier-resolution=node`
+- 但仍需完整的 node_modules 才能解析所有依赖
+
+### 下一步思路
+
+1. **本地构建完整部署包**：用 `pnpm deploy` 或手动构建自包含的 server 目录（包含所有 deps 的扁平 node_modules + Linux 原生模块）
+2. **或者升级服务器**：重装为 Rocky Linux 9（支持现代 Node）或至少 CentOS 8 Stream
+3. **或者用更轻量的方案**：只部署 Next.js 前端（standalone 已自带 node_modules），后端暂时不做复杂功能（去掉 geoip-lite、get-youtube-transcript 等非核心依赖）
 
 ## 七、数据库
 
