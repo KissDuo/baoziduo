@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 
 interface Sentence {
   id: number; index: number; startTime: number; endTime: number;
-  text: string; translation: string;
+  text: string; translation: string; audioUrl?: string;
 }
 
 export default function ListeningDetailPage() {
@@ -21,8 +21,9 @@ export default function ListeningDetailPage() {
   const [speed, setSpeed] = useState(1);
   const [activeSentence, setActiveSentence] = useState(-1);
 
-  // Mode — dictation defaults to sentence-only
-  const [mode, setMode] = useState<'full' | 'sentence'>(isDictation ? 'sentence' : 'full');
+  // Mode — dictation defaults to sentence-only (set after data loads)
+  const [mode, setMode] = useState<'full' | 'sentence'>('full');
+  useEffect(() => { if (isDictation) setMode('sentence'); }, [isDictation]);
   const [showTranslation, setShowTranslation] = useState(false);
 
   // Sentence dictation
@@ -58,8 +59,8 @@ export default function ListeningDetailPage() {
     const s = data.sentences[currentSentenceIdx];
     if (!s) return;
     const audio = audioRef.current;
-    if (isDictation && (s as any).audioUrl) {
-      audio.src = (s as any).audioUrl;
+    if (isDictation && s.audioUrl) {
+      audio.src = s.audioUrl;
     } else {
       audio.currentTime = s.startTime;
     }
