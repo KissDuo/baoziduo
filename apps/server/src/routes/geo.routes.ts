@@ -6,9 +6,14 @@ const router = Router();
 router.get('/', (req, res) => {
   // Get IP: prefer x-forwarded-for (behind proxy/nginx), fallback to connection remoteAddress
   const forwarded = req.headers['x-forwarded-for'];
-  const ip = (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded?.[0])
-    || req.socket.remoteAddress
-    || '127.0.0.1';
+  let ip = '127.0.0.1';
+  if (typeof forwarded === 'string') {
+    ip = forwarded.split(',')[0]!.trim();
+  } else if (Array.isArray(forwarded) && forwarded[0]) {
+    ip = forwarded[0];
+  } else if (req.socket.remoteAddress) {
+    ip = req.socket.remoteAddress;
+  }
 
   // Strip IPv6 prefix if present (e.g. "::ffff:192.168.1.1" → "192.168.1.1")
   const cleanIp = ip.replace(/^::ffff:/, '');

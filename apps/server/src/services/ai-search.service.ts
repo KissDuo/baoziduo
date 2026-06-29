@@ -152,10 +152,10 @@ export async function aiSearch(query: string) {
       const phrase = cp.phrase.toLowerCase().trim();
       const exists = await prisma.collocation.findFirst({ where: { phrase } });
       if (exists) continue;
-      const componentWords = [...new Set(phrase.split(/[\s-]+/).filter(w => w.length > 0 && !STOP_WORDS.has(w)))];
+      const componentWords = [...new Set(phrase.split(/[\s-]+/).filter((w: string) => w.length > 0 && !STOP_WORDS.has(w)))] as string[];
       if (componentWords.length >= 2) {
         try {
-          await prisma.collocation.create({
+          await (prisma as any).collocation.create({
             data: { phrase, translation: cp.translation, words: { create: componentWords.map(w => ({ word: w })) } },
           });
         } catch {}

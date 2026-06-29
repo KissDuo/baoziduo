@@ -261,7 +261,6 @@ export class VocabularyService {
         take: 8,
         orderBy: { phrase: 'asc' },
         include: { words: true },
-        select: { phrase: true, translation: true, examplesJson: true, words: true },
       });
       const results = await Promise.all(colMatches.map(async c => {
         const relatedWords = await Promise.all(

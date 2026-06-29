@@ -11,7 +11,7 @@ export async function listTranscripts(req: Request, res: Response, next: NextFun
 
 export async function getTranscript(req: Request, res: Response, next: NextFunction) {
   try {
-    const id = parseInt(req.params.id!);
+    const id = parseInt(req.params.id as string);
     const result = await listeningService.getTranscript(id);
     if (!result) { res.status(404).json({ error: 'Transcript not found' }); return; }
     res.json(result);
@@ -20,7 +20,7 @@ export async function getTranscript(req: Request, res: Response, next: NextFunct
 
 export async function checkSentence(req: Request, res: Response, next: NextFunction) {
   try {
-    const id = parseInt(req.params.id!);
+    const id = parseInt(req.params.id as string);
     const { sentenceIndex, userInput } = req.body;
     const result = await listeningService.checkSentence(id, sentenceIndex, userInput);
     res.json(result);
