@@ -125,7 +125,6 @@ export function WordPopup({
                 className="flex items-center gap-2 text-xs px-2 py-1 rounded hover:bg-slate-100 cursor-pointer transition-colors group">
                 <span className="font-medium text-slate-700 group-hover:text-primary-600">{rw.word}</span>
                 {rw.translation && <span className="text-slate-400 flex-1 text-right">{rw.translation}</span>}
-                <span className="text-[10px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">🔍</span>
               </div>
             ))}
           </div>
