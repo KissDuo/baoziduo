@@ -106,7 +106,7 @@ export function WordPopup({
       {/* Part of speech + translation */}
       <div className="flex items-center gap-2 mb-2">
         {word.partOfSpeech && (
-          <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded">{word.partOfSpeech}</span>
+          <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded">{word.partOfSpeech === 'phrase' ? t('vocab.phrase') : word.partOfSpeech}</span>
         )}
         <span className="text-sm font-medium text-slate-800">{word.translation}</span>
       </div>
