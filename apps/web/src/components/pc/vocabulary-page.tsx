@@ -76,7 +76,7 @@ function StudyTab() {
             <span className="block w-0.5 h-[1em] bg-slate-700 rounded-full flex-shrink-0" />
             {group.title}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {group.books.map(book => (
               <Link key={book.id} href={`/vocabulary/study/${book.slug}`}
                 className="block bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-primary-300 transition-all">
