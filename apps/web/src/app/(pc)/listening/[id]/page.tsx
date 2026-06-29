@@ -97,6 +97,40 @@ export default function ListeningDetailPage() {
     setCheckResult(results);
   };
 
+  const goNext = () => {
+    if (!data) return;
+    if (currentSentenceIdx < data.sentences.length - 1) {
+      setCurrentSentenceIdx(currentSentenceIdx + 1);
+    }
+  };
+
+  const goPrev = () => {
+    if (currentSentenceIdx > 0) {
+      setCurrentSentenceIdx(currentSentenceIdx - 1);
+    }
+  };
+
+  // Keyboard shortcuts (sentence mode only)
+  useEffect(() => {
+    if (mode !== 'sentence') return;
+    const handler = (e: KeyboardEvent) => {
+      // Don't fire when focus is in a word input (except for Enter)
+      const isInputFocused = document.activeElement?.tagName === 'INPUT';
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmAnswer();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goPrev();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [mode, currentSentence, userWords, currentSentenceIdx, data]);
+
   const handleWordKeyDown = (e: React.KeyboardEvent, idx: number) => {
     if (e.key === ' ' || e.key === 'Tab') {
       e.preventDefault();
@@ -213,7 +247,7 @@ export default function ListeningDetailPage() {
 
           {/* Action buttons */}
           <div className="flex items-center justify-center gap-2 mt-4">
-            <button onClick={() => setCurrentSentenceIdx(Math.max(0, currentSentenceIdx - 1))}
+            <button onClick={goPrev}
               disabled={currentSentenceIdx === 0} className="px-3 py-1.5 text-sm border rounded disabled:opacity-30">上一句</button>
             <button onClick={confirmAnswer}
               className="px-4 py-1.5 text-sm bg-primary-600 text-white rounded font-medium">确认</button>
@@ -221,9 +255,14 @@ export default function ListeningDetailPage() {
               className="px-3 py-1.5 text-sm border rounded">{showAnswer ? '隐藏答案' : '展示答案'}</button>
             <button onClick={playCurrentSentence}
               className="px-3 py-1.5 text-sm border rounded">重播</button>
-            <button onClick={() => setCurrentSentenceIdx(Math.min(data.sentences.length - 1, currentSentenceIdx + 1))}
+            <button onClick={goNext}
               disabled={currentSentenceIdx >= data.sentences.length - 1} className="px-3 py-1.5 text-sm border rounded disabled:opacity-30">下一句</button>
           </div>
+
+          {/* Keyboard shortcuts hint */}
+          <p className="text-center text-xs text-slate-400 mt-3 select-none">
+            Enter 确认 &nbsp;|&nbsp; ← 上一句 &nbsp;|&nbsp; → 下一句
+          </p>
         </div>
       )})()}
     </div>
