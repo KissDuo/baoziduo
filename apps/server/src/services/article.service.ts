@@ -265,6 +265,35 @@ export class ArticleService {
       throw new AppError(400, 'Invalid word', 'INVALID_WORD');
     }
 
+    // If phrase (contains space), check Collocation table
+    if (word.includes(' ')) {
+      const col = await prisma.collocation.findFirst({
+        where: { phrase: word },
+        include: { words: true },
+      });
+      if (col) {
+        const relatedWords = await Promise.all(
+          col.words.map(async cw => {
+            const wa = await prisma.wordAnnotation.findFirst({ where: { word: cw.word } });
+            return { word: cw.word, translation: wa?.translation || '' };
+          })
+        );
+        let examples = null;
+        try { if (col.examplesJson) examples = JSON.parse(col.examplesJson); } catch {}
+        return {
+          word: col.phrase,
+          phoneticUk: null, phoneticUs: null,
+          translation: col.translation,
+          partOfSpeech: 'phrase',
+          examples,
+          tags: [],
+          inVocabulary: false,
+          books: undefined, forms: undefined,
+          relatedWords,
+        } as any;
+      }
+    }
+
     // Look up in WordAnnotation
     const annotation = await prisma.wordAnnotation.findUnique({
       where: { word },
