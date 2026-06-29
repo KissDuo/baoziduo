@@ -254,6 +254,24 @@ export class VocabularyService {
   async searchWord(query: string) {
     const q = query.toLowerCase().trim();
 
+    // If query contains space, search Collocation table first
+    if (q.includes(' ')) {
+      const colMatches = await prisma.collocation.findMany({
+        where: { phrase: { startsWith: q } },
+        take: 8,
+        orderBy: { phrase: 'asc' },
+        select: { phrase: true, translation: true },
+      });
+      return colMatches.map(c => ({
+        word: c.phrase,
+        phoneticUk: null,
+        phoneticUs: null,
+        translation: c.translation,
+        partOfSpeech: 'phrase',
+        isCollocation: true,
+      }));
+    }
+
     // Try exact/starts-with match first
     let annotations = await prisma.wordAnnotation.findMany({
       where: { word: { startsWith: q } },
