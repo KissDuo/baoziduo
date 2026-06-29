@@ -36,14 +36,17 @@ async function whisperTranscribe(audioUrl: string): Promise<{ text: string; segm
     // Filter out IELTS narrator instructions and blank audio markers
     const NOISE_PATTERNS = [
       /you will hear/i, /you have some time/i, /look at questions/i,
-      /the end of (part|section|this test)/i, /seconds to check/i,
+      /the end of/i, /seconds to check/i,
       /BLANK.?AUDIO/i, /now listen/i, /first you have/i,
       /^IELTS/i, /^Cambridge/i, /published by/i,
       /^\s*Part\s*\d/i, /^\s*Section\s*\d/i, /^\s*Test\s*\d/i,
       /complete the (notes|summary|table|form|sentences)/i,
       /write (one|no|two|three|\d+)/i, /questions?\s*\d+.*\d+/i,
       /before you (listen|hear)/i, /now you have/i, /that is the end/i,
-      /check your answers/i, /you now have/i,
+      /check your (answers|work)/i, /you now have/i,
+      /all the recordings/i, /answer sheet/i, /once only/i,
+      /you hear\.?\s*$/i, /your answers/i, /now you will/i,
+      /^\d+ to \d+\.?$/i,  // "7 to 10."
     ];
 
     const segments = (jsonData.transcription || []).map((s: any) => ({
