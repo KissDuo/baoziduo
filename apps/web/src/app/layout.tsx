@@ -7,8 +7,17 @@ import type { Lang } from '@/lib/i18n';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: '宝子多EN - 英语学习平台',
-  description: 'Learn English with articles, vocabulary, and IELTS mock exams',
+  title: { template: '%s | 宝子多EN', default: '宝子多EN - 英语学习平台' },
+  description: '免费在线英语学习平台，提供雅思模拟考试、外刊阅读、精听练习、词汇学习等功能，支持电脑和手机。',
+  keywords: ['英语学习', '雅思', 'IELTS', 'PTE', '托福', '托业', '背单词', '精听', '外刊阅读', '英语阅读'],
+  authors: [{ name: '宝子多EN' }],
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: '宝子多EN - 英语学习平台',
+    description: '免费在线英语学习平台，雅思模拟考试、外刊阅读、精听练习、背单词',
+    type: 'website',
+    locale: 'zh_CN',
+  },
 };
 
 function parseJwtPayload(token: string): { sub: number; email?: string } | null {
