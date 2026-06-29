@@ -66,9 +66,6 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
     if (!article) return;
     let timeout: ReturnType<typeof setTimeout>;
     const handleScroll = () => {
-      // Close word popup on scroll
-      setSelectedWord(null);
-      setPhraseSelection(null);
       clearTimeout(timeout);
       timeout = setTimeout(() => {
         const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
