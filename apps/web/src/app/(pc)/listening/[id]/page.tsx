@@ -130,8 +130,8 @@ export default function ListeningDetailPage() {
           className="px-3 py-1.5 bg-primary-600 text-white rounded text-sm">{playing ? '⏸' : '▶'}</button>
         <input type="range" min={0} max={audioRef.current?.duration || 0} value={currentTime} step={0.1}
           onChange={e => { if (audioRef.current) audioRef.current.currentTime = +e.target.value; }}
-          className={`${isDictation ? 'hidden' : ''} flex-1`} />
-        <span className={`text-xs text-slate-500 ${isDictation ? 'hidden' : ''}`}>{formatTime(currentTime)}</span>
+          className="flex-1" />
+        <span className="text-xs text-slate-500">{formatTime(currentTime)}</span>
         <select value={speed} onChange={e => { const v = +e.target.value; setSpeed(v); if (audioRef.current) audioRef.current.playbackRate = v; }}
           className="text-xs border rounded px-1 py-0.5">
           {[0.5, 0.75, 1, 1.25, 1.5, 2].map(s => <option key={s} value={s}>{s}x</option>)}
