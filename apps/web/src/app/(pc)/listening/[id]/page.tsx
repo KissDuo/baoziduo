@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import { useLang } from '@/lib/i18n';
 
 interface Sentence {
   id: number; index: number; startTime: number; endTime: number;
@@ -10,6 +11,7 @@ interface Sentence {
 
 export default function ListeningDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useLang();
   const [data, setData] = useState<{ title: string; sourceUrl: string; sentences: Sentence[]; category: string; isDictation?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const isDictation = data?.isDictation;
@@ -188,7 +190,7 @@ export default function ListeningDetailPage() {
                   value={userWords[i] || ''}
                   onChange={e => handleWordChange(i, e.target.value)}
                   onKeyDown={e => handleWordKeyDown(e, i)}
-                  placeholder={word.replace(/[a-zA-Z]/g, '_')}
+                  placeholder={isDictation ? t('dictation.placeholder') : word.replace(/[a-zA-Z]/g, '_')}
                   className={`text-center text-sm px-2 py-1.5 rounded border-2 outline-none transition-colors ${
                     isCorrect ? 'border-green-400 bg-green-50 text-green-700' :
                     isWrong ? 'border-red-400 bg-red-50 text-red-600' :

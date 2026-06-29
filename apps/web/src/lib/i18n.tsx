@@ -201,6 +201,7 @@ const zh: Record<string, string> = {
   'popup.past': '过去式',
   'popup.past_participle': '过去分词',
   'popup.collocations': '常用搭配',
+  'dictation.placeholder': '请输入听到内容',
 
   'common.retry': '重试',
   'common.back': '返回',
@@ -413,6 +414,7 @@ const en: Record<string, string> = {
   'popup.past': 'past',
   'popup.past_participle': 'p.p.',
   'popup.collocations': 'Collocations',
+  'dictation.placeholder': 'Type what you hear',
 
   'common.retry': 'Retry',
   'common.back': 'Back',

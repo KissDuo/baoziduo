@@ -21,16 +21,12 @@ async function generate(category: string, items: DictationItem[]) {
 
   for (const item of items) {
     const mp3Path = path.join(dir, `${item.id}.mp3`);
-    const txtPath = path.join(dir, `${item.id}.txt`);
-
-    // Save metadata
-    fs.writeFileSync(txtPath, JSON.stringify({ display: item.display, answer: item.answer, ttsText: item.ttsText }, null, 2));
 
     try {
       // Write text to temp file to avoid shell escaping issues
       const tmpTxt = path.join(dir, '.tmp.txt');
       fs.writeFileSync(tmpTxt, item.ttsText);
-      execSync(`python3 -m edge_tts -f "${tmpTxt}" --voice ${VOICE} --write-media "${mp3Path}"`, { timeout: 30000 });
+      execSync(`python3 -m edge_tts -f "${tmpTxt}" --voice ${VOICE} --rate=-20% --write-media "${mp3Path}"`, { timeout: 30000 });
       fs.unlinkSync(tmpTxt);
       console.log(`  ✅ ${item.id}: ${item.display}`);
     } catch (e: any) {
@@ -45,28 +41,25 @@ async function main() {
   // ═══════════════════════════════════
   const numbers: DictationItem[] = [
     // Phone numbers
-    { id: 'phone-01', display: '212-555-1234', ttsText: 'two one two, five five five, one two three four. two one two, five five five, one two three four.', answer: '2125551234' },
-    { id: 'phone-02', display: '800-333-7777', ttsText: 'eight hundred, triple three, triple seven. eight hundred, triple three, triple seven.', answer: '8003337777' },
-    { id: 'phone-03', display: '020-7946-0018', ttsText: 'oh two oh, seven nine four six, double oh one eight. oh two oh, seven nine four six, double oh one eight.', answer: '02079460018' },
-    { id: 'phone-04', display: '+44-7911-123456', ttsText: 'plus four four, seven nine double one, one two three four five six. plus four four, seven nine double one, one two three four five six.', answer: '447911123456' },
-    { id: 'phone-05', display: '1-800-FLOWERS', ttsText: 'one, eight hundred, F L O W E R S. one, eight hundred, F L O W E R S.', answer: '1800FLOWERS' },
-    // Currency / amounts
+    { id: 'phone-01', display: '212-555-1234', ttsText: 'two one two, five five five, one two three four.', answer: '2125551234' },
+    { id: 'phone-02', display: '800-333-7777', ttsText: 'eight hundred, triple three, triple seven.', answer: '8003337777' },
+    { id: 'phone-03', display: '020-7946-0018', ttsText: 'oh two oh, seven nine four six, double oh one eight.', answer: '02079460018' },
+    { id: 'phone-04', display: '+44-7911-123456', ttsText: 'plus four four, seven nine double one, one two three four five six.', answer: '447911123456' },
+    { id: 'phone-05', display: '1-800-FLOWERS', ttsText: 'one, eight hundred, F L O W E R S.', answer: '1800FLOWERS' },
     { id: 'money-01', display: '$1,250.99', ttsText: 'one thousand, two hundred and fifty dollars, and ninety-nine cents.', answer: '1250.99' },
     { id: 'money-02', display: '£3.50', ttsText: 'three pounds and fifty pence.', answer: '3.50' },
     { id: 'money-03', display: '$0.75', ttsText: 'seventy-five cents.', answer: '0.75' },
-    // Dates & years
     { id: 'date-01', display: '1984', ttsText: 'nineteen eighty-four.', answer: '1984' },
-    { id: 'date-02', display: '2026', ttsText: 'twenty twenty-six. two thousand and twenty-six.', answer: '2026' },
+    { id: 'date-02', display: '2026', ttsText: 'twenty twenty-six.', answer: '2026' },
     { id: 'date-03', display: '11/09/2001', ttsText: 'September eleventh, two thousand and one.', answer: '11092001' },
-    // Large numbers
     { id: 'num-01', display: '1,234,567', ttsText: 'one million, two hundred and thirty-four thousand, five hundred and sixty-seven.', answer: '1234567' },
     { id: 'num-02', display: '0.005', ttsText: 'zero point zero zero five.', answer: '0.005' },
     { id: 'num-03', display: '2/3', ttsText: 'two thirds.', answer: '2/3' },
     { id: 'num-04', display: '50%', ttsText: 'fifty percent.', answer: '50%' },
     { id: 'num-05', display: 'Room 307', ttsText: 'room three oh seven.', answer: '307' },
     { id: 'num-06', display: 'PIN: 4829', ttsText: 'four eight two nine.', answer: '4829' },
-    { id: 'num-07', display: 'Ref: AB-2026-X', ttsText: 'reference: A B, dash, two zero two six, dash, X. A B, two zero two six, X.', answer: 'AB2026X' },
-    { id: 'num-08', display: 'Call 555-0199', ttsText: 'call five five five, oh one double nine. five five five, oh one double nine.', answer: '5550199' },
+    { id: 'num-07', display: 'Ref: AB-2026-X', ttsText: 'reference: A B, dash, two zero two six, dash, X.', answer: 'AB2026X' },
+    { id: 'num-08', display: 'Call 555-0199', ttsText: 'call five five five, oh one double nine.', answer: '5550199' },
     { id: 'num-09', display: 'Price: $14.99', ttsText: 'fourteen dollars and ninety-nine cents.', answer: '14.99' },
   ];
   await generate('numbers', numbers);
