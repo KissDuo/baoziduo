@@ -1,7 +1,0 @@
-node_modules
-.next/cache
-.git
-kmf-data
-docs
-*.md
-.DS_Store
