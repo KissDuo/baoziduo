@@ -41,14 +41,15 @@ export async function aiSearch(query: string) {
       include: { words: true },
     });
     if (existingCol) {
-      // Get related word annotations
       const relatedWords = await Promise.all(
         existingCol.words.map(async cw => {
           const wa = await prisma.wordAnnotation.findFirst({ where: { word: cw.word } });
           return { word: cw.word, translation: wa?.translation || '' };
         })
       );
-      return { word: q, partOfSpeech: 'phrase', translation: existingCol.translation, relatedWords, cached: true };
+      let examples = null;
+      try { if (existingCol.examplesJson) examples = JSON.parse(existingCol.examplesJson); } catch {}
+      return { word: q, partOfSpeech: 'phrase', translation: existingCol.translation, relatedWords, examples, cached: true };
     }
 
     // Create new collocation via AI
