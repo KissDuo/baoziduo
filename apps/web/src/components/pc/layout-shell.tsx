@@ -145,15 +145,18 @@ function SearchBox() {
 
   const doAISearch = async () => {
     if (!query.trim()) return;
-    setLoading(true);
+    setOpen(false);
+    setResults([]);
+    // Show popup immediately with loading state
+    setSelected({ word: query.trim(), partOfSpeech: '', translation: '', _loading: true });
     try {
       const result = await api.post<any>('/vocabulary/ai-search', { q: query.trim() });
       if (result && !result.error) {
         setSelected(result);
-        setOpen(false);
+      } else {
+        setSelected(null);
       }
-    } catch {}
-    finally { setLoading(false); }
+    } catch { setSelected(null); }
   };
 
   useEffect(() => {
@@ -236,6 +239,7 @@ function SearchBox() {
           onClose={() => setSelected(null)}
           onAddToVocabulary={() => {}}
           onRemoveFromVocabulary={() => {}}
+          loading={!!(selected as any)?._loading}
         />
       )}
     </div>
