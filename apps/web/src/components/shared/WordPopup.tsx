@@ -209,8 +209,10 @@ export function WordPopup({
       </div>
       <div className="space-y-1.5">
         {displayCollocations.map((c, i) => (
-          <div key={i} className="text-xs leading-relaxed">
-            <span className="text-slate-700 font-medium">{highlightPhrase(c.phrase, word.word)}</span>
+          <div key={i}
+            onClick={() => window.dispatchEvent(new CustomEvent('wordpopup:search', { detail: c.phrase }))}
+            className="text-xs leading-relaxed cursor-pointer hover:bg-slate-50 rounded px-1 py-0.5 -mx-1 transition-colors group">
+            <span className="text-slate-700 font-medium group-hover:text-primary-600">{highlightPhrase(c.phrase, word.word)}</span>
             <span className="text-slate-400 mx-1">—</span>
             <span className="text-slate-500">{c.translation}</span>
           </div>
