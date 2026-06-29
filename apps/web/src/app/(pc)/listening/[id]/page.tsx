@@ -207,7 +207,22 @@ export default function ListeningDetailPage() {
         return (
         <div className="max-w-lg mx-auto">
           <div className="text-center mb-4">
-            <span className="text-sm text-slate-500">句子 {currentSentenceIdx + 1} / {data.sentences.length}</span>
+            <span className="text-sm text-slate-500">
+              句子{' '}
+              <input
+                type="number"
+                min={1}
+                max={data.sentences.length}
+                value={currentSentenceIdx + 1}
+                onChange={e => {
+                  const v = parseInt(e.target.value, 10);
+                  if (v >= 1 && v <= data.sentences.length) setCurrentSentenceIdx(v - 1);
+                }}
+                onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                className="w-12 text-center border border-slate-200 rounded px-1 py-0.5 text-primary-600 font-medium outline-none focus:border-primary-400"
+              />
+              {' '}/ {data.sentences.length}
+            </span>
           </div>
 
           <div className="text-center mb-4">
