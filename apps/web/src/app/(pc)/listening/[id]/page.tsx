@@ -252,12 +252,12 @@ export default function ListeningDetailPage() {
           <div className="flex items-center justify-center gap-2 mt-4">
             <button onClick={goPrev}
               disabled={currentSentenceIdx === 0} className="px-3 py-1.5 text-sm border rounded disabled:opacity-30">上一句</button>
-            <button onClick={confirmAnswer}
-              className="px-4 py-1.5 text-sm bg-primary-600 text-white rounded font-medium">确认</button>
-            <button onClick={() => setShowAnswer(!showAnswer)}
-              className="px-3 py-1.5 text-sm border rounded">{showAnswer ? '隐藏答案' : '展示答案'}</button>
             <button onClick={playCurrentSentence}
               className="px-3 py-1.5 text-sm border rounded">重播</button>
+            <button onClick={() => setShowAnswer(!showAnswer)}
+              className="px-3 py-1.5 text-sm border rounded">{showAnswer ? '隐藏答案' : '展示答案'}</button>
+            <button onClick={confirmAnswer}
+              className="px-4 py-1.5 text-sm bg-primary-600 text-white rounded font-medium">确认</button>
             <button onClick={goNext}
               disabled={currentSentenceIdx >= data.sentences.length - 1} className="px-3 py-1.5 text-sm border rounded disabled:opacity-30">下一句</button>
           </div>
