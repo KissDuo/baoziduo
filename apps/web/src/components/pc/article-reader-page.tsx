@@ -446,7 +446,6 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
           onClose={() => setSelectedWord(null)}
           onAddToVocabulary={handleAddToVocabulary}
           onRemoveFromVocabulary={handleRemoveFromVocabulary}
-          position={selectedWord.position}
           isMobile={false}
           loading={wordLoading}
         />

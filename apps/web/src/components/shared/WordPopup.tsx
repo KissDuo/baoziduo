@@ -51,7 +51,7 @@ export function WordPopup({
     }
     return (
       <div
-        className="fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 w-[440px] min-h-[220px]"
+        className={`fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 w-[440px] min-h-[220px] ${!position ? 'inset-0 m-auto h-fit' : ''}`}
         style={position ? (position.useBottom ? { left: `${position.x}px`, bottom: `${position.y}px` } : { left: `${position.x}px`, top: `${position.y}px` }) : undefined}
       >
         <div className="flex items-center justify-center h-[180px]">
@@ -267,7 +267,7 @@ export function WordPopup({
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
-        className={`fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 min-h-[220px] ${popupWidth}`}
+        className={`fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-4 min-h-[220px] ${popupWidth} ${!position ? 'inset-0 m-auto h-fit' : ''}`}
         style={position ? (position.useBottom ? { left: `${position.x}px`, bottom: `${position.y}px` } : { left: `${position.x}px`, top: `${position.y}px` }) : undefined}
       >
         {content}
