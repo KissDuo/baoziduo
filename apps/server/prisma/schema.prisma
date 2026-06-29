@@ -250,8 +250,8 @@ model CollocationWord {
 
 model ListeningTranscript {
   id        Int      @id @default(autoincrement())
-  sectionId Int      @unique
-  section   IELTSExamSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sectionId Int?     @unique
+  section   IELTSExamSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   sourceUrl String   @db.VarChar(500)
   status    String   @default("pending")  // pending | transcribed | translated | ready
   category  String?  @db.VarChar(50)     // "ielts" | "ted" | "news" | ...
@@ -271,7 +271,8 @@ model ListeningSentence {
   startTime    Float
   endTime      Float
   text         String   @db.Text
-  translation  String   @db.Text     // Chinese translation
+  translation  String   @db.Text     // Chinese translation / display text
+  audioUrl     String?  @db.VarChar(500)  // Per-sentence audio (for dictation items)
   createdAt    DateTime @default(now())
 
   @@index([transcriptId, index])
