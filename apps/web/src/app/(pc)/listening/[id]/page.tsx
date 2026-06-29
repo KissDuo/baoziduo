@@ -36,7 +36,7 @@ export default function ListeningDetailPage() {
   const wordInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    fetch(`http://localhost:5201/api/v1/listening/${id}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5201/api/v1'}/listening/${id}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));

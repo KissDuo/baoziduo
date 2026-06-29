@@ -90,7 +90,7 @@ export function PCLayoutShell({ children, user }: { children: React.ReactNode; u
                     className="block px-4 py-2.5 text-sm text-slate-500 hover:bg-slate-50 rounded-b-lg border-t"
                     onClick={async (e) => {
                       e.preventDefault();
-                      try { await fetch('http://localhost:3001/api/v1/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+                      try { await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5201/api/v1'}/auth/logout`, { method: 'POST', credentials: 'include' }); } catch {}
                       window.location.href = '/login';
                     }}
                   >
