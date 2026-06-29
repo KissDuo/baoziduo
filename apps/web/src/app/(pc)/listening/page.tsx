@@ -2,12 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLang } from '@/lib/i18n';
 
 interface TranscriptItem {
   id: number; title: string; category: string; sentenceCount: number;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  ielts: 'listening.cat.ielts',
+  numbers: 'listening.cat.numbers',
+  names: 'listening.cat.names',
+  places: 'listening.cat.places',
+  mixed: 'listening.cat.mixed',
+};
+
 export default function ListeningListPage() {
+  const { t } = useLang();
   const [transcripts, setTranscripts] = useState<TranscriptItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
@@ -22,6 +32,8 @@ export default function ListeningListPage() {
   const categories = ['all', ...new Set(transcripts.map(t => t.category).filter(Boolean))] as string[];
   const filtered = filter === 'all' ? transcripts : transcripts.filter(t => t.category === filter);
 
+  const catLabel = (cat: string) => cat === 'all' ? t('listening.cat.all') : t(CATEGORY_LABELS[cat] || cat);
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-slate-900 mb-6">精听练习</h1>
@@ -35,7 +47,7 @@ export default function ListeningListPage() {
               {categories.map(cat => (
                 <button key={cat} onClick={() => setFilter(cat)}
                   className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${filter === cat ? 'bg-slate-800 text-white' : 'border border-slate-300 text-slate-600 hover:bg-slate-50'}`}>
-                  {cat === 'all' ? '全部' : cat.toUpperCase()}
+                  {catLabel(cat)}
                 </button>
               ))}
             </div>
