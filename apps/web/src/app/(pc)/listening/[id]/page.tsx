@@ -10,8 +10,9 @@ interface Sentence {
 
 export default function ListeningDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<{ title: string; sourceUrl: string; sentences: Sentence[]; category: string } | null>(null);
+  const [data, setData] = useState<{ title: string; sourceUrl: string; sentences: Sentence[]; category: string; isDictation?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
+  const isDictation = data?.isDictation;
 
   // Player state
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -20,8 +21,8 @@ export default function ListeningDetailPage() {
   const [speed, setSpeed] = useState(1);
   const [activeSentence, setActiveSentence] = useState(-1);
 
-  // Mode
-  const [mode, setMode] = useState<'full' | 'sentence'>('full');
+  // Mode — dictation defaults to sentence-only
+  const [mode, setMode] = useState<'full' | 'sentence'>(isDictation ? 'sentence' : 'full');
   const [showTranslation, setShowTranslation] = useState(false);
 
   // Sentence dictation
@@ -51,18 +52,23 @@ export default function ListeningDetailPage() {
     return () => audio.removeEventListener('timeupdate', tick);
   }, [data, speed]);
 
-  // Sentence mode: play current sentence only
+  // Sentence mode: play current sentence (dictation uses per-item audio)
   const playCurrentSentence = () => {
     if (!audioRef.current || !data) return;
     const s = data.sentences[currentSentenceIdx];
     if (!s) return;
     const audio = audioRef.current;
-    audio.currentTime = s.startTime;
+    if (isDictation && (s as any).audioUrl) {
+      audio.src = (s as any).audioUrl;
+    } else {
+      audio.currentTime = s.startTime;
+    }
     audio.play();
     setPlaying(true);
-    // Stop at end
-    const stop = () => { if (audio.currentTime >= s.endTime) { audio.pause(); setPlaying(false); audio.removeEventListener('timeupdate', stop); } };
-    audio.addEventListener('timeupdate', stop);
+    if (!isDictation) {
+      const stop = () => { if (audio.currentTime >= s.endTime) { audio.pause(); setPlaying(false); audio.removeEventListener('timeupdate', stop); } };
+      audio.addEventListener('timeupdate', stop);
+    }
   };
 
   // Initialize word inputs when sentence changes
@@ -124,15 +130,17 @@ export default function ListeningDetailPage() {
         </select>
       </div>
 
-      {/* Mode switch */}
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => setMode('full')} className={`px-3 py-1 text-sm rounded ${mode === 'full' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600'}`}>全文精听</button>
-        <button onClick={() => setMode('sentence')} className={`px-3 py-1 text-sm rounded ${mode === 'sentence' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600'}`}>逐句精听</button>
-        {mode === 'full' && (
-          <button onClick={() => setShowTranslation(!showTranslation)}
-            className="ml-auto px-3 py-1 text-sm border rounded">{showTranslation ? '隐藏译文' : '显示译文'}</button>
-        )}
-      </div>
+      {/* Mode switch — hidden for dictation (sentence-only) */}
+      {!isDictation && (
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={() => setMode('full')} className={`px-3 py-1 text-sm rounded ${mode === 'full' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600'}`}>全文精听</button>
+          <button onClick={() => setMode('sentence')} className={`px-3 py-1 text-sm rounded ${mode === 'sentence' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600'}`}>逐句精听</button>
+          {mode === 'full' && (
+            <button onClick={() => setShowTranslation(!showTranslation)}
+              className="ml-auto px-3 py-1 text-sm border rounded">{showTranslation ? '隐藏译文' : '显示译文'}</button>
+          )}
+        </div>
+      )}
 
       {/* Full-text mode */}
       {mode === 'full' && (
