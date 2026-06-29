@@ -36,8 +36,20 @@ export async function aiSearch(query: string) {
 
   if (isPhrase) {
     // Check existing collocation
-    const existingCol = await prisma.collocation.findFirst({ where: { phrase: q } });
-    if (existingCol) return { type: 'collocation', phrase: q, translation: existingCol.translation, cached: true };
+    const existingCol = await prisma.collocation.findFirst({
+      where: { phrase: q },
+      include: { words: true },
+    });
+    if (existingCol) {
+      // Get related word annotations
+      const relatedWords = await Promise.all(
+        existingCol.words.map(async cw => {
+          const wa = await prisma.wordAnnotation.findFirst({ where: { word: cw.word } });
+          return { word: cw.word, translation: wa?.translation || '' };
+        })
+      );
+      return { type: 'collocation', phrase: q, translation: existingCol.translation, relatedWords, cached: true };
+    }
 
     // Create new collocation via AI
     const ai = await annotateWord(q); // AI can also define phrases
@@ -53,7 +65,13 @@ export async function aiSearch(query: string) {
         },
       },
     });
-    return { type: 'collocation', phrase: q, translation, id: col.id, cached: false };
+    const relatedWords = await Promise.all(
+      (col as any).words?.map(async (cw: any) => {
+        const wa = await prisma.wordAnnotation.findFirst({ where: { word: cw.word } });
+        return { word: cw.word, translation: wa?.translation || '' };
+      }) || []
+    );
+    return { type: 'collocation', phrase: q, translation, relatedWords, id: col.id, cached: false };
   }
 
   // Single word

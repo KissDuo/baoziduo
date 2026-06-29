@@ -111,6 +111,21 @@ export function WordPopup({
         <span className="text-sm font-medium text-slate-800">{word.translation}</span>
       </div>
 
+      {/* Related Words (for phrases/collocations) */}
+      {(word as any).relatedWords && (word as any).relatedWords.length > 0 && (
+        <div className="mb-2">
+          <p className="text-[11px] text-slate-400 mb-1">{t('popup.related_words')}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {(word as any).relatedWords.map((rw: any, i: number) => (
+              <span key={i} className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
+                <span className="font-medium">{rw.word}</span>
+                {rw.translation && <span className="text-slate-400 ml-1">{rw.translation}</span>}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tags */}
       {word.tags && word.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
