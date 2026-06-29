@@ -72,16 +72,16 @@ function StudyTab() {
     <div className="space-y-8">
       {groupedBooks.map(group => (
         <div key={group.title}>
-          <h2 className="flex items-center gap-[10px] font-bold text-slate-800 text-base mb-4">
+          <h2 className="flex items-center gap-[10px] font-bold text-slate-800 text-lg mb-4">
             <span className="block w-0.5 h-[1em] bg-slate-700 rounded-full flex-shrink-0" />
             {group.title}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {group.books.map(book => (
               <Link key={book.id} href={`/vocabulary/study/${book.slug}`}
                 className="block bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-primary-300 transition-all">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-slate-900 text-lg">{t(`vocab.book.${book.slug}`) !== `vocab.book.${book.slug}` ? t(`vocab.book.${book.slug}`) : book.name}</h3>
+                  <h3 className="font-semibold text-slate-900 text-base">{t(`vocab.book.${book.slug}`) !== `vocab.book.${book.slug}` ? t(`vocab.book.${book.slug}`) : book.name}</h3>
                 </div>
                 {(t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` || book.description) && (
                   <p className="text-sm text-slate-500 mb-3">{t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` ? t(`vocab.desc.${book.slug}`) : book.description}</p>
