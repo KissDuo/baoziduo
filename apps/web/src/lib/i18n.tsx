@@ -69,6 +69,7 @@ const zh: Record<string, string> = {
 
   'vocab.title': '词汇',
   'vocab.study': '背单词',
+  'vocab.phrase': '短语',
   'vocab.group.basic': '基础词汇',
   'vocab.group.domestic': '国内考试',
   'vocab.group.international': '国际考试',
@@ -285,6 +286,7 @@ const en: Record<string, string> = {
 
   'vocab.title': 'Vocabulary',
   'vocab.study': 'Study',
+  'vocab.phrase': 'Phrase',
   'vocab.group.basic': 'Basic',
   'vocab.group.domestic': 'Domestic Exams',
   'vocab.group.international': 'International Exams',

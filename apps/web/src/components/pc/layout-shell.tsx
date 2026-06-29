@@ -190,7 +190,7 @@ function SearchBox() {
             <div key={i} onClick={() => setSelected(r)} className="p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-bold text-slate-900">{r.word}</span>
-                {r.partOfSpeech && <span className="text-xs text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">{r.partOfSpeech}</span>}
+                {r.partOfSpeech && <span className="text-xs text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">{r.partOfSpeech === 'phrase' ? t('vocab.phrase') : r.partOfSpeech}</span>}
               </div>
               {(r.phoneticUk || r.phoneticUs) && (
                 <p className="text-xs text-slate-400 mb-1">
