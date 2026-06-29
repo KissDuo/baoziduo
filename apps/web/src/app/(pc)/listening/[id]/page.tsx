@@ -61,14 +61,19 @@ export default function ListeningDetailPage() {
     const audio = audioRef.current;
     if (isDictation && s.audioUrl) {
       audio.src = s.audioUrl;
+      audio.load();
+      audio.oncanplaythrough = () => { audio.play(); setPlaying(true); };
     } else {
       audio.currentTime = s.startTime;
+      audio.play();
+      setPlaying(true);
     }
-    audio.play();
-    setPlaying(true);
     if (!isDictation) {
       const stop = () => { if (audio.currentTime >= s.endTime) { audio.pause(); setPlaying(false); audio.removeEventListener('timeupdate', stop); } };
       audio.addEventListener('timeupdate', stop);
+    } else {
+      const ended = () => { setPlaying(false); audio.removeEventListener('ended', ended); };
+      audio.addEventListener('ended', ended);
     }
   };
 
@@ -116,15 +121,15 @@ export default function ListeningDetailPage() {
       <h1 className="text-xl font-bold text-slate-900 mb-4">{data.title}</h1>
 
       {/* Audio player */}
-      <audio ref={audioRef} src={data.sourceUrl} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+      <audio ref={audioRef} src={data.sourceUrl || undefined} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
 
       <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg">
         <button onClick={() => audioRef.current?.paused ? audioRef.current?.play() : audioRef.current?.pause()}
           className="px-3 py-1.5 bg-primary-600 text-white rounded text-sm">{playing ? '⏸' : '▶'}</button>
         <input type="range" min={0} max={audioRef.current?.duration || 0} value={currentTime} step={0.1}
           onChange={e => { if (audioRef.current) audioRef.current.currentTime = +e.target.value; }}
-          className="flex-1" />
-        <span className="text-xs text-slate-500">{formatTime(currentTime)}</span>
+          className={`${isDictation ? 'hidden' : ''} flex-1`} />
+        <span className={`text-xs text-slate-500 ${isDictation ? 'hidden' : ''}`}>{formatTime(currentTime)}</span>
         <select value={speed} onChange={e => { const v = +e.target.value; setSpeed(v); if (audioRef.current) audioRef.current.playbackRate = v; }}
           className="text-xs border rounded px-1 py-0.5">
           {[0.5, 0.75, 1, 1.25, 1.5, 2].map(s => <option key={s} value={s}>{s}x</option>)}
