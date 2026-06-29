@@ -260,16 +260,26 @@ export class VocabularyService {
         where: { phrase: { startsWith: q } },
         take: 8,
         orderBy: { phrase: 'asc' },
-        select: { phrase: true, translation: true },
+        include: { words: true },
       });
-      return colMatches.map(c => ({
-        word: c.phrase,
-        phoneticUk: null,
-        phoneticUs: null,
-        translation: c.translation,
-        partOfSpeech: 'phrase',
-        isCollocation: true,
+      const results = await Promise.all(colMatches.map(async c => {
+        const relatedWords = await Promise.all(
+          c.words.map(async cw => {
+            const wa = await prisma.wordAnnotation.findFirst({ where: { word: cw.word } });
+            return { word: cw.word, translation: wa?.translation || '' };
+          })
+        );
+        return {
+          word: c.phrase,
+          phoneticUk: null,
+          phoneticUs: null,
+          translation: c.translation,
+          partOfSpeech: 'phrase',
+          isCollocation: true,
+          relatedWords,
+        };
       }));
+      return results;
     }
 
     // Try exact/starts-with match first
