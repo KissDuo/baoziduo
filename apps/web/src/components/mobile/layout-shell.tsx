@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
+import { useGeo } from '@/lib/geo-context';
 
 interface LayoutUser {
   id: number;
@@ -12,12 +13,14 @@ interface LayoutUser {
 export function MobileLayoutShell({ children, user }: { children: React.ReactNode; user?: LayoutUser | null }) {
   const { lang, setLang, t } = useLang();
   const pathname = usePathname();
+  const { isChina } = useGeo();
 
   const navItems = [
     { href: '/', match: '/', label: t('mobile.home'), icon: '🏠' },
     { href: '/articles', match: '/articles', label: t('nav.articles'), icon: '📰' },
     { href: '/ielts', match: '/ielts', label: t('nav.ielts'), icon: '✈️' },
-    { href: '/videos', match: '/videos', label: t('nav.videos'), icon: '🎬' },
+    // Only show video tab when confirmed outside China
+    ...(isChina === false ? [{ href: '/videos', match: '/videos', label: t('nav.videos'), icon: '🎬' }] : []),
     { href: user ? '/vocabulary' : '/login', match: user ? '/vocabulary' : '/login', label: user ? t('mobile.me') : t('nav.login'), icon: '👤' },
   ];
 

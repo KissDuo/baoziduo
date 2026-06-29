@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { PCLayoutShell } from '@/components/pc/layout-shell';
 import { MobileLayoutShell } from '@/components/mobile/layout-shell';
 import { LangWrapper } from '@/components/LangWrapper';
+import { GeoWrapper } from '@/components/GeoWrapper';
 import type { Lang } from '@/lib/i18n';
 import '@/styles/globals.css';
 
@@ -48,11 +49,13 @@ export default async function RootLayout({
     <html lang={lang === 'zh' ? 'zh-CN' : 'en'}>
       <body className={viewport === 'mobile' ? 'mobile' : 'pc'}>
         <LangWrapper initialLang={lang}>
-          {viewport === 'mobile' ? (
-            <MobileLayoutShell user={user}>{children}</MobileLayoutShell>
-          ) : (
-            <PCLayoutShell user={user}>{children}</PCLayoutShell>
-          )}
+          <GeoWrapper>
+            {viewport === 'mobile' ? (
+              <MobileLayoutShell user={user}>{children}</MobileLayoutShell>
+            ) : (
+              <PCLayoutShell user={user}>{children}</PCLayoutShell>
+            )}
+          </GeoWrapper>
         </LangWrapper>
       </body>
     </html>

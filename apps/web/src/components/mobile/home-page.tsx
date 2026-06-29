@@ -2,11 +2,23 @@
 
 import Link from 'next/link';
 import { useLang } from '@/lib/i18n';
+import { useGeo } from '@/lib/geo-context';
 
 interface LayoutUser { id: number; email?: string; }
 
 export default function MobileHomePage({ user }: { user?: LayoutUser | null }) {
   const { t } = useLang();
+  const { isChina } = useGeo();
+
+  const modules = [
+    { icon: '📰', title: t('home.f1_title'), desc: t('home.f1_desc'), href: '/articles' },
+    { icon: '🎧', title: t('home.f3_title'), desc: t('home.f3_desc'), href: '/ielts' },
+    { icon: '🎙️', title: t('home.f5_title'), desc: t('home.f5_desc'), href: '/listening' },
+  ];
+  if (isChina === false) {
+    modules.push({ icon: '🎬', title: t('home.f4_title'), desc: t('home.f4_desc'), href: '/videos' });
+  }
+  modules.push({ icon: '📚', title: t('home.f2_title'), desc: t('home.f2_desc'), href: '/vocabulary' });
 
   return (
     <div className="space-y-8">
@@ -25,10 +37,10 @@ export default function MobileHomePage({ user }: { user?: LayoutUser | null }) {
         </Link>
       </section>
 
-      <section className="space-y-4">
-        <MobileFeatureCard icon="📰" title={t('home.f1_title')} description={t('home.f1_desc')} href="/articles" />
-        <MobileFeatureCard icon="🎬" title={t('home.f4_title')} description={t('home.f4_desc')} href="/videos" />
-        <MobileFeatureCard icon="👤" title={t('nav.my_vocab')} description={t('popup.add_vocab')} href="/vocabulary" />
+      <section className="space-y-3">
+        {modules.map((m) => (
+          <MobileFeatureCard key={m.href} icon={m.icon} title={m.title} description={m.desc} href={m.href} />
+        ))}
       </section>
     </div>
   );

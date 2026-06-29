@@ -39,6 +39,8 @@ const zh: Record<string, string> = {
   'home.f3_desc': '真实还原雅思官方考试界面，听力+阅读全真模拟，自动计时和评分。',
   'home.f4_title': '视频学习',
   'home.f4_desc': '粘贴 YouTube/B站 链接，AI 自动抓取字幕并翻译，播放时同步高亮当前句子。',
+  'home.f5_title': '精听训练',
+  'home.f5_desc': '逐句精听雅思听力真题，支持全文跟读和逐句听写模式，快速提升听力能力。',
 
   'login.title': '登录',
   'login.email_tab': '邮箱登录',
@@ -217,6 +219,8 @@ const zh: Record<string, string> = {
   'common.load_more': '加载更多',
   'common.retry_label': '重试',
 
+  'notfound.message': '该页面已消失在太空中了 🚀',
+
   'difficulty.short': '短篇',
   'difficulty.medium': '中篇',
   'difficulty.long': '长篇',
@@ -257,6 +261,8 @@ const en: Record<string, string> = {
   'home.f3_desc': 'Realistic IELTS exam interface. Listening + Reading with auto-timing and scoring.',
   'home.f4_title': 'Video Learning',
   'home.f4_desc': 'Paste YouTube/Bilibili links. AI fetches subtitles, translates them, and highlights the current sentence during playback.',
+  'home.f5_title': 'Intensive Listening',
+  'home.f5_desc': 'Sentence-by-sentence dictation with IELTS audio. Full-text shadowing and gap-fill modes to rapidly improve listening skills.',
 
   'login.title': 'Login',
   'login.email_tab': 'Email',
@@ -434,6 +440,8 @@ const en: Record<string, string> = {
   'common.loading': 'Loading...',
   'common.load_more': 'Load More',
   'common.retry_label': 'Retry',
+
+  'notfound.message': 'This page has vanished into space 🚀',
 
   'difficulty.short': 'Short',
   'difficulty.medium': 'Medium',

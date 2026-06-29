@@ -6,6 +6,7 @@ import ieltsRoutes from './ielts.routes.js';
 
 import videoRoutes from './video.routes.js';
 import listeningRoutes from './listening.routes.js';
+import geoRoutes from './geo.routes.js';
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.use('/vocabulary', vocabularyRoutes);
 router.use('/ielts', ieltsRoutes);
 router.use('/videos', videoRoutes);
 router.use('/listening', listeningRoutes);
+router.use('/geo', geoRoutes);
 
 // router.use('/users', userRoutes);
 // router.use('/memberships', membershipRoutes);

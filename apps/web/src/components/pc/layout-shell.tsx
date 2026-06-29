@@ -6,12 +6,13 @@ import { usePathname } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { WordPopup } from '@/components/shared/WordPopup';
+import { useGeo } from '@/lib/geo-context';
 
-const NAV_LINKS = [
+const ALL_NAV_LINKS = [
   { href: '/articles', key: 'nav.articles', match: '/articles' },
   { href: '/ielts', key: 'nav.ielts', match: '/ielts' },
   { href: '/listening', key: 'nav.listening', match: '/listening' },
-  { href: '/videos', key: 'nav.videos', match: '/videos' },
+  { href: '/videos', key: 'nav.videos', match: '/videos', chinaOnly: false },
   { href: '/vocabulary', key: 'nav.vocabulary', match: '/vocabulary' },
 ];
 
@@ -23,6 +24,9 @@ interface LayoutUser {
 export function PCLayoutShell({ children, user }: { children: React.ReactNode; user?: LayoutUser | null }) {
   const { lang, setLang, t } = useLang();
   const pathname = usePathname();
+  const { isChina } = useGeo();
+
+  const NAV_LINKS = ALL_NAV_LINKS.filter(link => link.chinaOnly !== false || isChina === false);
 
   return (
     <div className="pc-layout">
