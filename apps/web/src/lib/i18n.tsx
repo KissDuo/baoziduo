@@ -221,6 +221,9 @@ const zh: Record<string, string> = {
 
   'notfound.message': '该页面已消失在太空中了 🚀',
 
+  'desktop.title': '请使用电脑访问',
+  'desktop.desc': '本网站仅支持电脑端访问，请使用电脑浏览器打开以获得最佳体验。',
+
   'difficulty.short': '短篇',
   'difficulty.medium': '中篇',
   'difficulty.long': '长篇',
@@ -442,6 +445,9 @@ const en: Record<string, string> = {
   'common.retry_label': 'Retry',
 
   'notfound.message': 'This page has vanished into space 🚀',
+
+  'desktop.title': 'Desktop Only',
+  'desktop.desc': 'This site is designed for desktop browsers. Please open it on a computer for the best experience.',
 
   'difficulty.short': 'Short',
   'difficulty.medium': 'Medium',
