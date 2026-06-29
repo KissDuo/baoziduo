@@ -46,25 +46,59 @@
 
 ## 四、踩坑记录
 
-### 坑1: CentOS 7 GLIBC 太老
+### 坑1: CentOS 7 GLIBC 太老（核心问题）
 - **症状**: Node 18+ 报 `GLIBC_2.25 not found` / `GLIBC_2.28 not found`
 - **原因**: CentOS 7 只有 GLIBC 2.17
-- **解决**: 用 Docker 容器跑现代 Node，绕开宿主机 GLIBC 限制
+- **最终方案**: 用 Node.js 非官方构建 `node-v18.20.8-linux-x64-glibc-217.tar.xz`（已下载到本地 `/tmp/`，待传服务器）
 
 ### 坑2: nvm 路径非标准
 - **症状**: `source ~/.nvm/nvm.sh` 找不到
 - **原因**: nvm 装在 `/root/nvm/` 而非默认的 `~/.nvm/`
 - **解决**: `export NVM_DIR="/root/nvm"`
 
-### 坑3: 内存紧张
+### 坑3: Docker Hub 被墙
+- **症状**: `docker pull node:18-alpine` 超时
+- **原因**: 服务器在国内，Docker Hub 不可达
+- **尝试**: 阿里云镜像、DaoCloud 镜像 → Docker 1.13.1 不兼容新配置格式，systemd override 导致 Docker 启动失败
+- **结论**: Docker 路线放弃，改用原生 Node + PM2
+
+### 坑4: GitHub 被墙
+- **症状**: `git pull` 失败 `Encountered end of file`
+- **解决**: 用 `scp` 传文件替代 git pull
+
+### 坑5: Docker 版本极老
+- CentOS 7 yum 装的 Docker 是 1.13.1 (2017年)，不兼容 registry mirror 配置
+
+### 坑6: 内存紧张
 - 1GB 内存，空闲仅 150MB
-- Docker 容器需精打细算，用 Alpine 镜像
+- Docker 方案不可行也和内存有关
 
-### 坑4: Docker 版本极老
-- CentOS 7 yum 装的 Docker 是 1.13.1 (2017年)
-- 需测试镜像兼容性
+## 五、部署方案变更记录
 
-## 五、数据库
+| 方案 | 结果 | 原因 |
+|------|------|------|
+| 原生 Node 20 | ❌ | GLIBC 太老 |
+| Docker + Node 18 Alpine | ❌ | Docker Hub 被墙 + Docker 太老 |
+| Node 18 glibc-217 二进制 | 🔄 | 已下载，待传到服务器 |
+
+## 六、当前进度（2026-06-29 18:30）
+
+**已完成**:
+- [x] 服务器环境检查
+- [x] pnpm、pm2 安装
+- [x] 项目代码 clone 到 `/root/english-learning-platform/`
+- [x] 本地构建成功（server dist + web standalone）
+- [x] 构建产物已传至服务器（dist/ + .next/standalone/）
+- [x] Node 18 glibc-217 二进制下载到本地 `/tmp/node18-glibc217.tar.xz`
+
+**待完成**:
+- [ ] SCP Node 18 二进制到服务器并解压
+- [ ] 配置 PATH 使用 Node 18
+- [ ] 用 PM2 启动后端（port 5201）+ 前端（port 5200）
+- [ ] 开放阿里云安全组端口
+- [ ] 验证访问
+
+## 七、数据库
 
 | 项目 | 值 |
 |------|-----|
