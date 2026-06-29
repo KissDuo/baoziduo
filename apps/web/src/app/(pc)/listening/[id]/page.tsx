@@ -230,7 +230,7 @@ export default function ListeningDetailPage() {
               const checked = checkResult?.[i];
               const isCorrect = checked === true;
               const isWrong = checked === false;
-              const wlen = isDictation ? Math.max(130, word.length * 26) : Math.max(60, word.length * 16);
+              const wlen = isDictation ? 140 : Math.max(60, word.length * 16);
               return (
                 <input key={i} ref={el => { wordInputRefs.current[i] = el; }}
                   value={userWords[i] || ''}
