@@ -79,14 +79,14 @@ function StudyTab() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {group.books.map(book => (
               <Link key={book.id} href={`/vocabulary/study/${book.slug}`}
-                className="block bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-primary-300 transition-all">
+                className="block bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-primary-300 hover:bg-primary-500 transition-all group">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-slate-900 text-base">{t(`vocab.book.${book.slug}`) !== `vocab.book.${book.slug}` ? t(`vocab.book.${book.slug}`) : book.name}</h3>
+                  <h3 className="font-semibold text-slate-900 text-base group-hover:text-white transition-colors">{t(`vocab.book.${book.slug}`) !== `vocab.book.${book.slug}` ? t(`vocab.book.${book.slug}`) : book.name}</h3>
                 </div>
                 {(t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` || book.description) && (
-                  <p className="text-sm text-slate-500 mb-3">{t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` ? t(`vocab.desc.${book.slug}`) : book.description}</p>
+                  <p className="text-sm text-slate-500 mb-3 group-hover:text-primary-100 transition-colors">{t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` ? t(`vocab.desc.${book.slug}`) : book.description}</p>
                 )}
-                <div className="flex items-center gap-4 text-xs text-slate-400">
+                <div className="flex items-center gap-4 text-xs text-slate-400 group-hover:text-primary-100 transition-colors">
                   <span>{t('vocab.words_count', { n: book.totalWords })}</span>
                 </div>
               </Link>
