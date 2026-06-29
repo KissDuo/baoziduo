@@ -72,6 +72,17 @@ export class VocabularyController {
       next(err);
     }
   }
+
+  async aiSearch(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { q } = req.body;
+      const { aiSearch } = await import('../services/ai-search.service.js');
+      const result = await aiSearch(q);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const vocabularyController = new VocabularyController();

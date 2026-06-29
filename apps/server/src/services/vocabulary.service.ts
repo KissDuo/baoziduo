@@ -335,7 +335,23 @@ export class VocabularyService {
       };
     }));
 
-    return results;
+    // Also search Collocation table for phrase matches
+    const colMatches = await prisma.collocation.findMany({
+      where: { phrase: { startsWith: q } },
+      take: 5,
+      orderBy: { phrase: 'asc' },
+      select: { phrase: true, translation: true },
+    });
+    const collocationResults = colMatches.map(c => ({
+      word: c.phrase,
+      phoneticUk: null,
+      phoneticUs: null,
+      translation: c.translation,
+      partOfSpeech: 'phrase',
+      isCollocation: true,
+    }));
+
+    return [...results, ...collocationResults];
   }
 }
 

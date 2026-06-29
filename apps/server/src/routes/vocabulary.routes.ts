@@ -52,6 +52,11 @@ router.get('/search', optionalAuth, validateQuery(searchQuerySchema), (req, res,
   vocabularyController.searchWord(req, res, next),
 );
 
+// POST /api/v1/vocabulary/ai-search — AI search (create new word/phrase on the fly)
+router.post('/ai-search', optionalAuth, (req, res, next) =>
+  vocabularyController.aiSearch(req, res, next),
+);
+
 // GET /api/v1/vocabulary/books — List vocabulary books
 router.get('/books', optionalAuth, (req, res, next) =>
   vocabularyController.listBooks(req, res, next),

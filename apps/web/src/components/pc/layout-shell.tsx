@@ -143,6 +143,19 @@ function SearchBox() {
     finally { setLoading(false); }
   };
 
+  const doAISearch = async () => {
+    if (!query.trim()) return;
+    setLoading(true);
+    try {
+      const result = await api.post<any>('/vocabulary/ai-search', { q: query.trim() });
+      if (result && !result.error) {
+        setSelected(result);
+        setOpen(false);
+      }
+    } catch {}
+    finally { setLoading(false); }
+  };
+
   useEffect(() => {
     const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', handler);
@@ -165,7 +178,14 @@ function SearchBox() {
       {open && (
         <div className="absolute top-full mt-1 left-0 bg-white border rounded-xl shadow-xl z-50 w-80 max-h-[400px] overflow-y-auto">
           {loading && <div className="p-4 text-sm text-slate-400">Searching...</div>}
-          {!loading && results.length === 0 && <div className="p-4 text-sm text-slate-400">No results</div>}
+          {!loading && results.length === 0 && query.trim().length >= 2 && (
+            <div onClick={doAISearch} className="p-4 text-sm text-primary-600 hover:bg-primary-50 cursor-pointer border-t border-slate-100">
+              🤖 AI查询（请输入完整单词或短语）
+            </div>
+          )}
+          {!loading && results.length === 0 && query.trim().length < 2 && (
+            <div className="p-4 text-sm text-slate-400">No results</div>
+          )}
           {results.map((r, i) => (
             <div key={i} onClick={() => setSelected(r)} className="p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer">
               <div className="flex items-center gap-2 mb-1">
