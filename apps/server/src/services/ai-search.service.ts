@@ -48,7 +48,7 @@ export async function aiSearch(query: string) {
           return { word: cw.word, translation: wa?.translation || '' };
         })
       );
-      return { type: 'collocation', phrase: q, translation: existingCol.translation, relatedWords, cached: true };
+      return { word: q, partOfSpeech: 'phrase', translation: existingCol.translation, relatedWords, cached: true };
     }
 
     // Create new collocation via AI
@@ -71,7 +71,7 @@ export async function aiSearch(query: string) {
         return { word: cw.word, translation: wa?.translation || '' };
       }) || []
     );
-    return { type: 'collocation', phrase: q, translation, relatedWords, id: col.id, cached: false };
+    return { word: q, partOfSpeech: 'phrase', translation, relatedWords, id: col.id, cached: false };
   }
 
   // Single word
