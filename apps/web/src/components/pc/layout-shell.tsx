@@ -121,6 +121,11 @@ export function PCLayoutShell({ children, user }: { children: React.ReactNode; u
 
       <footer className="border-t py-8 text-center text-sm text-slate-500">
         <p>&copy; {new Date().getFullYear()} 宝子多EN. All rights reserved.</p>
+        <p className="mt-1">
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-700">
+            京ICP备16014958号-4
+          </a>
+        </p>
       </footer>
     </div>
   );
