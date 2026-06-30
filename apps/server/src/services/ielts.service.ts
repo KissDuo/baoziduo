@@ -184,8 +184,16 @@ export class IeltsService {
       for (const q of section.questions) {
         const userAnswer = answerMap.get(q.id) || '';
         const normalizedUser = userAnswer.trim().toLowerCase();
-        // Check against primary answer and any acceptable alternatives
-        let isCorrect = normalizedUser === q.correctAnswer.trim().toLowerCase();
+        // Check against primary answer, comma-separated alternatives (KMF format), and acceptableAnswers field
+        const correctTrimmed = q.correctAnswer.trim().toLowerCase();
+        let isCorrect = normalizedUser === correctTrimmed;
+        if (!isCorrect) {
+          // Check comma-separated alternatives within correctAnswer (KMF format)
+          const commaParts = correctTrimmed.split(',').map(s => s.trim()).filter(Boolean);
+          if (commaParts.length > 1) {
+            isCorrect = commaParts.some(a => normalizedUser === a);
+          }
+        }
         if (!isCorrect && q.acceptableAnswers) {
           try {
             const alternatives: string[] = JSON.parse(q.acceptableAnswers);
