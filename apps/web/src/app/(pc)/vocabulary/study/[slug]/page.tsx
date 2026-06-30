@@ -9,7 +9,7 @@ import { vocabStudyService, type VocabWord, type BookWordsResponse } from '@/ser
 // ═══════════════════════════════════════════
 // Flashcard Mode
 // ═══════════════════════════════════════════
-function FlashcardMode({ words, onComplete }: { words: VocabWord[]; onComplete: (results: { wordId: number; known: boolean }[]) => void }) {
+function FlashcardMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onComplete: (results: { wordId: number; known: boolean }[]) => void; onWordDone: (result: { wordId: number; known: boolean }) => void }) {
   const { t } = useLang();
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -20,9 +20,11 @@ function FlashcardMode({ words, onComplete }: { words: VocabWord[]; onComplete: 
   if (!word) return null;
 
   const handleKnown = (known: boolean) => {
-    const next = [...results, { wordId: word.id, known }];
+    const result = { wordId: word.id, known };
+    const next = [...results, result];
     setResults(next);
     setFlipped(false);
+    onWordDone(result);  // save immediately
     if (index + 1 < words.length) {
       setIndex(index + 1);
     } else {
@@ -114,7 +116,7 @@ function FlashcardMode({ words, onComplete }: { words: VocabWord[]; onComplete: 
 // ═══════════════════════════════════════════
 // Spell Mode (character-by-character)
 // ═══════════════════════════════════════════
-function SpellMode({ words, onComplete }: { words: VocabWord[]; onComplete: (results: { wordId: number; known: boolean }[]) => void }) {
+function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onComplete: (results: { wordId: number; known: boolean }[]) => void; onWordDone: (result: { wordId: number; known: boolean }) => void }) {
   const { t } = useLang();
   const [index, setIndex] = useState(0);
   const [input, setInput] = useState<string[]>([]);
@@ -165,8 +167,10 @@ function SpellMode({ words, onComplete }: { words: VocabWord[]; onComplete: (res
 
   const handleNext = () => {
     const isCorrect = status === 'correct';
-    const next = [...results, { wordId: word.id, known: isCorrect }];
+    const result = { wordId: word.id, known: isCorrect };
+    const next = [...results, result];
     setResults(next);
+    onWordDone(result);  // save immediately
     if (index + 1 < words.length) {
       setIndex(index + 1);
     } else {
@@ -334,6 +338,13 @@ export default function VocabStudyPage() {
     } catch { /* silent */ }
   };
 
+  // Save progress for a single word (called after each word, so progress persists on early exit)
+  const saveSingleWord = async (result: { wordId: number; known: boolean }) => {
+    try {
+      await vocabStudyService.submitProgress(slug, [result]);
+    } catch { /* silent */ }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -422,9 +433,9 @@ export default function VocabStudyPage() {
           )}
         </div>
       ) : mode === 'flashcard' ? (
-        <FlashcardMode words={filteredWords} onComplete={handleComplete} />
+        <FlashcardMode words={filteredWords} onComplete={handleComplete} onWordDone={saveSingleWord} />
       ) : (
-        <SpellMode words={filteredWords} onComplete={handleComplete} />
+        <SpellMode words={filteredWords} onComplete={handleComplete} onWordDone={saveSingleWord} />
       )}
     </div>
   );
