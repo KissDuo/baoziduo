@@ -26,7 +26,7 @@ export interface VocabWord {
 export interface BookWordsResponse {
   book: { id: number; name: string; slug: string; totalWords: number };
   words: VocabWord[];
-  progress: { learnedCount: number; reviewingCount: number; masteredCount: number } | null;
+  progress: { learnedCount: number; reviewingCount: number; masteredCount: number; lastStudiedIndex: number } | null;
 }
 
 export interface StudyProgressResult {

@@ -387,6 +387,7 @@ model VocabularyBookProgress {
   learnedCount    Int       @default(0)
   reviewingCount  Int       @default(0)
   masteredCount   Int       @default(0)
+  lastStudiedIndex Int      @default(-1)
   lastStudiedAt   DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

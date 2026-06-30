@@ -4,7 +4,7 @@
 
 | 项目 | 值 |
 |------|-----|
-| 主机 | 123.56.146.148:3306 |
+| 主机 | 8.152.100.211:3306 |
 | 用户 | root |
 | 密码 | DCHdch1234. |
 | 数据库 | en |
@@ -12,12 +12,12 @@
 
 **连接字符串**:
 ```
-mysql://root:DCHdch1234.@123.56.146.148:3306/en?timezone=%2B08%3A00
+mysql://root:DCHdch1234.@8.152.100.211:3306/en?timezone=%2B08%3A00
 ```
 
 **环境变量** (`apps/server/.env`):
 ```
-DATABASE_URL=mysql://root:DCHdch1234.@123.56.146.148:3306/en?timezone=%2B08%3A00
+DATABASE_URL=mysql://root:DCHdch1234.@8.152.100.211:3306/en?timezone=%2B08%3A00
 ```
 
 ## 安全规则
@@ -43,15 +43,15 @@ DATABASE_URL=mysql://root:DCHdch1234.@123.56.146.148:3306/en?timezone=%2B08%3A00
 
 ### 恢复方法
 ```bash
-mysql -u root -pDCHdch1234. -h 123.56.146.148 en < apps/server/prisma/seed-ielts-c18.sql
-mysql -u root -pDCHdch1234. -h 123.56.146.148 en < apps/server/prisma/seed-ielts-c19.sql
-mysql -u root -pDCHdch1234. -h 123.56.146.148 en < apps/server/prisma/seed-ielts-c20.sql
+mysql -u root -pDCHdch1234. -h 8.152.100.211 en < apps/server/prisma/seed-ielts-c18.sql
+mysql -u root -pDCHdch1234. -h 8.152.100.211 en < apps/server/prisma/seed-ielts-c19.sql
+mysql -u root -pDCHdch1234. -h 8.152.100.211 en < apps/server/prisma/seed-ielts-c20.sql
 ```
 
 ### 导出方法
 每次修改题库数据后，运行以下命令重新导出：
 ```bash
-DATABASE_URL="mysql://root:DCHdch1234.@123.56.146.148:3306/en?timezone=%2B08%3A00" \
+DATABASE_URL="mysql://root:DCHdch1234.@8.152.100.211:3306/en?timezone=%2B08%3A00" \
   ./apps/server/node_modules/.bin/tsx /tmp/export-seeds.ts
 ```
 

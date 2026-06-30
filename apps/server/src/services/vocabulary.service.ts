@@ -178,6 +178,7 @@ export class VocabularyService {
         learnedCount: userProgress.learnedCount,
         reviewingCount: userProgress.reviewingCount,
         masteredCount: userProgress.masteredCount,
+        lastStudiedIndex: userProgress.lastStudiedIndex,
       } : null,
     };
   }
@@ -235,14 +236,22 @@ export class VocabularyService {
       }
     }
 
+    // Compute max wordIndex from submitted results
+    let maxWordIndex = -1;
+    for (const r of results) {
+      const vw = await prisma.vocabularyWord.findUnique({ where: { id: r.wordId }, select: { wordIndex: true } });
+      if (vw && vw.wordIndex > maxWordIndex) maxWordIndex = vw.wordIndex;
+    }
+
     // Update book progress
     await prisma.vocabularyBookProgress.upsert({
       where: { userId_bookId: { userId, bookId: book.id } },
-      create: { userId, bookId: book.id, learnedCount: learned, reviewingCount: reviewing, masteredCount: mastered, lastStudiedAt: new Date() },
+      create: { userId, bookId: book.id, learnedCount: learned, reviewingCount: reviewing, masteredCount: mastered, lastStudiedIndex: maxWordIndex, lastStudiedAt: new Date() },
       update: {
         learnedCount: { increment: learned },
         reviewingCount: reviewing > 0 ? { increment: reviewing } : undefined,
         masteredCount: { increment: mastered },
+        lastStudiedIndex: maxWordIndex,   // always update to the furthest position
         lastStudiedAt: new Date(),
       },
     });

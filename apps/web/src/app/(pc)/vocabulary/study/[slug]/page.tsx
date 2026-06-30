@@ -303,7 +303,6 @@ export default function VocabStudyPage() {
   const [filterType, setFilterType] = useState<'all' | 'chapter' | 'letter'>('all');
   const [selectedChapter, setSelectedChapter] = useState<string>('');
   const [selectedLetter, setSelectedLetter] = useState<string>('');
-  const [randomMode, setRandomMode] = useState(false);
 
   useEffect(() => {
     vocabStudyService.getBookWords(slug)
@@ -312,24 +311,18 @@ export default function VocabStudyPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  // Filter words
+  // Filter words — start from last studied position, enforce sequential order
+  const startIndex = (data?.progress?.lastStudiedIndex ?? -1) + 1;
   const filteredWords = useMemo(() => {
-    let result = data?.words.filter(w => {
-      if (filterType === 'chapter' && selectedChapter) return w.chapter === selectedChapter;
-      if (filterType === 'letter' && selectedLetter) return w.word[0]?.toLowerCase() === selectedLetter.toLowerCase();
-      return true;
-    }) || [];
-    if (randomMode) {
-      // Fisher-Yates shuffle
-      const arr = [...result];
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j]!, arr[i]!];
-      }
-      return arr;
-    }
+    let result = (data?.words || [])
+      .filter(w => w.wordIndex >= startIndex)  // auto-resume from last position
+      .filter(w => {
+        if (filterType === 'chapter' && selectedChapter) return w.chapter === selectedChapter;
+        if (filterType === 'letter' && selectedLetter) return w.word[0]?.toLowerCase() === selectedLetter.toLowerCase();
+        return true;
+      });
     return result;
-  }, [data?.words, filterType, selectedChapter, selectedLetter, randomMode]);
+  }, [data?.words, filterType, selectedChapter, selectedLetter, startIndex]);
 
   // Get unique chapters and first letters
   const chapters = [...new Set(data?.words.map(w => w.chapter).filter(Boolean) || [])];
@@ -402,10 +395,6 @@ export default function VocabStudyPage() {
             {letters.map(l => <option key={l} value={l!}>{l!.toUpperCase()}</option>)}
           </select>
         )}
-        <button onClick={() => setRandomMode(!randomMode)}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${randomMode ? 'bg-primary-600 text-white shadow-md shadow-primary-200 scale-105' : 'bg-slate-100 text-slate-500 hover:text-slate-700'}`}>
-          🔀 {t('vocab.random')}
-        </button>
         <span className="text-xs text-slate-400">{t('vocab.words_count', { n: filteredWords.length })}</span>
       </div>
 
@@ -420,7 +409,18 @@ export default function VocabStudyPage() {
 
       {/* Mode content */}
       {filteredWords.length === 0 ? (
-        <p className="text-center text-slate-400 py-12">{t('vocab.books_empty')}</p>
+        <div className="text-center py-16">
+          {startIndex > 0 && (data?.words.length || 0) > 0 ? (
+            <>
+              <div className="text-5xl mb-4">🎉</div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">All words completed!</h2>
+              <p className="text-slate-500 mb-6">You've studied all {data?.words.length} words in this book.</p>
+              <Link href="/vocabulary" className="text-primary-600 hover:underline text-sm font-medium">← {t('vocab.title')}</Link>
+            </>
+          ) : (
+            <p className="text-slate-400">{t('vocab.books_empty')}</p>
+          )}
+        </div>
       ) : mode === 'flashcard' ? (
         <FlashcardMode words={filteredWords} onComplete={handleComplete} />
       ) : (
