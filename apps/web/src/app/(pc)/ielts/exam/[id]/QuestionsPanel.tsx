@@ -61,19 +61,31 @@ function getSummaryGroup(qs: any[]) {
 function getTableGroups(qs: any[]) {
   const groups: { questions: any[]; firstIndex: number }[] = [];
   const seen = new Set<number>();
-  // Find all table-start indices
-  const tableStarts = qs
+  // Find all table-start indices (only first Q of each contiguous table block)
+  const sortedTableQs = qs
     .filter((q: any) => q.passageText && q.passageText.trim().startsWith('[table]'))
-    .map((q: any) => q.questionIndex)
-    .sort((a, b) => a - b);
+    .sort((a, b) => a.questionIndex - b.questionIndex);
 
-  for (const startQi of tableStarts) {
-    // Find the actual question object for this start
-    const startQ = qs.find((g: any) => g.questionIndex === startQi && g.passageText?.trim().startsWith('[table]'));
-    if (!startQ || seen.has(startQ.id)) continue;
-    // Find end: next table start, or start+10, whichever is smaller
-    const nextStart = tableStarts.find(s => s > startQi);
-    const end = nextStart ? Math.min(nextStart, startQi + 10) : startQi + 10;
+  for (let i = 0; i < sortedTableQs.length; i++) {
+    const startQ = sortedTableQs[i]!;
+    if (seen.has(startQ.id)) continue;
+    const startQi = startQ.questionIndex;
+
+    // Find end: next non-table Q or next table marker that belongs to a different table
+    // (consecutive Qs with [table] passageText belong to the SAME table)
+    let end = startQi + 10; // default max
+    for (let j = i + 1; j < sortedTableQs.length; j++) {
+      const nextQ = sortedTableQs[j]!;
+      // If next table Q is non-consecutive (>1 gap) or has different passageText → new table
+      if (nextQ.questionIndex > startQi + 1 && sortedTableQs[j - 1]!.questionIndex < nextQ.questionIndex - 1) break;
+      // If same passageText and consecutive → part of same table
+      if (nextQ.questionIndex <= end) continue;
+      break;
+    }
+    // Also check non-table questions that would end the group
+    const nonTableEnd = qs.find((g: any) => g.questionIndex > startQi && g.questionType !== 'fill_blank' && !(g.passageText && g.passageText.trim().startsWith('[table]')));
+    if (nonTableEnd && nonTableEnd.questionIndex < end) end = nonTableEnd.questionIndex;
+
     const tableQs = qs.filter((g: any) => g.questionIndex >= startQi && g.questionIndex < end &&
       (g.questionType === 'fill_blank' || (g.passageText && g.passageText.trim().startsWith('[table]'))));
     tableQs.forEach((g: any) => seen.add(g.id));
