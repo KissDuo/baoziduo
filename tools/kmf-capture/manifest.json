@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "KMF Data Capture",
+  "version": "1.0",
+  "description": "Auto-capture KMF practyse-detail API responses",
+  "permissions": ["storage", "downloads"],
+  "host_permissions": ["https://*.kmf.com/*"],
+  "content_scripts": [{
+    "matches": ["https://*.kmf.com/*"],
+    "js": ["capture.js"],
+    "run_at": "document_start"
+  }]
+}
