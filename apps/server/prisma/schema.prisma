@@ -233,7 +233,7 @@ model WordAnnotation {
 
 model Collocation {
   id           Int       @id @default(autoincrement())
-  phrase       String    @db.VarChar(500)
+  phrase       String    @unique @db.VarChar(500)
   translation  String    @db.VarChar(500)
   examplesJson String?   @db.Text
   createdAt    DateTime  @default(now())
