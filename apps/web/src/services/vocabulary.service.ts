@@ -8,6 +8,7 @@ export interface VocabBook {
   category: string;
   totalWords: number;
   isMembershipOnly: boolean;
+  studiedCount?: number;  // how many words studied so far (0 if not started)
 }
 
 export interface VocabWord {

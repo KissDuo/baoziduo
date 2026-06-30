@@ -90,6 +90,9 @@ function StudyTab() {
                 )}
                 <div className="flex items-center gap-4 text-xs text-slate-400 group-hover:text-primary-100 transition-colors">
                   <span>{t('vocab.words_count', { n: book.totalWords })}</span>
+                  {book.studiedCount != null && book.studiedCount > 0 && (
+                    <span className="text-primary-500 group-hover:text-white font-medium">已背{book.studiedCount}词</span>
+                  )}
                 </div>
               </Link>
             ))}

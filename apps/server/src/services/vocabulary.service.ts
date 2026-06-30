@@ -130,7 +130,7 @@ export class VocabularyService {
   }
 
   // ── List Vocabulary Books ──
-  async listBooks() {
+  async listBooks(userId?: number) {
     const books = await prisma.vocabularyBook.findMany({
       where: { isPublished: true },
       orderBy: { sortOrder: 'asc' },
@@ -139,6 +139,21 @@ export class VocabularyService {
         totalWords: true, isMembershipOnly: true,
       },
     });
+
+    // If user is authenticated, include progress for each book
+    if (userId) {
+      const progressList = await prisma.vocabularyBookProgress.findMany({
+        where: { userId, bookId: { in: books.map(b => b.id) } },
+        select: { bookId: true, lastStudiedIndex: true },
+      });
+      const progressMap = new Map(progressList.map(p => [p.bookId, p.lastStudiedIndex]));
+
+      return books.map(b => ({
+        ...b,
+        studiedCount: progressMap.has(b.id) ? progressMap.get(b.id)! + 1 : 0,
+      }));
+    }
+
     return books;
   }
 

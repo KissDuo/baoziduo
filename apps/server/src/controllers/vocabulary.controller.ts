@@ -32,9 +32,10 @@ export class VocabularyController {
     }
   }
 
-  async listBooks(_req: Request, res: Response, next: NextFunction) {
+  async listBooks(req: Request, res: Response, next: NextFunction) {
     try {
-      const books = await vocabularyService.listBooks();
+      const userId = req.user?.id;
+      const books = await vocabularyService.listBooks(userId);
       res.json(books);
     } catch (err) {
       next(err);

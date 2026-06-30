@@ -60,7 +60,12 @@ function MobileStudyTab() {
           {(t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` || book.description) && (
             <p className="text-sm text-slate-500 mb-2">{t(`vocab.desc.${book.slug}`) !== `vocab.desc.${book.slug}` ? t(`vocab.desc.${book.slug}`) : book.description}</p>
           )}
-          <span className="text-xs text-slate-400">{t('vocab.words_count', { n: book.totalWords })}</span>
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            <span>{t('vocab.words_count', { n: book.totalWords })}</span>
+            {book.studiedCount != null && book.studiedCount > 0 && (
+              <span className="text-primary-500 font-medium">已背{book.studiedCount}词</span>
+            )}
+          </div>
         </Link>
       ))}
     </div>
