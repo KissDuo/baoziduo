@@ -36,7 +36,10 @@ router.post('/', authenticate, validate(addVocabularySchema), (req, res, next) =
 );
 
 // GET /api/v1/vocabulary — List user vocabulary
-router.get('/', authenticate, validateQuery(paginationSchema), (req, res, next) =>
+const listVocabQuerySchema = paginationSchema.extend({
+  filter: z.enum(['studied', 'manual']).optional(),
+});
+router.get('/', authenticate, validateQuery(listVocabQuerySchema), (req, res, next) =>
   vocabularyController.listVocabulary(req, res, next),
 );
 

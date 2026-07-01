@@ -5,6 +5,8 @@ import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLang } from '@/lib/i18n';
 import { vocabStudyService, type VocabWord, type BookWordsResponse } from '@/services/vocabulary.service';
+import { WordPopup } from '@/components/shared/WordPopup';
+import { api } from '@/lib/api-client';
 
 // ═══════════════════════════════════════════
 // Flashcard Mode
@@ -12,20 +14,34 @@ import { vocabStudyService, type VocabWord, type BookWordsResponse } from '@/ser
 function FlashcardMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onComplete: (results: { wordId: number; known: boolean }[]) => void; onWordDone: (result: { wordId: number; known: boolean }) => void }) {
   const { t } = useLang();
   const [index, setIndex] = useState(0);
-  const [flipped, setFlipped] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [detailData, setDetailData] = useState<any>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [finished, setFinished] = useState(false);
   const knownCountRef = useRef(0);
 
   const word = words[index];
   if (!word) return null;
 
-  const goPrev = () => { if (index > 0) { setIndex(index - 1); setFlipped(false); } };
-  const goNext = () => { if (index + 1 < words.length) { setIndex(index + 1); setFlipped(false); } };
+  const openDetail = async () => {
+    setShowDetail(true);
+    setDetailData(null);
+    setDetailLoading(true);
+    try {
+      const results = await api.get<any[]>('/vocabulary/search', { q: word.word });
+      if (results && results.length > 0) {
+        setDetailData(results[0]);
+      }
+    } catch {} finally { setDetailLoading(false); }
+  };
+
+  const goPrev = () => { if (index > 0) { setIndex(index - 1); setShowDetail(false); } };
+  const goNext = () => { if (index + 1 < words.length) { setIndex(index + 1); setShowDetail(false); } };
 
   const handleKnown = () => {
     onWordDone({ wordId: word.id, known: true });
     knownCountRef.current += 1;
-    setFlipped(false);
+    setShowDetail(false);
     if (index + 1 < words.length) {
       setIndex(index + 1);
     } else {
@@ -46,9 +62,9 @@ function FlashcardMode({ words, onComplete, onWordDone }: { words: VocabWord[]; 
   }
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-2xl mx-auto">
       {/* Progress */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-3 mb-6">
         <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
           <div className="h-full bg-primary-500 transition-all rounded-full" style={{ width: `${((index + 1) / words.length) * 100}%` }} />
         </div>
@@ -57,51 +73,29 @@ function FlashcardMode({ words, onComplete, onWordDone }: { words: VocabWord[]; 
 
       {/* Card */}
       <div
-        onClick={() => setFlipped(!flipped)}
-        className="bg-white rounded-2xl border-2 border-slate-200 p-8 min-h-[320px] flex flex-col items-center justify-center cursor-pointer hover:shadow-lg transition-all select-none"
+        onClick={openDetail}
+        className="bg-white rounded-2xl border-2 border-slate-200 px-10 py-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-lg hover:border-primary-300 transition-all select-none"
       >
-        <h2 className="text-3xl font-extrabold text-slate-900 mb-4">{word.word}</h2>
+        <h2 className="text-4xl font-extrabold text-slate-900 mb-3">{word.word}</h2>
 
         {(word.phoneticUk || word.phoneticUs) && (
-          <p className="text-sm text-slate-400 mb-3">
+          <p className="text-sm text-slate-400 mb-2">
             {word.phoneticUk && <span>英[{word.phoneticUk.replace(/^\/|\/$/g, '')}]</span>}
             {word.phoneticUk && word.phoneticUs && word.phoneticUk !== word.phoneticUs && <span> 美[{word.phoneticUs.replace(/^\/|\/$/g, '')}]</span>}
           </p>
         )}
 
         {word.partOfSpeech && (
-          <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2.5 py-0.5 rounded-full mb-3">
+          <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2.5 py-0.5 rounded-full">
             {word.partOfSpeech}
           </span>
         )}
-
-        {/* Flipped content */}
-        {flipped && (
-          <div className="mt-4 text-center w-full border-t border-slate-100 pt-4">
-            <p className="text-lg font-semibold text-slate-800 mb-4">{word.translation}</p>
-            {(word.examples && word.examples.length > 0) && (
-              <div className="space-y-2 text-left">
-                {word.examples.slice(0, 3).map((ex, i) => (
-                  <div key={i} className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-sm text-slate-700">
-                      {ex.en.split(new RegExp(`(${word.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')).map((part: string, j: number) =>
-                        part.toLowerCase() === word.word.toLowerCase()
-                          ? <strong key={j} className="text-blue-600 font-bold">{part}</strong> : part
-                      )}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">{ex.zh}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      <p className="text-center text-xs text-slate-400 mt-3">{t('vocab.tap_flip')}</p>
+      <p className="text-center text-xs text-slate-400 mt-2">{t('vocab.tap_flip')}</p>
 
       {/* Actions */}
-      <div className="flex gap-3 mt-6 items-center">
+      <div className="flex gap-3 mt-5 items-center">
         <button onClick={goPrev} disabled={index === 0}
           className="px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-medium hover:bg-slate-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
           ← {t('vocab.prev_word')}
@@ -111,11 +105,31 @@ function FlashcardMode({ words, onComplete, onWordDone }: { words: VocabWord[]; 
         </button>
         <button onClick={goNext} disabled={index + 1 >= words.length}
           className="px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-medium hover:bg-slate-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-          {t('vocab.next_word')} →
+          {t('vocab.next_word')}
         </button>
       </div>
 
       <p className="text-center text-xs text-slate-300 mt-4">{t('vocab.study_hint')}</p>
+
+      {/* Detail Popup */}
+      {showDetail && (
+        <WordPopup
+          word={detailData || {
+            word: word.word,
+            phoneticUk: word.phoneticUk,
+            phoneticUs: word.phoneticUs,
+            partOfSpeech: word.partOfSpeech,
+            translation: word.translation,
+            examples: word.examples || [],
+          } as any}
+          inVocabulary={false}
+          isMobile={false}
+          loading={detailLoading}
+          onClose={() => setShowDetail(false)}
+          onAddToVocabulary={() => {}}
+          onRemoveFromVocabulary={() => {}}
+        />
+      )}
     </div>
   );
 }
@@ -317,7 +331,7 @@ function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onCo
         </div>
       )}
 
-      <p className="text-center text-xs text-slate-300 mt-4">{t('vocab.study_hint')}</p>
+      <p className="text-center text-xs text-slate-300 mt-4">{t('vocab.spell_hint')}</p>
     </div>
   );
 }
@@ -338,6 +352,7 @@ export default function VocabStudyPage() {
   const [filterType, setFilterType] = useState<'all' | 'chapter' | 'letter'>('all');
   const [selectedChapter, setSelectedChapter] = useState<string>('');
   const [selectedLetter, setSelectedLetter] = useState<string>('');
+  const [studyFilter, setStudyFilter] = useState<'unstudied' | 'studied' | 'all'>('unstudied');
 
   useEffect(() => {
     vocabStudyService.getBookWords(slug)
@@ -346,18 +361,25 @@ export default function VocabStudyPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  // Filter words — start from last studied position, enforce sequential order
-  const startIndex = (data?.progress?.lastStudiedIndex ?? -1) + 1;
+  const lastStudiedIndex = data?.progress?.lastStudiedIndex ?? -1;
+  const studiedCount = lastStudiedIndex < 0 ? 0 : (data?.words || []).filter(w => w.wordIndex <= lastStudiedIndex).length;
+  const unstudiedCount = (data?.words.length || 0) - studiedCount;
+
+  // Filter words based on study progress and chapter/letter filters
   const filteredWords = useMemo(() => {
     let result = (data?.words || [])
-      .filter(w => w.wordIndex >= startIndex)  // auto-resume from last position
+      .filter(w => {
+        if (studyFilter === 'studied') return w.wordIndex <= lastStudiedIndex;
+        if (studyFilter === 'unstudied') return w.wordIndex > lastStudiedIndex;
+        return true; // 'all'
+      })
       .filter(w => {
         if (filterType === 'chapter' && selectedChapter) return w.chapter === selectedChapter;
         if (filterType === 'letter' && selectedLetter) return w.word[0]?.toLowerCase() === selectedLetter.toLowerCase();
         return true;
       });
     return result;
-  }, [data?.words, filterType, selectedChapter, selectedLetter, startIndex]);
+  }, [data?.words, filterType, selectedChapter, selectedLetter, studyFilter, lastStudiedIndex]);
 
   // Get unique chapters and first letters
   const chapters = [...new Set(data?.words.map(w => w.chapter).filter(Boolean) || [])];
@@ -389,12 +411,12 @@ export default function VocabStudyPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
+    <div className="max-w-3xl mx-auto py-4 px-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <Link href="/vocabulary" className="text-sm text-slate-400 hover:text-primary-600 transition-colors">← {t('vocab.title')}</Link>
-          <h1 className="text-lg font-bold text-slate-900 mt-1">{t(`vocab.book.${data.book.slug}`) !== `vocab.book.${data.book.slug}` ? t(`vocab.book.${data.book.slug}`) : data.book.name}</h1>
+          <h1 className="text-lg font-bold text-slate-900 mt-0">{t(`vocab.book.${data.book.slug}`) !== `vocab.book.${data.book.slug}` ? t(`vocab.book.${data.book.slug}`) : data.book.name}</h1>
         </div>
         {/* Mode toggle */}
         <div className="flex bg-slate-100 rounded-lg p-1">
@@ -413,46 +435,28 @@ export default function VocabStudyPage() {
         </div>
       </div>
 
-      {/* Filter bar */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <div className="flex bg-slate-100 rounded-lg p-1">
-          {(['all', 'chapter', 'letter'] as const).map(f => (
-            <button key={f} onClick={() => { setFilterType(f); setSelectedChapter(''); setSelectedLetter(''); }}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${filterType === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              {f === 'all' ? t('vocab.filter_all') : f === 'chapter' ? t('vocab.filter_chapter') : t('vocab.filter_letter')}
-            </button>
-          ))}
-        </div>
-        {filterType === 'chapter' && (
-          <select value={selectedChapter} onChange={e => setSelectedChapter(e.target.value)}
-            className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-700">
-            <option value="">All Chapters</option>
-            {chapters.map(c => <option key={c} value={c!}>{c}</option>)}
-          </select>
-        )}
-        {filterType === 'letter' && (
-          <select value={selectedLetter} onChange={e => setSelectedLetter(e.target.value)}
-            className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-700">
-            <option value="">All Letters</option>
-            {letters.map(l => <option key={l} value={l!}>{l!.toUpperCase()}</option>)}
-          </select>
-        )}
-        <span className="text-xs text-slate-400">{t('vocab.words_count', { n: filteredWords.length })}</span>
-      </div>
+{/* Filter bar — hidden for now */}
+      {/* <div className="flex items-center gap-3 mb-6 flex-wrap">
+        ...
+      </div> */}
 
-      {/* Progress info */}
-      {data.progress && (
-        <div className="flex gap-4 mb-6 text-xs text-slate-500">
-          <span>{t('vocab.mastered')}: {data.progress.masteredCount}</span>
-          <span>{t('vocab.reviewing')}: {data.progress.reviewingCount}</span>
-          <span>{t('vocab.learning')}: {data.progress.learnedCount}</span>
-        </div>
-      )}
+      {/* Study filter chips */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-6 w-fit">
+        {([
+          { key: 'unstudied' as const, label: `未背 ${unstudiedCount} 词` },
+          { key: 'studied' as const, label: `已背 ${studiedCount} 词` },
+        ]).map(f => (
+          <button key={f.key} onClick={() => setStudyFilter(f.key)}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${studyFilter === f.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       {/* Mode content */}
       {filteredWords.length === 0 ? (
         <div className="text-center py-16">
-          {startIndex > 0 && (data?.words.length || 0) > 0 ? (
+          {studiedCount > 0 && studiedCount >= (data?.words.length || 0) ? (
             <>
               <div className="text-5xl mb-4">🎉</div>
               <h2 className="text-xl font-bold text-slate-800 mb-2">All words completed!</h2>

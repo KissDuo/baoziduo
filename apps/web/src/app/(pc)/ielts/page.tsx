@@ -61,7 +61,7 @@ export default function IeltsPage() {
     <div className="max-w-5xl mx-auto pt-2">
       <SocialSidebar />
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">雅思模拟考试</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">雅思模拟考试</h1>
         <p className="text-slate-500">真实还原雅思机考界面，阅读+听力全真模拟</p>
       </div>
 

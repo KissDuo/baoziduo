@@ -79,7 +79,7 @@ export function PCLayoutShell({ children, user }: { children: React.ReactNode; u
                 </button>
                 <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                   <Link
-                    href="/vocabulary"
+                    href="/vocabulary?tab=mywords"
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
                   >
                     <span>📖</span>
@@ -115,7 +115,7 @@ export function PCLayoutShell({ children, user }: { children: React.ReactNode; u
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-4 w-full">
         {children}
       </main>
 

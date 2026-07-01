@@ -322,7 +322,6 @@ export default function MobileArticleReaderPage({ slug }: { slug: string }) {
       {article.titleZh && <p className="text-sm text-slate-500 mb-3">{article.titleZh}</p>}
       <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap mb-4">
         <DifficultyBadge level={level} />
-        {article.source && <span>{article.source}</span>}
         <span>{article.wordCount} 词</span>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { X, BookOpen, List } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { SocialSidebar } from './social-sidebar';
@@ -11,19 +12,20 @@ import type { UserVocabulary } from '@english/shared';
 
 const PAGE_SIZE = 50;
 const MYWORDS_FILTERS = [
-  { key: '' as const, label: '全部' },
-  { key: 'studied' as const, label: '我已背过' },
   { key: 'manual' as const, label: '手动添加' },
+  { key: 'studied' as const, label: '我已背过' },
 ];
 
 export default function PCVocabularyPage() {
   const { t } = useLang();
-  const [tab, setTab] = useState<'study' | 'mywords'>('study');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'mywords' ? 'mywords' : 'study';
+  const [tab, setTab] = useState<'study' | 'mywords'>(initialTab);
 
   return (
     <div className="max-w-4xl mx-auto pt-2 pb-8 px-4">
       <SocialSidebar />
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('vocab.title')}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">{t('vocab.title')}</h1>
       <p className="text-xs text-slate-400 mb-5">{t('vocab.overlap_hint')}</p>
 
       {/* Tabs */}
@@ -110,20 +112,21 @@ function StudyTab() {
 
 // ── My Words Tab: Personal Word Collection ──
 function MyWordsTab() {
+  const { t } = useLang();
   const [words, setWords] = useState<UserVocabulary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<UserVocabulary | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'' | 'studied' | 'manual'>('');
+  const [activeFilter, setActiveFilter] = useState<'studied' | 'manual'>('manual');
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const fetchWords = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await articleService.listVocabulary({ page, pageSize: PAGE_SIZE, filter: activeFilter || undefined });
+      const result = await articleService.listVocabulary({ page, pageSize: PAGE_SIZE, filter: activeFilter });
       setWords(result.items);
       setTotal(result.total);
     } catch (err: any) {
@@ -145,26 +148,9 @@ function MyWordsTab() {
     }
   };
 
-  if (loading) {
-    return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" /></div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-12 text-red-500">{error}</div>;
-  }
-
-  if (words.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-slate-400 mb-3">No words saved yet.</p>
-        <Link href="/articles" className="text-primary-600 hover:underline text-sm font-medium">Browse articles to add words →</Link>
-      </div>
-    );
-  }
-
   return (
     <>
-      {/* Filter tabs */}
+      {/* Filter tabs — always visible */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
         {MYWORDS_FILTERS.map(f => (
           <button key={f.key} onClick={() => { setActiveFilter(f.key); setPage(1); }}
@@ -174,46 +160,63 @@ function MyWordsTab() {
         ))}
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-slate-50 border-b">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 w-12">#</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500">Word</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 hidden md:table-cell">Phonetic</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 hidden md:table-cell">Part</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500">Translation</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 w-16"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {words.map((v, i) => (
-              <tr key={v.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelected(v)}>
-                <td className="px-4 py-3 text-sm text-slate-400">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                <td className="px-4 py-3 text-sm font-medium text-slate-900">{v.word.word}</td>
-                <td className="px-4 py-3 text-sm text-slate-500 hidden md:table-cell">{v.word.phoneticUk || v.word.phonetic || '-'}</td>
-                <td className="px-4 py-3 text-sm text-slate-500 hidden md:table-cell">{v.word.partOfSpeech || '-'}</td>
-                <td className="px-4 py-3 text-sm text-slate-700">{v.word.translation}</td>
-                <td className="px-4 py-3">
-                  <button onClick={(e) => { e.stopPropagation(); handleRemove(v.id); }}
-                    className="text-slate-300 hover:text-red-500 transition-colors"><X size={16} /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 mt-6">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-            className="px-4 py-2 text-sm border rounded-lg disabled:opacity-30">Prev</button>
-          <span className="text-sm text-slate-500">{page} / {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-            className="px-4 py-2 text-sm border rounded-lg disabled:opacity-30">Next</button>
+      {loading ? (
+        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" /></div>
+      ) : error ? (
+        <div className="text-center py-12 text-red-500">{error}</div>
+      ) : words.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-slate-400 mb-3">{activeFilter === 'manual' ? t('vocab.empty_manual') : t('vocab.empty_studied')}</p>
+          {activeFilter === 'manual' ? (
+            <Link href="/articles" className="text-primary-600 hover:underline text-sm font-medium">{t('vocab.browse')}</Link>
+          ) : (
+            <Link href="/vocabulary" className="text-primary-600 hover:underline text-sm font-medium">{t('vocab.study')} →</Link>
+          )}
         </div>
+      ) : (
+        <>
+          {/* Table */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 w-12">{t('vocab.col_index')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-slate-500">{t('vocab.col_word')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 hidden md:table-cell">{t('vocab.col_phonetic')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 hidden md:table-cell">{t('vocab.col_part')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-slate-500">{t('vocab.col_translation')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 w-16"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {words.map((v, i) => (
+                  <tr key={v.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelected(v)}>
+                    <td className="px-4 py-3 text-sm text-slate-400">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{v.word.word}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500 hidden md:table-cell">{v.word.phoneticUk || v.word.phonetic || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500 hidden md:table-cell">{v.word.partOfSpeech || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">{v.word.translation}</td>
+                    <td className="px-4 py-3">
+                      <button onClick={(e) => { e.stopPropagation(); handleRemove(v.id); }}
+                        className="text-slate-300 hover:text-red-500 transition-colors"><X size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+                className="px-4 py-2 text-sm border rounded-lg disabled:opacity-30">{t('vocab.prev')}</button>
+              <span className="text-sm text-slate-500">{page} / {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
+                className="px-4 py-2 text-sm border rounded-lg disabled:opacity-30">{t('vocab.next')}</button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Detail Modal */}

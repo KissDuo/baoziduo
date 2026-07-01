@@ -95,7 +95,6 @@ export function ArticleCard({ article, userProgress, compact = false }: ArticleC
           <p className="text-sm text-slate-500 line-clamp-2 mb-3 flex-1">{article.summary}</p>
           <div className="flex items-center gap-4 text-xs text-slate-400 pt-3 border-t border-slate-100">
             <span>{article.wordCount} words</span>
-            {article.source && <span className="truncate">{article.source}</span>}
           </div>
         </div>
       </div>

@@ -9,15 +9,20 @@ import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: { template: '%s | 宝子多EN', default: '宝子多EN - 英语学习平台' },
-  description: '免费在线英语学习平台，提供雅思模拟考试、外刊阅读、精听练习、词汇学习等功能，支持电脑和手机。',
-  keywords: ['宝子多英语', '宝子多雅思', '英语学习', '雅思', 'IELTS', 'PTE', '托福', '托业', '背单词', '精听', '外刊阅读', '英语阅读'],
+  description: '免费在线英语学习平台，提供雅思模拟考试、文章阅读、精听练习、词汇学习等功能，支持电脑和手机。',
+  keywords: ['宝子多英语', '宝子多雅思', '英语学习', '雅思', 'IELTS', 'PTE', '托福', '托业', '背单词', '精听', '文章阅读', '英语阅读'],
   authors: [{ name: '宝子多EN' }],
   robots: { index: true, follow: true },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
   openGraph: {
     title: '宝子多EN - 英语学习平台',
-    description: '免费在线英语学习平台，雅思模拟考试、外刊阅读、精听练习、背单词',
+    description: '免费在线英语学习平台，雅思模拟考试、文章阅读、精听练习、背单词',
     type: 'website',
     locale: 'zh_CN',
+    images: ['/icon-512.png'],
   },
 };
 

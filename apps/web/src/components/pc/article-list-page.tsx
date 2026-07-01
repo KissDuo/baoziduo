@@ -50,7 +50,7 @@ export default function PCArticleListPage() {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-1">{t('articles.title')}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">{t('articles.title')}</h1>
         <p className="text-lg text-slate-400 font-medium">{tFn('en')('articles.title')}</p>
       </div>
 

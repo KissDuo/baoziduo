@@ -355,7 +355,6 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
             {article.titleZh && <p className="text-lg text-slate-500 mb-4">{article.titleZh}</p>}
             <div className="flex items-center gap-4 text-sm text-slate-500 flex-wrap">
               <DifficultyBadge level={level} />
-              {article.source && <span>Source: {article.source}</span>}
               <span>{article.wordCount} words</span>
               {article.publishDate && (
                 <span>{new Date(article.publishDate).toLocaleDateString('zh-CN')}</span>

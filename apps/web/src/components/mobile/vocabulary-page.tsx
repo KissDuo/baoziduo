@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { X, BookOpen, List } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { articleService } from '@/services/article.service';
@@ -10,14 +11,15 @@ import type { UserVocabulary } from '@english/shared';
 
 const PAGE_SIZE = 50;
 const MYWORDS_FILTERS = [
-  { key: '' as const, label: '全部' },
-  { key: 'studied' as const, label: '我已背过' },
   { key: 'manual' as const, label: '手动添加' },
+  { key: 'studied' as const, label: '我已背过' },
 ];
 
 export default function MobileVocabularyPage() {
   const { t } = useLang();
-  const [tab, setTab] = useState<'study' | 'mywords'>('study');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'mywords' ? 'mywords' : 'study';
+  const [tab, setTab] = useState<'study' | 'mywords'>(initialTab);
 
   return (
     <div className="px-4 py-6">
@@ -83,13 +85,13 @@ function MobileMyWordsTab() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<UserVocabulary | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'' | 'studied' | 'manual'>('');
+  const [activeFilter, setActiveFilter] = useState<'studied' | 'manual'>('manual');
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const fetchWords = useCallback(async (p: number) => {
     setLoading(true);
     try {
-      const result = await articleService.listVocabulary({ page: p, pageSize: PAGE_SIZE, filter: activeFilter || undefined });
+      const result = await articleService.listVocabulary({ page: p, pageSize: PAGE_SIZE, filter: activeFilter });
       if (p === 1) { setWords(result.items); } else { setWords(prev => [...prev, ...result.items]); }
       setTotal(result.total);
       setPage(p);
