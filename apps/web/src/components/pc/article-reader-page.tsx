@@ -109,7 +109,7 @@ export default function PCArticleReaderPage({ slug }: { slug: string }) {
         timeSpentSeconds: timeSpentRef.current,
       });
       navigator.sendBeacon(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'}/articles/${slug}/progress`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5201/api/v1'}/articles/${slug}/progress`,
         new Blob([body], { type: 'application/json' }),
       );
     };
