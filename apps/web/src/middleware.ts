@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, userAgent } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/register', '/api', '/_next', '/static', '/favicon.ico'];
 
-const PROTECTED_PATHS = ['/articles', '/videos', '/ielts', '/vocabulary'];
+const PROTECTED_PATHS = ['/articles', '/videos', '/ielts', '/vocabulary', '/listening'];
 
 function isProtected(pathname: string) {
   return PROTECTED_PATHS.some((p) => pathname.startsWith(p));

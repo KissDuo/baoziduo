@@ -38,7 +38,7 @@ export default function ListeningListPage() {
   return (
     <div className="max-w-4xl mx-auto pt-2 px-6 pb-6">
       <SocialSidebar />
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">精听练习</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">{t('nav.listening')}</h1>
 
       {loading && <div className="text-center py-8 text-slate-400">Loading...</div>}
 
