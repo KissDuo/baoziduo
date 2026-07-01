@@ -11,11 +11,21 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [code, setCode] = useState('');
+  const [source, setSource] = useState('');
+  const [sourceDetail, setSourceDetail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
+  const SOURCE_OPTIONS = [
+    { value: 'douyin', label: '抖音' },
+    { value: 'xiaohongshu', label: '小红书' },
+    { value: 'referral', label: '他人推荐' },
+    { value: 'search', label: '浏览器/搜索引擎' },
+    { value: 'other', label: '其他' },
+  ];
 
   function startCountdown() {
     setCountdown(60);
@@ -62,7 +72,11 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await api.post('/auth/register/email', { email, password, code, nickname: nickname || undefined });
+      await api.post('/auth/register/email', {
+        email, password, code, nickname: nickname || undefined,
+        source: source || undefined,
+        sourceDetail: source === 'other' ? sourceDetail || undefined : undefined,
+      });
       window.location.href = '/';
     } catch (err: any) {
       setError(err.message || t('auth.register_failed'));
@@ -106,6 +120,26 @@ export default function RegisterPage() {
           <label className="block text-sm font-medium text-slate-700 mb-1">{t('auth.register_pw')}</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" required placeholder={t('auth.register_pw_ph')} />
+        </div>
+
+        {/* Registration source */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">从哪里了解到本站？<span className="text-red-500 ml-0.5">*</span></label>
+          <div className="space-y-2">
+            {SOURCE_OPTIONS.map(opt => (
+              <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="source" value={opt.value}
+                  checked={source === opt.value} onChange={() => setSource(opt.value)}
+                  className="text-primary-600 focus:ring-primary-500" />
+                <span className="text-sm text-slate-600">{opt.label}</span>
+              </label>
+            ))}
+          </div>
+          {source === 'other' && (
+            <input type="text" value={sourceDetail} onChange={e => setSourceDetail(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              placeholder="请输入来源" maxLength={100} />
+          )}
         </div>
 
         <button type="submit" disabled={loading}

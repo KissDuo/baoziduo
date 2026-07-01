@@ -57,7 +57,7 @@ export class AuthService {
   }
 
   // ── Email Registration ──
-  async registerByEmail(email: string, password: string, code: string, nickname?: string) {
+  async registerByEmail(email: string, password: string, code: string, nickname?: string, source?: string, sourceDetail?: string) {
     // Verify code first
     const emailCode = await prisma.emailCode.findFirst({
       where: { email, code, used: false },
@@ -84,6 +84,15 @@ export class AuthService {
         nickname: nickname || email.split('@')[0]!,
       },
     });
+
+    // Save registration source
+    if (source) {
+      try {
+        await prisma.registrationSource.create({
+          data: { userId: user.id, source, detail: sourceDetail?.slice(0, 100) || null },
+        });
+      } catch {} // non-critical, don't fail registration
+    }
 
     const tokens = await this.issueTokens(user.id, user.email ?? undefined);
     return { user, ...tokens };

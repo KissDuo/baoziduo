@@ -61,8 +61,8 @@ export class AuthController {
 
   async registerByEmail(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password, code, nickname } = req.body;
-      const result = await authService.registerByEmail(email, password, code, nickname);
+      const { email, password, code, nickname, source, sourceDetail } = req.body;
+      const result = await authService.registerByEmail(email, password, code, nickname, source, sourceDetail);
       setTokenCookies(res, result.accessToken, result.refreshToken);
       res.status(201).json({ user: formatUserResponse(result.user) });
     } catch (err) {

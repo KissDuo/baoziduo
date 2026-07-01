@@ -33,6 +33,7 @@ model User {
   updatedAt         DateTime  @updatedAt
 
   refreshTokens          RefreshToken[]
+  registrationSource     RegistrationSource?
   payments               Payment[]
   userVocabulary         UserVocabulary[]
   ieltsAttempts          IELTSAttempt[]
@@ -86,6 +87,19 @@ model DailyEmailQuota {
   registerCount Int      @default(0)
   resetCount    Int      @default(0)
   createdAt     DateTime @default(now())
+}
+
+// ========================
+// REGISTRATION SOURCE
+// ========================
+
+model RegistrationSource {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source    String   @db.VarChar(50)   // douyin | xiaohongshu | referral | search | other
+  detail    String?  @db.VarChar(100)  // free-text when source='other'
+  createdAt DateTime @default(now())
 }
 
 // ========================
