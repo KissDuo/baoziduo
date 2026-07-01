@@ -10,7 +10,6 @@ const COOKIE_OPTIONS = {
 
 const REFRESH_COOKIE_OPTIONS = {
   ...COOKIE_OPTIONS,
-  path: '/api/v1/auth',
   sameSite: 'strict' as const,
 };
 
