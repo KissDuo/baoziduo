@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   keywords: ['宝子多英语', '宝子多雅思', '英语学习', '雅思', 'IELTS', 'PTE', '托福', '托业', '背单词', '精听', '文章阅读', '英语阅读'],
   authors: [{ name: '宝子多EN' }],
   robots: { index: true, follow: true },
+  verification: { other: { 'baidu-site-verification': 'codeva-bVt45auzyZ' } },
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
