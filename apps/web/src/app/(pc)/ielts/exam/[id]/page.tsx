@@ -113,15 +113,18 @@ export default function IeltsExamPage() {
     mountedRef.current = true;
     async function init() {
       try {
-        const [detail, att] = await Promise.all([
-          ieltsService.getDetail(examId),
-          ieltsService.startAttempt(examId),
-        ]);
+        // Load exam detail first — show content immediately
+        const detail = await ieltsService.getDetail(examId);
         if (!mountedRef.current) return;
         setExam(detail);
-        setAttempt(att);
-        setAnswers(att.savedAnswers || {});
-        setTimeLeft(Math.max(0, detail.durationMinutes * 60 - (att.timeSpentSeconds || 0)));
+        setTimeLeft(detail.durationMinutes * 60);
+        // Start attempt in background (non-blocking for content display)
+        ieltsService.startAttempt(examId).then(att => {
+          if (!mountedRef.current) return;
+          setAttempt(att);
+          setAnswers(att.savedAnswers || {});
+          setTimeLeft(Math.max(0, detail.durationMinutes * 60 - (att.timeSpentSeconds || 0)));
+        }).catch(() => {}); // Silent — user can still browse questions
       } catch (err: any) {
         if (mountedRef.current) setError(err.message || 'Failed');
       } finally {
