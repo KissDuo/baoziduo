@@ -12,12 +12,21 @@ class ApiClient {
   }
 
   private async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const url = new URL(`${this.baseUrl}${path}`);
-    if (options.params) {
-      Object.entries(options.params).forEach(([k, v]) => url.searchParams.set(k, v));
+    let url: string;
+    if (this.baseUrl.startsWith('http')) {
+      const u = new URL(`${this.baseUrl}${path}`);
+      if (options.params) {
+        Object.entries(options.params).forEach(([k, v]) => u.searchParams.set(k, v));
+      }
+      url = u.toString();
+    } else {
+      // Relative base URL (e.g. /api/v1) — construct path directly
+      const params = new URLSearchParams(options.params);
+      const qs = params.toString();
+      url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
     }
 
-    const res = await fetch(url.toString(), {
+    const res = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
