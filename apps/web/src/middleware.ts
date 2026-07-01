@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
   }
 
   const { device } = userAgent(request);
-  const isMobile = device.type === 'mobile' || device.type === 'tablet';
+  const isMobile = device.type === 'mobile';
   const viewport = isMobile ? 'mobile' : 'pc';
 
   // Block mobile access to IELTS (desktop only)
