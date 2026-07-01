@@ -13,33 +13,33 @@ function FlashcardMode({ words, onComplete, onWordDone }: { words: VocabWord[]; 
   const { t } = useLang();
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [results, setResults] = useState<{ wordId: number; known: boolean }[]>([]);
   const [finished, setFinished] = useState(false);
+  const knownCountRef = useRef(0);
 
   const word = words[index];
   if (!word) return null;
 
-  const handleKnown = (known: boolean) => {
-    const result = { wordId: word.id, known };
-    const next = [...results, result];
-    setResults(next);
+  const goPrev = () => { if (index > 0) { setIndex(index - 1); setFlipped(false); } };
+  const goNext = () => { if (index + 1 < words.length) { setIndex(index + 1); setFlipped(false); } };
+
+  const handleKnown = () => {
+    onWordDone({ wordId: word.id, known: true });
+    knownCountRef.current += 1;
     setFlipped(false);
-    onWordDone(result);  // save immediately
     if (index + 1 < words.length) {
       setIndex(index + 1);
     } else {
       setFinished(true);
-      onComplete(next);
+      onComplete([]);
     }
   };
 
   if (finished) {
-    const known = results.filter(r => r.known).length;
     return (
       <div className="text-center py-20">
         <div className="text-5xl mb-4">🎉</div>
         <h2 className="text-xl font-bold text-slate-800 mb-2">{t('vocab.session_done')}</h2>
-        <p className="text-slate-500 mb-6">{known} / {words.length} {t('vocab.mastered')}</p>
+        <p className="text-slate-500 mb-6">{knownCountRef.current} / {words.length} {t('vocab.mastered')}</p>
         <Link href="/vocabulary" className="text-primary-600 hover:underline text-sm font-medium">← {t('vocab.title')}</Link>
       </div>
     );
@@ -100,15 +100,22 @@ function FlashcardMode({ words, onComplete, onWordDone }: { words: VocabWord[]; 
 
       <p className="text-center text-xs text-slate-400 mt-3">{t('vocab.tap_flip')}</p>
 
-      {/* Actions — always visible */}
-      <div className="flex gap-3 mt-6">
-        <button onClick={() => handleKnown(false)} className="flex-1 py-3 rounded-xl border-2 border-red-200 text-red-600 font-semibold hover:bg-red-50 transition-colors">
-          {t('vocab.dont_know')}
+      {/* Actions */}
+      <div className="flex gap-3 mt-6 items-center">
+        <button onClick={goPrev} disabled={index === 0}
+          className="px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-medium hover:bg-slate-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+          ← {t('vocab.prev_word')}
         </button>
-        <button onClick={() => handleKnown(true)} className="flex-1 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors">
+        <button onClick={handleKnown} className="flex-1 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors">
           {t('vocab.know')}
         </button>
+        <button onClick={goNext} disabled={index + 1 >= words.length}
+          className="px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-medium hover:bg-slate-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+          {t('vocab.next_word')} →
+        </button>
       </div>
+
+      <p className="text-center text-xs text-slate-300 mt-4">{t('vocab.study_hint')}</p>
     </div>
   );
 }
@@ -146,8 +153,12 @@ function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onCo
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Enter to advance when result is shown
-    if (e.key === 'Enter' && status !== 'typing') {
-      handleNext();
+    if (e.key === 'Enter' && status === 'correct') {
+      handleCorrect();
+      return;
+    }
+    if (e.key === 'Enter' && status === 'wrong') {
+      handleSkip();
       return;
     }
     if (status !== 'typing') return;
@@ -161,21 +172,35 @@ function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onCo
       if (next.length === remaining.length) {
         const isCorrect = next.join('') === remaining.join('');
         setStatus(isCorrect ? 'correct' : 'wrong');
+        if (isCorrect) {
+          // save on correct
+          onWordDone({ wordId: word.id, known: true });
+        }
       }
     }
   };
 
-  const handleNext = () => {
-    const isCorrect = status === 'correct';
-    const result = { wordId: word.id, known: isCorrect };
-    const next = [...results, result];
-    setResults(next);
-    onWordDone(result);  // save immediately
+  const handlePrev = () => { if (index > 0) { setIndex(index - 1); } };
+
+  const handleCorrect = () => {
+    const result = { wordId: word.id, known: true };
+    setResults([...results, result]);
+    onWordDone(result);
     if (index + 1 < words.length) {
       setIndex(index + 1);
     } else {
       setFinished(true);
-      onComplete(next);
+      onComplete([]);
+    }
+  };
+
+  const handleSkip = () => {
+    // skip without saving — just advance
+    if (index + 1 < words.length) {
+      setIndex(index + 1);
+    } else {
+      setFinished(true);
+      onComplete([]);
     }
   };
 
@@ -252,11 +277,11 @@ function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onCo
               {word.phoneticUk && word.phoneticUs && word.phoneticUk !== word.phoneticUs && <span> 美[{word.phoneticUs.replace(/^\/|\/$/g, '')}]</span>}
             </p>
           )}
-          <div className="flex gap-3 justify-center mt-4">
+          <div className="flex gap-3 justify-center items-center mt-4">
             <button onClick={handleRetry} className="px-6 py-2.5 border-2 border-slate-300 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition-colors">
               {t('vocab.retry')}
             </button>
-            <button onClick={handleNext} className="px-8 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors">
+            <button onClick={handleCorrect} className="px-8 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors">
               {t('vocab.next_word')}
             </button>
           </div>
@@ -273,11 +298,11 @@ function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onCo
               {word.phoneticUk && word.phoneticUs && word.phoneticUk !== word.phoneticUs && <span> 美[{word.phoneticUs.replace(/^\/|\/$/g, '')}]</span>}
             </p>
           )}
-          <div className="flex gap-3 justify-center mt-4">
+          <div className="flex gap-3 justify-center items-center mt-4">
             <button onClick={handleRetry} className="px-6 py-2.5 border-2 border-slate-300 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition-colors">
               {t('vocab.retry')}
             </button>
-            <button onClick={handleNext} className="px-8 py-2.5 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-900 transition-colors">
+            <button onClick={handleSkip} className="px-8 py-2.5 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-900 transition-colors">
               {t('vocab.next_word')}
             </button>
           </div>
@@ -285,8 +310,18 @@ function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onCo
       )}
 
       {status === 'typing' && (
-        <p className="text-center text-xs text-slate-400">{t('vocab.type_hint')}</p>
+        <div>
+          <div className="flex gap-3 justify-center mb-4">
+            <button onClick={handlePrev} disabled={index === 0}
+              className="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+              ← {t('vocab.prev_word')}
+            </button>
+          </div>
+          <p className="text-center text-xs text-slate-400">{t('vocab.type_hint')}</p>
+        </div>
       )}
+
+      <p className="text-center text-xs text-slate-300 mt-4">{t('vocab.study_hint')}</p>
     </div>
   );
 }
