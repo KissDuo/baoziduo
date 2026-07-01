@@ -232,7 +232,7 @@ export default function ListeningDetailPage() {
               const isWrong = checked === false;
               const wlen = isDictation ? 140 : Math.max(60, word.length * 16);
               return (
-                <span key={i} className="relative inline-flex items-center">
+                <span key={i} className="relative inline-flex items-center" style={{ marginRight: 22 }}>
                   <input ref={el => { wordInputRefs.current[i] = el; }}
                     value={userWords[i] || ''}
                     onChange={e => handleWordChange(i, e.target.value)}
@@ -245,8 +245,8 @@ export default function ListeningDetailPage() {
                     }`}
                     style={{ width: wlen + 'px' }}
                   />
-                  {isCorrect && <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg font-bold">✓</span>}
-                  {isWrong && <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-red-500 text-lg font-bold">✗</span>}
+                  {isCorrect && <span className="absolute left-full ml-[15px] top-1/2 -translate-y-1/2 text-green-500 text-lg font-bold">✓</span>}
+                  {isWrong && <span className="absolute left-full ml-[15px] top-1/2 -translate-y-1/2 text-red-500 text-lg font-bold">✗</span>}
                 </span>
               );
             })}
