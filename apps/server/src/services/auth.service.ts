@@ -8,27 +8,23 @@ export class AuthService {
   // ── Daily email quota helpers ──
   private async checkAndIncrementQuota(type: 'register' | 'reset') {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const dateStr = today.toISOString().slice(0, 10); // "YYYY-MM-DD"
+    const column = type === 'register' ? 'registerCount' : 'resetCount';
 
-    // Upsert to avoid race condition on first create of the day
-    let quota = await prisma.dailyEmailQuota.upsert({
-      where: { date: today },
-      create: { date: today },
-      update: {},
-    });
+    // Use raw SQL INSERT ... ON DUPLICATE KEY UPDATE to avoid race condition
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO DailyEmailQuota (date, registerCount, resetCount, createdAt)
+       VALUES (?, ${type === 'register' ? 1 : 0}, ${type === 'reset' ? 1 : 0}, NOW())
+       ON DUPLICATE KEY UPDATE ${column} = ${column} + 1`,
+      dateStr
+    );
 
+    // Check quota
+    const quota = await prisma.dailyEmailQuota.findUniqueOrThrow({ where: { date: today } });
     const total = quota.registerCount + quota.resetCount;
     if (total >= 99) {
       throw new AppError(429, 'Daily email quota exceeded', 'EMAIL_QUOTA_EXCEEDED');
     }
-
-    // Increment atomically
-    await prisma.dailyEmailQuota.update({
-      where: { id: quota.id },
-      data: type === 'register'
-        ? { registerCount: { increment: 1 } }
-        : { resetCount: { increment: 1 } },
-    });
   }
 
   // ── Send Email Verification Code ──
