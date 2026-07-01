@@ -95,10 +95,11 @@ export const articleService = {
     return api.post<UserVocabulary>('/vocabulary', data);
   },
 
-  async listVocabulary(params: { page?: number; pageSize?: number } = {}): Promise<PaginatedResponse<UserVocabulary>> {
+  async listVocabulary(params: { page?: number; pageSize?: number; filter?: 'studied' | 'manual' } = {}): Promise<PaginatedResponse<UserVocabulary>> {
     const searchParams: Record<string, string> = {};
     if (params.page) searchParams.page = String(params.page);
     if (params.pageSize) searchParams.pageSize = String(params.pageSize);
+    if (params.filter) searchParams.filter = params.filter;
     return api.get<PaginatedResponse<UserVocabulary>>('/vocabulary', searchParams);
   },
 

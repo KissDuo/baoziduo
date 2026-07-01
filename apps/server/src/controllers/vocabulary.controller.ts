@@ -14,8 +14,8 @@ export class VocabularyController {
 
   async listVocabulary(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, pageSize } = req.query as any;
-      const result = await vocabularyService.listVocabulary(req.user!.id, page, pageSize);
+      const { page, pageSize, filter } = req.query as any;
+      const result = await vocabularyService.listVocabulary(req.user!.id, page, pageSize, filter);
       res.json(result);
     } catch (err) {
       next(err);

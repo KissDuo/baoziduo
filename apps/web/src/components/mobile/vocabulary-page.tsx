@@ -8,7 +8,12 @@ import { articleService } from '@/services/article.service';
 import { vocabStudyService, type VocabBook } from '@/services/vocabulary.service';
 import type { UserVocabulary } from '@english/shared';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
+const MYWORDS_FILTERS = [
+  { key: '' as const, label: '全部' },
+  { key: 'studied' as const, label: '我已背过' },
+  { key: 'manual' as const, label: '手动添加' },
+];
 
 export default function MobileVocabularyPage() {
   const { t } = useLang();
@@ -78,17 +83,18 @@ function MobileMyWordsTab() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<UserVocabulary | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'' | 'studied' | 'manual'>('');
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const fetchWords = useCallback(async (p: number) => {
     setLoading(true);
     try {
-      const result = await articleService.listVocabulary({ page: p, pageSize: PAGE_SIZE });
+      const result = await articleService.listVocabulary({ page: p, pageSize: PAGE_SIZE, filter: activeFilter || undefined });
       if (p === 1) { setWords(result.items); } else { setWords(prev => [...prev, ...result.items]); }
       setTotal(result.total);
       setPage(p);
     } catch {} finally { setLoading(false); }
-  }, []);
+  }, [activeFilter]);
 
   useEffect(() => { fetchWords(1); }, [fetchWords]);
 
@@ -116,6 +122,16 @@ function MobileMyWordsTab() {
 
   return (
     <>
+      {/* Filter tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-3 w-fit">
+        {MYWORDS_FILTERS.map(f => (
+          <button key={f.key} onClick={() => { setActiveFilter(f.key); }}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeFilter === f.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="space-y-2">
         {words.map(v => (
           <div key={v.id} className="bg-white rounded-lg border border-slate-200 p-3 flex items-center justify-between" onClick={() => setSelected(v)}>

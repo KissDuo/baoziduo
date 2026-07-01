@@ -9,7 +9,12 @@ import { articleService } from '@/services/article.service';
 import { vocabStudyService, type VocabBook } from '@/services/vocabulary.service';
 import type { UserVocabulary } from '@english/shared';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
+const MYWORDS_FILTERS = [
+  { key: '' as const, label: '全部' },
+  { key: 'studied' as const, label: '我已背过' },
+  { key: 'manual' as const, label: '手动添加' },
+];
 
 export default function PCVocabularyPage() {
   const { t } = useLang();
@@ -111,13 +116,14 @@ function MyWordsTab() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<UserVocabulary | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'' | 'studied' | 'manual'>('');
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const fetchWords = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await articleService.listVocabulary({ page, pageSize: PAGE_SIZE });
+      const result = await articleService.listVocabulary({ page, pageSize: PAGE_SIZE, filter: activeFilter || undefined });
       setWords(result.items);
       setTotal(result.total);
     } catch (err: any) {
@@ -125,7 +131,7 @@ function MyWordsTab() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, activeFilter]);
 
   useEffect(() => { fetchWords(); }, [fetchWords]);
 
@@ -158,6 +164,16 @@ function MyWordsTab() {
 
   return (
     <>
+      {/* Filter tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
+        {MYWORDS_FILTERS.map(f => (
+          <button key={f.key} onClick={() => { setActiveFilter(f.key); setPage(1); }}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeFilter === f.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <table className="w-full">

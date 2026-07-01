@@ -81,8 +81,16 @@ export class VocabularyService {
   }
 
   // ── List User Vocabulary ──
-  async listVocabulary(userId: number, page: number, pageSize: number) {
-    const where = { userId };
+  async listVocabulary(userId: number, page: number, pageSize: number, filter?: 'studied' | 'manual') {
+    const where: any = { userId };
+
+    // 'studied' = words from vocabulary book study (addedFrom is null)
+    // 'manual' = words manually added from articles (addedFrom is not null)
+    if (filter === 'studied') {
+      where.addedFrom = null;
+    } else if (filter === 'manual') {
+      where.addedFrom = { not: null };
+    }
 
     const [items, total] = await Promise.all([
       prisma.userVocabulary.findMany({
