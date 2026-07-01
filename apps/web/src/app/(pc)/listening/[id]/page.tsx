@@ -232,18 +232,22 @@ export default function ListeningDetailPage() {
               const isWrong = checked === false;
               const wlen = isDictation ? 140 : Math.max(60, word.length * 16);
               return (
-                <input key={i} ref={el => { wordInputRefs.current[i] = el; }}
-                  value={userWords[i] || ''}
-                  onChange={e => handleWordChange(i, e.target.value)}
-                  onKeyDown={e => handleWordKeyDown(e, i)}
-                  placeholder={isDictation ? t('dictation.placeholder') : word.replace(/[a-zA-Z]/g, '_')}
-                  className={`text-center text-sm px-2 py-1.5 rounded border-2 outline-none transition-colors ${
-                    isCorrect ? 'border-green-400 bg-green-50 text-green-700' :
-                    isWrong ? 'border-red-400 bg-red-50 text-red-600' :
-                    'border-slate-300 focus:border-primary-400'
-                  }`}
-                  style={{ width: wlen + 'px' }}
-                />
+                <span key={i} className="relative inline-flex items-center">
+                  <input ref={el => { wordInputRefs.current[i] = el; }}
+                    value={userWords[i] || ''}
+                    onChange={e => handleWordChange(i, e.target.value)}
+                    onKeyDown={e => handleWordKeyDown(e, i)}
+                    placeholder={isDictation ? t('dictation.placeholder') : word.replace(/[a-zA-Z]/g, '_')}
+                    className={`text-center text-sm px-2 py-1.5 rounded border-2 outline-none transition-colors ${
+                      isCorrect ? 'border-green-400 bg-green-50 text-green-700' :
+                      isWrong ? 'border-red-400 bg-red-50 text-red-600' :
+                      'border-slate-300 focus:border-primary-400'
+                    }`}
+                    style={{ width: wlen + 'px' }}
+                  />
+                  {isCorrect && <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg font-bold">✓</span>}
+                  {isWrong && <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-red-500 text-lg font-bold">✗</span>}
+                </span>
               );
             })}
           </div>

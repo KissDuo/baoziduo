@@ -33,9 +33,9 @@ async function generate(category: string, items: DictationItem[]) {
       );
       fs.unlinkSync(tmpTxt);
 
-      // 2. Trim silence at start, amplify volume, and save final
+      // 2. Add 1s silence at start (so first letter isn't cut off), amplify, save final
       execSync(
-        `ffmpeg -y -i "${rawPath}" -af "silenceremove=start_periods=1:start_duration=0.1:start_threshold=-50dB,volume=3.0" -q:a 5 "${mp3Path}"`,
+        `ffmpeg -y -i "${rawPath}" -af "adelay=1000|1000,volume=6.0" -q:a 5 "${mp3Path}"`,
         { timeout: 15000 }
       );
       fs.unlinkSync(rawPath);
