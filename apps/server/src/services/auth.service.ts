@@ -19,8 +19,12 @@ export class AuthService {
       dateStr
     );
 
-    // Check quota
-    const quota = await prisma.dailyEmailQuota.findUniqueOrThrow({ where: { date: today } });
+    // Check quota — use raw query because Prisma @db.Date doesn't match JS Date reliably
+    const quotas = await prisma.$queryRawUnsafe<Array<{ registerCount: number; resetCount: number }>>(
+      `SELECT registerCount, resetCount FROM DailyEmailQuota WHERE date = ?`, dateStr
+    );
+    const quota = quotas[0];
+    if (!quota) throw new AppError(500, 'Failed to read quota', 'QUOTA_READ_FAILED');
     const total = quota.registerCount + quota.resetCount;
     if (total >= 99) {
       throw new AppError(429, 'Daily email quota exceeded', 'EMAIL_QUOTA_EXCEEDED');
