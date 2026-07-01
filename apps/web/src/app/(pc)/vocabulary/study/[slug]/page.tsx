@@ -172,10 +172,6 @@ function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onCo
       if (next.length === remaining.length) {
         const isCorrect = next.join('') === remaining.join('');
         setStatus(isCorrect ? 'correct' : 'wrong');
-        if (isCorrect) {
-          // save on correct
-          onWordDone({ wordId: word.id, known: true });
-        }
       }
     }
   };
@@ -185,7 +181,7 @@ function SpellMode({ words, onComplete, onWordDone }: { words: VocabWord[]; onCo
   const handleCorrect = () => {
     const result = { wordId: word.id, known: true };
     setResults([...results, result]);
-    onWordDone(result);
+    onWordDone(result);  // only save on explicit "correct" advance
     if (index + 1 < words.length) {
       setIndex(index + 1);
     } else {
