@@ -10,17 +10,19 @@ export class AuthService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let quota = await prisma.dailyEmailQuota.findUnique({ where: { date: today } });
-    if (!quota) {
-      quota = await prisma.dailyEmailQuota.create({ data: { date: today } });
-    }
+    // Upsert to avoid race condition on first create of the day
+    let quota = await prisma.dailyEmailQuota.upsert({
+      where: { date: today },
+      create: { date: today },
+      update: {},
+    });
 
     const total = quota.registerCount + quota.resetCount;
     if (total >= 99) {
       throw new AppError(429, 'Daily email quota exceeded', 'EMAIL_QUOTA_EXCEEDED');
     }
 
-    // Increment
+    // Increment atomically
     await prisma.dailyEmailQuota.update({
       where: { id: quota.id },
       data: type === 'register'
