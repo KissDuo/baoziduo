@@ -51,15 +51,15 @@
       clone.json().then(function(data) {
         if (data && (data.result || data.data)) {
           if (url.indexOf(RECORDS_URL) !== -1) {
-            // web-index/records — save with the ids parameter as key
-            var u = new URL(url);
-            var ids = u.searchParams.get('ids');
-            if (ids) {
-              var key = 'records_' + ids.slice(0, 30);
-              CAPTURED[key] = { url: url, data: data };
+            // web-index/records — extract exam_unique IDs and fetch practise-detail for each
+            var records = data.result || data.data || [];
+            if (Array.isArray(records) && records.length > 0) {
+              var uids = records.map(function(r) { return r.exam_unique; }).filter(Boolean);
+              log('📋 Found ' + uids.length + ' practice IDs. Fetching all...');
               save();
               updatePanel();
-              log('✅ Records: ' + ids.split(',').length + ' items');
+              // Fetch practise-detail for all IDs (with delay to avoid rate limit)
+              fetchAllDetails(uids, 0);
             }
           } else {
             var u2 = new URL(url);
@@ -92,9 +92,14 @@
           var data = JSON.parse(self.responseText);
           if (data && (data.result || data.data)) {
             if (self._kmf_url.indexOf(RECORDS_URL) !== -1) {
-              var u = new URL(self._kmf_url);
-              var ids = u.searchParams.get('ids');
-              if (ids) CAPTURED['records_' + ids.slice(0,30)] = { url: self._kmf_url, data: data };
+              var records = data.result || data.data || [];
+              if (Array.isArray(records) && records.length > 0) {
+                var uids = records.map(function(r) { return r.exam_unique; }).filter(Boolean);
+                log('📋 Found ' + uids.length + ' IDs via XHR. Fetching...');
+                save();
+                updatePanel();
+                fetchAllDetails(uids, 0);
+              }
             } else {
               var u2 = new URL(self._kmf_url);
               var uid = u2.searchParams.get('u');
@@ -129,7 +134,42 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  // ── State flow ──
+  // ── Batch fetch all practise-detail APIs ──
+  function fetchAllDetails(uids, startIdx) {
+    if (startIdx >= uids.length) {
+      log('🎉 All ' + uids.length + ' items captured!');
+      updatePanel();
+      return;
+    }
+
+    var uid = uids[startIdx];
+    if (CAPTURED[uid] && CAPTURED[uid].result) {
+      // Already have it
+      log('[' + (startIdx+1) + '/' + uids.length + '] Already have u=' + uid.slice(0,12) + '...');
+      setTimeout(function() { fetchAllDetails(uids, startIdx + 1); }, 100);
+      return;
+    }
+
+    log('[' + (startIdx+1) + '/' + uids.length + '] Fetching u=' + uid.slice(0,12) + '...');
+    var apiUrl = 'https://api.kmf.com/ielts-app/front/practise-detail?u=' + uid;
+    fetch(apiUrl, { credentials: 'include' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.result) {
+          CAPTURED[uid] = data;
+          save();
+          log('  ✅ Saved (' + realCount() + ' total)');
+        } else {
+          log('  ⚠ No data');
+        }
+        updatePanel();
+        setTimeout(function() { fetchAllDetails(uids, startIdx + 1); }, 500);
+      })
+      .catch(function(e) {
+        log('  ❌ ' + e.message);
+        setTimeout(function() { fetchAllDetails(uids, startIdx + 1); }, 500);
+      });
+  }
   function handlePracticePage(state) {
     log('📍 Practice page [' + (state.idx + 1) + '/' + state.total + ']');
     log('   Waiting for API capture...');
