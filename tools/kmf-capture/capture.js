@@ -79,6 +79,13 @@
     var isDetail = url && url.indexOf(DETAIL_URL) !== -1;
 
     return origFetch.apply(this, args).then(function(res) {
+      // Debug: log ALL kmf API calls
+      if (url && url.indexOf('kmf.com') !== -1) {
+        var short = url.replace(/https?:\/\/[^\/]+\//, '/').slice(0, 60);
+        if (url.indexOf(RECORDS_URL) !== -1) debugLog('📋 RECORDS: ' + short);
+        else if (url.indexOf(DETAIL_URL) !== -1) debugLog('📝 DETAIL: ' + short);
+        else debugLog('🌐 API: ' + short);
+      }
       if (isRecords || isDetail) {
         var clone = res.clone();
         clone.json().then(function(data) {
@@ -145,7 +152,15 @@
     updatePanel();
   }
 
-  function updatePanel() {
+  // Log ALL API calls for debugging (first 20 only)
+  var debugCount = 0;
+  var debugMax = 20;
+  function debugLog(msg) {
+    if (debugCount < debugMax) {
+      debugCount++;
+      log('🔍 ' + msg);
+    }
+  }
     var countEl = document.getElementById('kmf-count');
     if (!countEl) return;
     countEl.textContent = realCount();
@@ -204,6 +219,7 @@
         '<div style="font-weight:bold;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">' +
           '<span>📡 KMF <span id="kmf-count" style="color:#34d399;font-size:16px;">0</span></span>' +
           '<div style="display:flex;gap:4px;">' +
+            '<button id="kmf-rf" class="kmf-clr">🔄</button>' +
             '<button id="kmf-dl" class="kmf-dl">⬇ Download</button>' +
             '<button id="kmf-clr" class="kmf-clr">🗑</button>' +
           '</div>' +
@@ -215,6 +231,10 @@
         '</div>' +
       '</div>';
     document.body.appendChild(panel);
+    document.getElementById('kmf-rf').onclick = function() {
+      debugCount = 0;
+      log('🔄 Refreshing — watching for API calls...');
+    };
     document.getElementById('kmf-dl').onclick = downloadAll;
     document.getElementById('kmf-clr').onclick = clearAll;
   }
