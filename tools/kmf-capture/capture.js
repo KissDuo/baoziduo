@@ -5,13 +5,21 @@
   var DETAIL_URL = 'practise-detail';
   var RECORDS_URL = 'web-index/records';
 
-  // ── Init ──
-  chrome.storage.local.get('kmfCapture', function(res) {
-    if (res.kmfCapture) CAPTURED = res.kmfCapture;
-    createPanel();
-    log('📡 Ready. ' + realCount() + ' items stored.');
-    updatePanel();
-  });
+  // ── Init (wait for DOM) ──
+  function init() {
+    chrome.storage.local.get('kmfCapture', function(res) {
+      if (res.kmfCapture) CAPTURED = res.kmfCapture;
+      createPanel();
+      log('📡 Ready. ' + realCount() + ' items stored.');
+      updatePanel();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
   function save() { chrome.storage.local.set({ kmfCapture: CAPTURED }); }
   function realCount() {
