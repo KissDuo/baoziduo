@@ -3,71 +3,67 @@
 
   var CAPTURED = {};
   var DETAIL_URL = 'practise-detail';
-  var autoRunning = false;
-  var autoQueue = [];
-  var autoIndex = 0;
-  var autoTotal = 0;
 
-  // ── Restore captured data from storage, then init ──
+  // ── Init: restore data + check state ──
   function init() {
-    chrome.storage.local.get('kmfCapture', function(res) {
-      if (res.kmfCapture) {
-        CAPTURED = res.kmfCapture;
-      }
+    chrome.storage.local.get(['kmfCapture', 'kmfState'], function(res) {
+      if (res.kmfCapture) CAPTURED = res.kmfCapture;
+      var state = res.kmfState || {};
       createPanel();
-      log('Ready. ' + Object.keys(CAPTURED).length + ' items stored.');
-      log('Navigate practice pages and data auto-captures.');
       updatePanel();
+
+      // Auto-dismiss popups (继续练习/重新练习)
+      watchForPopup();
+
+      var isPractice = location.href.indexOf('ielts-practices') !== -1;
+      var isList = !isPractice;
+
+      if (state.phase === 'scanning') {
+        if (isPractice) {
+          // Arrived on practice page — wait for API
+          handlePracticePage(state);
+        } else {
+          // Back on list page — click next
+          handleListPage(state);
+        }
+      } else {
+        var count = realCount();
+        log('📡 Ready. ' + count + ' items stored.');
+        if (isList) {
+          var btns = countButtons();
+          if (btns.length > 0) {
+            log('💡 Found ' + btns.length + ' practice items. Click 🚀 to auto-scan.');
+          }
+        }
+      }
     });
   }
-
-  function saveToStorage() {
-    chrome.storage.local.set({ kmfCapture: CAPTURED });
-  }
-
-  // ── Intercept pushState to capture practice IDs from URL changes ──
-  var pushStateIds = [];
-  function captureIdFromUrl(url) {
-    if (!url) return null;
-    var s = String(url);
-    var m = s.match(/\/start\/(\d{15,20})/);
-    if (m) return m[1];
-    m = s.match(/[?&]u=(\d{10,})/);
-    if (m) return m[1];
-    m = s.match(/\/claw\/(\d{15,20})/);
-    if (m) return m[1];
-    return null;
-  }
-
-  var origPushState = history.pushState;
-  history.pushState = function(state, title, url) {
-    var id = captureIdFromUrl(url);
-    if (id && pushStateIds.indexOf(id) === -1) pushStateIds.push(id);
-    return origPushState.apply(this, arguments);
-  };
 
   // ── Intercept fetch ──
   var origFetch = window.fetch;
   window.fetch = async function() {
     var args = arguments;
     var res = await origFetch.apply(this, args);
-    var url = typeof args[0] === 'string' ? args[0] : args[0].url;
-    if (url.indexOf(DETAIL_URL) !== -1) {
+    var url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url);
+    if (url && url.indexOf(DETAIL_URL) !== -1) {
       var clone = res.clone();
       clone.json().then(function(data) {
-        var u = new URL(url);
-        var uid = u.searchParams.get('u');
-        if (uid && data.result) {
-          CAPTURED[uid] = data;
-          saveToStorage();
-          updatePanel();
+        if (data && data.result) {
+          var u = new URL(url);
+          var uid = u.searchParams.get('u');
+          if (uid) {
+            CAPTURED[uid] = data;
+            save();
+            updatePanel();
+            log('✅ u=' + uid.slice(0,12) + '... (' + realCount() + ' total)');
+          }
         }
       }).catch(function(){});
     }
     return res;
   };
 
-  // ── Intercept XMLHttpRequest ──
+  // ── Intercept XHR ──
   var origOpen = XMLHttpRequest.prototype.open;
   var origSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.open = function(method, url) {
@@ -84,8 +80,9 @@
           var uid = u.searchParams.get('u');
           if (uid && data.result) {
             CAPTURED[uid] = data;
-            saveToStorage();
+            save();
             updatePanel();
+            log('✅ u=' + uid.slice(0,12) + '... (' + realCount() + ' total)');
           }
         } catch(e) {}
       }
@@ -93,231 +90,193 @@
     return origSend.apply(this, arguments);
   };
 
-  // ── Direct API fetch ──
-  async function fetchPractiseDetail(uid) {
-    var apiUrl = 'https://ielts.kmf.com/ielts-app/front/practise-detail?u=' + uid;
-    try {
-      var res = await fetch(apiUrl, { credentials: 'include' });
-      var data = await res.json();
-      if (data && data.result) {
-        CAPTURED[uid] = data;
-        saveToStorage();
-        updatePanel();
-        return true;
-      }
-    } catch(e) {}
-    return false;
-  }
-
-  // ── Extract practice ID from Vue component ──
-  function extractVueId(el) {
-    var p = el;
-    while (p && p !== document.body) {
-      if (p.__vue__) {
-        try {
-          var vue = p.__vue__;
-          for (var k in vue) {
-            if (vue.hasOwnProperty(k)) {
-              var sv = String(vue[k]);
-              if (/^\d{15,20}$/.test(sv)) return sv;
-            }
+  // ── Popup auto-dismiss ──
+  function watchForPopup() {
+    var observer = new MutationObserver(function() {
+      // Try common modal selectors
+      var containers = document.querySelectorAll('[class*="modal"], [class*="dialog"], [class*="popup"], [class*="drawer"], [role="dialog"]');
+      for (var i = 0; i < containers.length; i++) {
+        var btns = containers[i].querySelectorAll('button, a, span[class*="btn"]');
+        for (var j = 0; j < btns.length; j++) {
+          var t = (btns[j].textContent || '').trim();
+          if (t === '继续练习') {
+            btns[j].click();
+            log('🤖 Dismissed popup: ' + t);
+            return;
           }
-        } catch(e) {}
+        }
       }
-      p = p.parentElement;
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // ── State flow ──
+  function handlePracticePage(state) {
+    log('📍 Practice page [' + (state.idx + 1) + '/' + state.total + ']');
+    log('   Waiting for API capture...');
+    updatePanel();
+
+    var prevCount = realCount();
+    var waited = 0;
+    var maxWait = 25; // ~12 seconds max
+
+    function check() {
+      waited++;
+      chrome.storage.local.get('kmfCapture', function(r) {
+        var newData = r.kmfCapture || {};
+        var newCount = 0;
+        for (var k in newData) { if (newData.hasOwnProperty(k) && newData[k].result) newCount++; }
+
+        if (newCount > prevCount || waited >= maxWait) {
+          if (newCount > prevCount) {
+            CAPTURED = newData;
+            log('   ✅ Captured!');
+          } else {
+            log('   ⚠ Timeout — proceeding anyway');
+          }
+
+          var nextIdx = state.idx + 1;
+          if (nextIdx >= state.total) {
+            // ALL DONE!
+            chrome.storage.local.remove('kmfState');
+            log('🎉 ALL DONE! ' + newCount + ' items total.');
+            updatePanel();
+            // Navigate back to list
+            setTimeout(function() { history.go(-(state.total - state.idx + 1)); }, 300);
+          } else {
+            chrome.storage.local.set({ kmfState: { phase: 'scanning', idx: nextIdx, total: state.total, listUrl: state.listUrl } });
+            setTimeout(function() { history.back(); }, 300);
+          }
+        } else {
+          setTimeout(check, 600);
+        }
+      });
     }
-    return null;
+
+    setTimeout(check, 1500); // Wait for redirect + API to fire
   }
 
-  // ── Also check current page URL for the ID ──
-  function idFromCurrentPage() {
-    return captureIdFromUrl(window.location.href);
+  function handleListPage(state) {
+    log('📍 List page — clicking item [' + (state.idx + 1) + '/' + state.total + ']');
+    updatePanel();
+
+    // Find the nth button
+    var allLinks = document.querySelectorAll('a');
+    var count = 0;
+    var found = false;
+
+    for (var i = 0; i < allLinks.length; i++) {
+      var text = (allLinks[i].textContent || '').trim();
+      if (text === '继续练习' || text === '开始练习' || text === '继续刷题') {
+        if (count === state.idx) {
+          var label = text;
+          var item = allLinks[i].closest('.part-item');
+          if (item) {
+            var nameEl = item.querySelector('.seq_name, a[target]');
+            if (nameEl) label = (nameEl.textContent || '').trim();
+          }
+          log('   Clicking: ' + label);
+          // Save state BEFORE clicking (page will navigate away)
+          chrome.storage.local.set({ kmfState: { phase: 'scanning', idx: state.idx, total: state.total, listUrl: state.listUrl } });
+          setTimeout(function() { allLinks[i].click(); }, 200);
+          found = true;
+          break;
+        }
+        count++;
+      }
+    }
+
+    if (!found) {
+      log('   ⚠ Button not found at index ' + state.idx + ' — retrying...');
+      setTimeout(function() { handleListPage(state); }, 1000);
+    }
   }
 
-  // ── Scan for "继续练习" buttons ──
-  function scanButtons() {
-    var buttons = [];
+  // ── Start scan ──
+  function startScan() {
+    var btns = countButtons();
+    if (btns === 0) {
+      log('⚠ No practice buttons found on this page.');
+      return;
+    }
+
+    log('🚀 Auto-scanning ' + btns + ' items...');
+    log('   Page will navigate automatically. Please wait.');
+
+    handleListPage({ phase: 'scanning', idx: 0, total: btns, listUrl: location.href });
+  }
+
+  function countButtons() {
+    var count = 0;
     var allLinks = document.querySelectorAll('a');
     for (var i = 0; i < allLinks.length; i++) {
-      var a = allLinks[i];
-      var text = (a.textContent || '').trim();
-      if (text === '继续练习' || text === '开始练习' || text === '继续刷题') {
-        var item = a.closest('.part-item');
-        var label = text;
-        if (item) {
-          var nameEl = item.querySelector('.seq_name, a[target]');
-          if (nameEl) label = (nameEl.textContent || '').trim() + ' - ' + text;
-        }
-        var group = a.closest('[id^="group-"]');
-        if (group) {
-          var groupName = group.querySelector('.part-header_title');
-          if (groupName) label = (groupName.textContent || '').trim() + ' / ' + label;
-        }
-        buttons.push({ el: a, label: label, id: extractVueId(a) });
-      }
+      var text = (allLinks[i].textContent || '').trim();
+      if (text === '继续练习' || text === '开始练习' || text === '继续刷题') count++;
     }
-
-    if (buttons.length === 0) {
-      log('⚠ No buttons found. Try on KMF test list page.');
-    } else {
-      var withId = buttons.filter(function(b) { return b.id; }).length;
-      log('Found ' + buttons.length + ' buttons (' + withId + ' with Vue IDs)');
-    }
-    return buttons;
+    return count;
   }
 
-  // ── Auto-flow: open all buttons in new tabs, wait, close tabs, done ──
-  var openedTabIds = [];
-
-  function doAutoScan() {
-    var buttons = scanButtons();
-    if (buttons.length === 0) { log('⚠ No buttons found'); updatePanel(); return; }
-
-    autoQueue = buttons;
-    autoTotal = buttons.length;
-    autoRunning = true;
-    openedTabIds = [];
-    log('Opening ' + autoTotal + ' practice pages in new tabs...');
-
-    // Click all buttons with ctrlKey to open in new tabs (with small delay between)
-    function openNext(i) {
-      if (i >= autoQueue.length) {
-        // All tabs opened — wait 5 seconds then close them
-        log('All ' + autoTotal + ' tabs opened. Waiting 5s for API to capture...');
-        updatePanel();
-
-        setTimeout(function() {
-          // Close all opened practice tabs
-          if (openedTabIds.length > 0) {
-            log('Closing ' + openedTabIds.length + ' practice tabs...');
-            chrome.tabs.remove(openedTabIds, function() {
-              log('✅ Tabs closed.');
-              autoRunning = false;
-              // Refresh data from storage
-              chrome.storage.local.get('kmfCapture', function(res) {
-                if (res.kmfCapture) CAPTURED = res.kmfCapture;
-                log('🎉 Done! ' + Object.keys(CAPTURED).length + ' items captured.');
-                updatePanel();
-              });
-            });
-          } else {
-            autoRunning = false;
-            chrome.storage.local.get('kmfCapture', function(res) {
-              if (res.kmfCapture) CAPTURED = res.kmfCapture;
-              log('🎉 Done! ' + Object.keys(CAPTURED).length + ' items captured.');
-              updatePanel();
-            });
-          }
-        }, 5000);
-
-        return;
-      }
-
-      var item = autoQueue[i];
-      log('[' + (i+1) + '/' + autoTotal + '] ' + item.label);
-
-      // Listen for new tab creation
-      var beforeTabCount = -1;
-      chrome.tabs.query({ currentWindow: true }, function(tabs) {
-        beforeTabCount = tabs.length;
-      });
-
-      // Click to open in new tab
-      item.el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
-
-      // After a short delay, find the new tab
-      setTimeout(function() {
-        chrome.tabs.query({ currentWindow: true }, function(tabs) {
-          // Find tabs that are practice pages and add to our list
-          for (var j = 0; j < tabs.length; j++) {
-            var url = tabs[j].url || '';
-            if (url.indexOf('ielts-practices') !== -1 && openedTabIds.indexOf(tabs[j].id) === -1) {
-              openedTabIds.push(tabs[j].id);
-            }
-          }
-          // Next button
-          setTimeout(function() { openNext(i + 1); }, 400);
-        });
-      }, 1500);
-    }
-
-    openNext(0);
-    updatePanel();
+  function realCount() {
+    var c = 0;
+    for (var k in CAPTURED) { if (CAPTURED.hasOwnProperty(k) && CAPTURED[k] && CAPTURED[k].result) c++; }
+    return c;
   }
 
-  function startAuto() {
-    if (autoRunning) return;
-    doAutoScan();
-  }
+  function save() { chrome.storage.local.set({ kmfCapture: CAPTURED }); }
 
-  function stopAuto() {
-    autoRunning = false;
-    log('Stopped.');
-    updatePanel();
-  }
-
-  // ── Capture current page (for when you're on a practice page) ──
-  function captureCurrent() {
-    var id = idFromCurrentPage();
-    if (id) {
-      log('Current page ID: ' + id);
-      fetchPractiseDetail(id).then(function(ok) {
-        log(ok ? '✅ Captured!' : '⚠ Failed');
-      });
-    } else {
-      log('No ID found in current URL. Manually navigate a practice page first.');
-    }
-  }
-
-  // ── Log ──
+  // ── UI ──
   var logLines = [];
   function log(msg) {
-    logLines.push(msg);
+    logLines.push(new Date().toLocaleTimeString().slice(0,5) + ' ' + msg);
     if (logLines.length > 100) logLines.shift();
     updatePanel();
   }
 
   function updatePanel() {
-    var count = Object.keys(CAPTURED).length;
     var countEl = document.getElementById('kmf-count');
-    var listEl = document.getElementById('kmf-list');
-    var logEl = document.getElementById('kmf-log');
-    var btnEl = document.getElementById('kmf-btn');
-    if (countEl) countEl.textContent = count;
-    if (listEl) listEl.innerHTML = Object.keys(CAPTURED).slice(-10).map(function(k) { return '<div>u=' + k + '</div>'; }).join('');
-    if (logEl) logEl.innerHTML = logLines.slice(-12).map(function(l) { return '<div>' + l + '</div>'; }).join('');
-    if (btnEl) {
-      btnEl.textContent = autoRunning ? '⏹ Stop' : '🚀 Auto Scan';
-      btnEl.className = autoRunning ? 'kmf-stop-btn' : 'kmf-scan-btn';
-    }
-  }
+    if (!countEl) return;
+    countEl.textContent = realCount();
 
-  function clearAll() {
-    CAPTURED = {};
-    chrome.storage.local.remove('kmfCapture');
-    log('Cleared all data.');
-    updatePanel();
+    var listEl = document.getElementById('kmf-list');
+    if (listEl) {
+      var ids = [];
+      for (var k in CAPTURED) { if (CAPTURED.hasOwnProperty(k) && CAPTURED[k] && CAPTURED[k].result) ids.push(k); }
+      listEl.innerHTML = ids.slice(-10).map(function(id) { return '<div>u=' + id + '</div>'; }).join('');
+    }
+
+    var logEl = document.getElementById('kmf-log');
+    if (logEl) logEl.innerHTML = logLines.slice(-10).map(function(l) { return '<div>' + l + '</div>'; }).join('');
   }
 
   function downloadAll() {
-    var keys = Object.keys(CAPTURED);
-    if (keys.length === 0) { alert('No data captured yet.'); return; }
+    var items = {};
+    for (var k in CAPTURED) { if (CAPTURED.hasOwnProperty(k) && CAPTURED[k] && CAPTURED[k].result) items[k] = CAPTURED[k]; }
+    var keys = Object.keys(items);
+    if (keys.length === 0) { alert('No data yet.'); return; }
 
-    var blob = new Blob([JSON.stringify(CAPTURED, null, 2)], {type:'application/json'});
+    var blob = new Blob([JSON.stringify(items, null, 2)], {type:'application/json'});
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'kmf-data-' + new Date().toISOString().slice(0,10) + '.json';
     a.click();
 
     setTimeout(function() {
-      for (var uid in CAPTURED) {
-        var b = new Blob([JSON.stringify(CAPTURED[uid], null, 2)], {type:'application/json'});
+      for (var uid in items) {
+        var b = new Blob([JSON.stringify(items[uid], null, 2)], {type:'application/json'});
         var a2 = document.createElement('a');
         a2.href = URL.createObjectURL(b);
         a2.download = 'kmf_' + uid + '.json';
         a2.click();
       }
-    }, 500);
+    }, 600);
+  }
+
+  function clearAll() {
+    CAPTURED = {};
+    chrome.storage.local.remove('kmfCapture');
+    chrome.storage.local.remove('kmfState');
+    log('🗑 Cleared.');
+    updatePanel();
   }
 
   function createPanel() {
@@ -326,36 +285,30 @@
     panel.innerHTML =
       '<style>' +
         '#kmf-capture-panel { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace; }' +
-        '.kmf-scan-btn { background:#4f46e5; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font:13px monospace; font-weight:bold; }' +
-        '.kmf-stop-btn { background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font:13px monospace; font-weight:bold; }' +
-        '.kmf-dl-btn { background:#059669; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font:12px monospace; }' +
-        '.kmf-clr-btn { background:#64748b; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font:12px monospace; }' +
+        '.kmf-scan { background:#4f46e5; color:#fff; border:none; padding:5px 14px; border-radius:6px; cursor:pointer; font:12px monospace; font-weight:bold; }' +
+        '.kmf-dl { background:#059669; color:#fff; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font:11px monospace; }' +
+        '.kmf-clr { background:#475569; color:#fff; border:none; padding:5px 8px; border-radius:6px; cursor:pointer; font:11px monospace; }' +
       '</style>' +
-      '<div style="position:fixed;bottom:20px;right:20px;z-index:99999;background:#1e293b;color:#fff;border-radius:12px;padding:14px;font:14px monospace;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:300px;max-width:400px;">' +
-        '<div style="font-weight:bold;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">' +
-          '<span>KMF Capture <span id="kmf-count" style="color:#34d399">0</span></span>' +
+      '<div style="position:fixed;bottom:16px;right:16px;z-index:99999;background:#1e293b;color:#fff;border-radius:12px;padding:12px 14px;font:13px monospace;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:280px;max-width:380px;">' +
+        '<div style="font-weight:bold;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">' +
+          '<span>📡 KMF <span id="kmf-count" style="color:#34d399;font-size:16px;">0</span></span>' +
           '<div style="display:flex;gap:4px;">' +
-            '<button id="kmf-btn" class="kmf-scan-btn" style="font-size:11px;">🚀 Scan</button>' +
-            '<button id="kmf-cap" class="kmf-dl-btn" style="font-size:11px;">📡 Capture</button>' +
-            '<button id="kmf-dl" class="kmf-dl-btn">⬇</button>' +
-            '<button id="kmf-clr" class="kmf-clr-btn">🗑</button>' +
+            '<button id="kmf-scan" class="kmf-scan">🚀 Start</button>' +
+            '<button id="kmf-dl" class="kmf-dl">⬇</button>' +
+            '<button id="kmf-clr" class="kmf-clr">🗑</button>' +
           '</div>' +
         '</div>' +
-        '<div id="kmf-log" style="font-size:10px;max-height:140px;overflow-y:auto;color:#94a3b8;margin-bottom:4px;line-height:1.5;"></div>' +
-        '<div id="kmf-list" style="font-size:10px;max-height:60px;overflow-y:auto;color:#64748b"></div>' +
-        '<div style="margin-top:4px;font-size:9px;color:#475569;">' +
-          'One-click: opens all practice pages in tabs → auto-captures → closes tabs → ready to download' +
+        '<div id="kmf-log" style="font-size:9px;max-height:130px;overflow-y:auto;color:#94a3b8;margin-bottom:2px;line-height:1.5;"></div>' +
+        '<div id="kmf-list" style="font-size:9px;max-height:50px;overflow-y:auto;color:#64748b"></div>' +
+        '<div style="margin-top:2px;font-size:8px;color:#475569;">' +
+          'Click 🚀 on list page. Extension auto-navigates all items. Come back to download.' +
         '</div>' +
       '</div>';
     document.body.appendChild(panel);
 
-    document.getElementById('kmf-btn').onclick = function() { if (autoRunning) stopAuto(); else startAuto(); };
-    document.getElementById('kmf-cap').onclick = captureCurrent;
+    document.getElementById('kmf-scan').onclick = startScan;
     document.getElementById('kmf-dl').onclick = downloadAll;
     document.getElementById('kmf-clr').onclick = clearAll;
-
-    updatePanel();
-    log('Ready. Use "Scan" on list page, or "Capture" on practice page.');
   }
 
   if (document.readyState === 'loading') {
