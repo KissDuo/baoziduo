@@ -8,14 +8,18 @@
   var autoIndex = 0;
   var autoTotal = 0;
 
-  // ── Restore captured data from storage ──
-  chrome.storage.local.get('kmfCapture', function(res) {
-    if (res.kmfCapture) {
-      CAPTURED = res.kmfCapture;
-      log('📦 Restored ' + Object.keys(CAPTURED).length + ' saved items');
+  // ── Restore captured data from storage, then init ──
+  function init() {
+    chrome.storage.local.get('kmfCapture', function(res) {
+      if (res.kmfCapture) {
+        CAPTURED = res.kmfCapture;
+      }
+      createPanel();
+      log('Ready. ' + Object.keys(CAPTURED).length + ' items stored.');
+      log('Navigate practice pages and data auto-captures.');
       updatePanel();
-    }
-  });
+    });
+  }
 
   function saveToStorage() {
     chrome.storage.local.set({ kmfCapture: CAPTURED });
@@ -346,8 +350,8 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', createPanel);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    createPanel();
+    init();
   }
 })();
