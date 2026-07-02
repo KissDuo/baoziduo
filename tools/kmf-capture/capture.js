@@ -53,27 +53,47 @@
 
   // ── Extract practice ID from an element ──
   function extractId(el) {
-    // Check data attributes first
-    for (const attr of ['data-u', 'data-id', 'data-paper-id', 'data-question-id', 'data-sheet-id']) {
+    // Check data attributes first (most common)
+    for (const attr of ['data-u', 'data-id', 'data-paper-id', 'data-question-id', 'data-sheet-id', 'data-exam-id', 'data-practise-id']) {
       const v = el.getAttribute(attr);
       if (v && /^\d{10,}$/.test(v.trim())) return v.trim();
     }
-    // Check href
+    // Check href for u= param
     const href = el.getAttribute('href') || (el.closest('a') && el.closest('a').getAttribute('href'));
-    if (href) {
-      const m = href.match(/[?&]u=(\d+)/);
+    if (href && href !== '#') {
+      const m = href.match(/[?&]u=(\d{10,})/);
       if (m) return m[1];
+      // Check for IDs in URL paths
+      const pm = href.match(/\/(\d{15,20})(?:\?|$|\/|\.)/);
+      if (pm) return pm[1];
     }
-    // Check parent tree for data attributes
-    let p = el.parentElement;
-    while (p && p !== document.body) {
-      for (const attr of ['data-u', 'data-paper-id', 'data-question-id']) {
-        const v = p.getAttribute(attr);
-        if (v && /^\d{10,}$/.test(v.trim())) return v.trim();
+    // Walk up the DOM tree looking for ANY data attribute with a long numeric value
+    let p = el;
+    let depth = 0;
+    while (p && p !== document.body && depth < 10) {
+      if (p.attributes) {
+        for (const attr of p.attributes) {
+          if (attr.name.startsWith('data-') && /^\d{10,}$/.test(attr.value.trim())) {
+            return attr.value.trim();
+          }
+        }
+      }
+      // Also check Vue component instance properties
+      if (p.__vue__ || p.__vueParentComponent) {
+        try {
+          const vue = p.__vue__ || p.__vueParentComponent;
+          if (vue && vue.props) {
+            for (const [k, v] of Object.entries(vue.props)) {
+              const sv = String(v);
+              if (/^\d{10,}$/.test(sv)) return sv;
+            }
+          }
+        } catch(e) {}
       }
       p = p.parentElement;
+      depth++;
     }
-    // Check onclick / vue handlers
+    // Check onclick handlers
     const onclick = el.getAttribute('onclick') || '';
     const vm = onclick.match(/\d{10,}/);
     if (vm) return vm[0];
@@ -99,6 +119,8 @@
 
     // Strategy 2: Search ALL elements for text "练习"/"practise"/"practice"/"开始"/"继续"
     const keywords = /(开始练习|继续练习|继续刷题|practise|practice|开始答题|进入练习|开始|继续)/i;
+    const unmatchedButtons = []; // For debug: buttons found but no ID extracted
+
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
       acceptNode: node => {
         if (node.children.length > 0) return NodeFilter.FILTER_SKIP; // Only leaf nodes
@@ -111,10 +133,10 @@
 
     let node;
     while (node = walker.nextNode()) {
-      // Walk up to find the clickable element
+      // Navigate up to the nearest clickable ancestor (<a>, <button>, or element with click handler)
       let clickable = node;
       while (clickable && clickable.tagName !== 'A' && clickable.tagName !== 'BUTTON'
-        && !clickable.getAttribute('onclick') && !clickable.getAttribute('data-u')
+        && !clickable.getAttribute('onclick')
         && !clickable.getAttribute('href')) {
         clickable = clickable.parentElement;
         if (!clickable || clickable === document.body) break;
@@ -125,7 +147,40 @@
       if (id && !seen.has(id)) {
         seen.add(id);
         buttons.push({ el: clickable, id, text: (node.textContent || '').trim().slice(0, 40) });
+      } else if (!id) {
+        // Log unmatched for debugging
+        const parentAttrs = [];
+        let p = clickable;
+        for (let i = 0; i < 5 && p && p !== document.body; i++) {
+          const tag = p.tagName.toLowerCase();
+          const attrs = [];
+          if (p.attributes) {
+            for (const a of p.attributes) {
+              if (a.name.startsWith('data-') || a.name === 'href' || a.name === 'id' || a.name === 'class') {
+                attrs.push(`${a.name}="${String(a.value).slice(0, 40)}"`);
+              }
+            }
+          }
+          parentAttrs.push(`  ${tag}[${attrs.join(' ')}]`);
+          p = p.parentElement;
+        }
+        unmatchedButtons.push({
+          text: (node.textContent || '').trim().slice(0, 30),
+          tag: clickable.tagName,
+          tree: parentAttrs.join('\n')
+        });
       }
+    }
+
+    // Debug: show unmatched buttons with their parent tree
+    if (buttons.length === 0 && unmatchedButtons.length > 0) {
+      log(`🔍 Found ${unmatchedButtons.length} button(s) but no ID extracted:`);
+      unmatchedButtons.slice(0, 5).forEach(b => {
+        log(`  <${b.tag}> "${b.text}"`);
+        log(b.tree);
+      });
+      log('  Checking page URL for IDs...');
+      log(`  URL: ${window.location.href.slice(0, 100)}`);
     }
 
     // Strategy 3: Search for any Vue/React data with long numeric IDs in the DOM
