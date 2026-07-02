@@ -238,48 +238,57 @@
     return buttons;
   }
 
-  // ── Auto-click next in queue ──
+  // ── Direct API fetch using page's cookies (no page navigation needed!) ──
+  async function fetchPractiseDetail(uid) {
+    const apiUrl = `https://ielts.kmf.com/ielts-app/front/practise-detail?u=${uid}`;
+    try {
+      const res = await fetch(apiUrl, { credentials: 'include' });
+      const data = await res.json();
+      if (data && data.result) {
+        CAPTURED[uid] = data;
+        return true;
+      }
+    } catch(e) {
+      log(`  ⚠ Fetch failed for ${uid}: ${e.message}`);
+    }
+    return false;
+  }
+
+  // ── Auto-fetch next in queue (no page navigation!) ──
   async function autoNext() {
     if (autoIndex >= autoQueue.length) {
       autoRunning = false;
       updatePanel();
-      log('✅ All done! ' + autoTotal + ' items scanned.');
+      log(`✅ All done! ${Object.keys(CAPTURED).length} items captured.`);
       return;
     }
 
     const item = autoQueue[autoIndex];
-    log(`[${autoIndex + 1}/${autoTotal}] Clicking: ${item.text} (u=${item.id})`);
-
-    try {
-      item.el.click();
-    } catch(e) {
-      log(`  ⚠ Click failed: ${e.message}`);
-    }
-
     autoIndex++;
+    log(`[${autoIndex}/${autoTotal}] Fetching: ${item.text.slice(0, 30)} (u=${item.id})`);
 
-    // Wait for API response to be captured (the page navigates and API fires)
-    // Then go back and click next
-    setTimeout(() => {
-      if (window.history && autoIndex < autoQueue.length) {
-        window.history.back();
-        setTimeout(() => autoNext(), 2000);
-      } else {
-        autoNext();
-      }
-    }, 3000);
+    const ok = await fetchPractiseDetail(item.id);
+    if (ok) {
+      log(`  ✅ Captured`);
+    } else {
+      log(`  ❌ Failed — might need to be logged in`);
+    }
+    updatePanel();
+
+    // Small delay to be nice to KMF server
+    setTimeout(() => autoNext(), 800);
   }
 
   function startAuto() {
     if (autoRunning) return;
 
-    // Wait 1s for dynamic content to render, then scan
-    log('⏳ Waiting for page to fully render...');
+    // Wait 1.5s for dynamic content to render, then scan
+    log('⏳ Scanning page for practice buttons...');
     setTimeout(() => {
       const buttons = scanButtons();
       if (buttons.length === 0) {
-        log('⚠ No practice buttons found. Check debug info above.');
-        log('💡 Try: navigate to a KMF page with a list of tests (e.g. C18 listening), then click Auto Scan.');
+        log('⚠ No practice items with IDs found. See debug info above.');
+        log('💡 Try: navigate to a KMF page with test list, then click Auto Scan.');
         updatePanel();
         return;
       }
@@ -288,8 +297,7 @@
       autoIndex = 0;
       autoTotal = buttons.length;
       autoRunning = true;
-      log(`✅ Found ${autoTotal} practice items. Starting auto-capture...`);
-      log(`   Each click triggers API call → captured automatically.`);
+      log(`✅ Found ${autoTotal} items. Fetching directly via API (no page navigation)...`);
       updatePanel();
       autoNext();
     }, 1500);
@@ -369,7 +377,7 @@
         <div id="kmf-log" style="font-size:10px;max-height:100px;overflow-y:auto;color:#94a3b8;margin-bottom:6px;line-height:1.5;"></div>
         <div id="kmf-list" style="font-size:11px;max-height:80px;overflow-y:auto;color:#64748b"></div>
         <div style="margin-top:6px;font-size:10px;color:#475569;">
-          Auto-scan finds "开始练习"/"继续练习" buttons and clicks them to capture API data.
+          Finds practice IDs on page → fetches API data directly (no page navigation).
         </div>
       </div>
     `;
