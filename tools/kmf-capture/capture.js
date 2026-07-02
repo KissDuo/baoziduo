@@ -3,6 +3,7 @@
 
   var CAPTURED = {};
   var DETAIL_URL = 'practise-detail';
+  var RECORDS_URL = 'web-index/records';  // Also capture this API!
 
   // ── Init: restore data + check state ──
   function init() {
@@ -45,17 +46,30 @@
     var args = arguments;
     var res = await origFetch.apply(this, args);
     var url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url);
-    if (url && url.indexOf(DETAIL_URL) !== -1) {
+    if (url && (url.indexOf(DETAIL_URL) !== -1 || url.indexOf(RECORDS_URL) !== -1)) {
       var clone = res.clone();
       clone.json().then(function(data) {
-        if (data && data.result) {
-          var u = new URL(url);
-          var uid = u.searchParams.get('u');
-          if (uid) {
-            CAPTURED[uid] = data;
-            save();
-            updatePanel();
-            log('✅ u=' + uid.slice(0,12) + '... (' + realCount() + ' total)');
+        if (data && (data.result || data.data)) {
+          if (url.indexOf(RECORDS_URL) !== -1) {
+            // web-index/records — save with the ids parameter as key
+            var u = new URL(url);
+            var ids = u.searchParams.get('ids');
+            if (ids) {
+              var key = 'records_' + ids.slice(0, 30);
+              CAPTURED[key] = { url: url, data: data };
+              save();
+              updatePanel();
+              log('✅ Records: ' + ids.split(',').length + ' items');
+            }
+          } else {
+            var u2 = new URL(url);
+            var uid = u2.searchParams.get('u');
+            if (uid) {
+              CAPTURED[uid] = data;
+              save();
+              updatePanel();
+              log('✅ u=' + uid.slice(0,12) + '... (' + realCount() + ' total)');
+            }
           }
         }
       }).catch(function(){});
@@ -73,16 +87,21 @@
   XMLHttpRequest.prototype.send = function() {
     var self = this;
     this.addEventListener('load', function() {
-      if (self._kmf_url && self._kmf_url.indexOf(DETAIL_URL) !== -1) {
+      if (self._kmf_url && (self._kmf_url.indexOf(DETAIL_URL) !== -1 || self._kmf_url.indexOf(RECORDS_URL) !== -1)) {
         try {
           var data = JSON.parse(self.responseText);
-          var u = new URL(self._kmf_url);
-          var uid = u.searchParams.get('u');
-          if (uid && data.result) {
-            CAPTURED[uid] = data;
+          if (data && (data.result || data.data)) {
+            if (self._kmf_url.indexOf(RECORDS_URL) !== -1) {
+              var u = new URL(self._kmf_url);
+              var ids = u.searchParams.get('ids');
+              if (ids) CAPTURED['records_' + ids.slice(0,30)] = { url: self._kmf_url, data: data };
+            } else {
+              var u2 = new URL(self._kmf_url);
+              var uid = u2.searchParams.get('u');
+              if (uid) CAPTURED[uid] = data;
+            }
             save();
             updatePanel();
-            log('✅ u=' + uid.slice(0,12) + '... (' + realCount() + ' total)');
           }
         } catch(e) {}
       }
@@ -271,7 +290,62 @@
     }, 600);
   }
 
-  function clearAll() {
+  function debugIds() {
+    // Search for IDs in page
+    log('🔍 Searching for IDs...');
+
+    // 1. Check all elements for data attributes with numeric values
+    var found = [];
+    document.querySelectorAll('*').forEach(function(el) {
+      if (el.attributes) {
+        for (var i = 0; i < el.attributes.length; i++) {
+          var val = el.attributes[i].value;
+          if (val && /^\d{2,8}$/.test(val.trim())) {
+            found.push(el.attributes[i].name + '=' + val + ' on <' + el.tagName.toLowerCase() + '>');
+          }
+        }
+      }
+      // Check Vue data
+      if (el.__vue__) {
+        try {
+          var vue = el.__vue__;
+          for (var k in vue) {
+            if (vue.hasOwnProperty(k)) {
+              var sv = String(vue[k]);
+              if (sv.length >= 2 && sv.length <= 8 && /^\d+$/.test(sv) && parseInt(sv) > 100) {
+                found.push('Vue.' + k + '=' + sv + ' on <' + el.tagName.toLowerCase() + '>');
+              }
+            }
+          }
+        } catch(e) {}
+      }
+    });
+
+    if (found.length === 0) {
+      log('  No numeric data attributes found.');
+    } else {
+      log('  Found ' + found.length + ' numeric data attrs (showing unique):');
+      var seen = {};
+      for (var j = 0; j < found.length; j++) {
+        if (!seen[found[j]]) {
+          seen[found[j]] = true;
+          log('  ' + found[j]);
+        }
+      }
+    }
+
+    // 2. Also search for all <script> tags with embedded data
+    var scripts = document.querySelectorAll('script');
+    log('  Scripts on page: ' + scripts.length);
+    scripts.forEach(function(s, idx) {
+      var text = (s.textContent || s.innerText || '').slice(0, 200);
+      if (text.indexOf('sheet_id') !== -1 || text.indexOf('record') !== -1 || text.indexOf('ids') !== -1) {
+        log('  Script[' + idx + ']: contains sheet_id/record/ids — ' + text.slice(0, 100));
+      }
+    });
+
+    updatePanel();
+  }
     CAPTURED = {};
     chrome.storage.local.remove('kmfCapture');
     chrome.storage.local.remove('kmfState');
@@ -295,6 +369,7 @@
           '<div style="display:flex;gap:4px;">' +
             '<button id="kmf-scan" class="kmf-scan">🚀 Start</button>' +
             '<button id="kmf-dl" class="kmf-dl">⬇</button>' +
+            '<button id="kmf-dbg" class="kmf-clr" style="font-size:9px;">🔍</button>' +
             '<button id="kmf-clr" class="kmf-clr">🗑</button>' +
           '</div>' +
         '</div>' +
@@ -308,6 +383,7 @@
 
     document.getElementById('kmf-scan').onclick = startScan;
     document.getElementById('kmf-dl').onclick = downloadAll;
+    document.getElementById('kmf-dbg').onclick = debugIds;
     document.getElementById('kmf-clr').onclick = clearAll;
   }
 
