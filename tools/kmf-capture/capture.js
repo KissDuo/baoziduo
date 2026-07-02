@@ -8,6 +8,21 @@
   let autoIndex = 0;
   let autoTotal = 0;
 
+  // ── Intercept pushState to capture practice IDs from URL changes ──
+  const origPushState = history.pushState;
+  history.pushState = function(state, title, url) {
+    if (url) {
+      const m = String(url).match(/[?&]u=(\d{10,})/);
+      if (m && m[1] && !CAPTURED[m[1]]) {
+        log(`  🔗 Found u=${m[1]} from URL: ${String(url).slice(0, 60)}`);
+        pushStateIds.push(m[1]);
+      }
+    }
+    return origPushState.apply(this, arguments);
+  };
+
+  const pushStateIds = [];
+
   // ── Intercept fetch ──
   const origFetch = window.fetch;
   window.fetch = async function(...args) {
@@ -28,8 +43,8 @@
   };
 
   // ── Intercept XMLHttpRequest ──
-  const origOpen = XMLHttpRequest.prototype.open;
-  const origSend = XMLHttpRequest.prototype.send;
+  var origOpen = XMLHttpRequest.prototype.open;
+  var origSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.open = function(method, url) {
     this._kmf_url = url;
     return origOpen.apply(this, arguments);
@@ -38,9 +53,9 @@
     this.addEventListener('load', function() {
       if (this._kmf_url && this._kmf_url.includes(DETAIL_URL)) {
         try {
-          const data = JSON.parse(this.responseText);
-          const u = new URL(this._kmf_url);
-          const uid = u.searchParams.get('u');
+          var data = JSON.parse(this.responseText);
+          var u = new URL(this._kmf_url);
+          var uid = u.searchParams.get('u');
           if (uid && data.result) {
             CAPTURED[uid] = data;
             updatePanel();
@@ -51,244 +66,115 @@
     return origSend.apply(this, arguments);
   };
 
-  // ── Extract practice ID from an element ──
-  function extractId(el) {
-    // Check data attributes first (most common)
-    for (const attr of ['data-u', 'data-id', 'data-paper-id', 'data-question-id', 'data-sheet-id', 'data-exam-id', 'data-practise-id']) {
-      const v = el.getAttribute(attr);
-      if (v && /^\d{10,}$/.test(v.trim())) return v.trim();
-    }
-    // Check href for u= param
-    const href = el.getAttribute('href') || (el.closest('a') && el.closest('a').getAttribute('href'));
-    if (href && href !== '#') {
-      const m = href.match(/[?&]u=(\d{10,})/);
-      if (m) return m[1];
-      // Check for IDs in URL paths
-      const pm = href.match(/\/(\d{15,20})(?:\?|$|\/|\.)/);
-      if (pm) return pm[1];
-    }
-    // Walk up the DOM tree looking for ANY data attribute with a long numeric value
-    let p = el;
-    let depth = 0;
-    while (p && p !== document.body && depth < 10) {
-      if (p.attributes) {
-        for (const attr of p.attributes) {
-          if (attr.name.startsWith('data-') && /^\d{10,}$/.test(attr.value.trim())) {
-            return attr.value.trim();
-          }
-        }
-      }
-      // Also check Vue component instance properties
-      if (p.__vue__ || p.__vueParentComponent) {
-        try {
-          const vue = p.__vue__ || p.__vueParentComponent;
-          if (vue && vue.props) {
-            for (const [k, v] of Object.entries(vue.props)) {
-              const sv = String(v);
-              if (/^\d{10,}$/.test(sv)) return sv;
-            }
-          }
-        } catch(e) {}
-      }
-      p = p.parentElement;
-      depth++;
-    }
-    // Check onclick handlers
-    const onclick = el.getAttribute('onclick') || '';
-    const vm = onclick.match(/\d{10,}/);
-    if (vm) return vm[0];
-    return null;
-  }
-
-  // ── Scan page for practice buttons ──
-  function scanButtons() {
-    const buttons = [];
-    const seen = new Set();
-
-    // Strategy 1: Find ALL elements containing a long numeric ID (u param)
-    // Search href attributes first (most reliable)
-    const allWithHref = document.querySelectorAll('[href*="u="]');
-    for (const el of allWithHref) {
-      const href = el.getAttribute('href') || '';
-      const m = href.match(/[?&]u=(\d{10,})/);
-      if (m && !seen.has(m[1])) {
-        seen.add(m[1]);
-        buttons.push({ el, id: m[1], text: (el.textContent || '').trim().slice(0, 40) || href.slice(0, 40) });
-      }
-    }
-
-    // Strategy 2: Search ALL elements for text "练习"/"practise"/"practice"/"开始"/"继续"
-    const keywords = /(开始练习|继续练习|继续刷题|practise|practice|开始答题|进入练习|开始|继续)/i;
-    const unmatchedButtons = []; // For debug: buttons found but no ID extracted
-
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
-      acceptNode: node => {
-        if (node.children.length > 0) return NodeFilter.FILTER_SKIP; // Only leaf nodes
-        const text = (node.textContent || '').trim();
-        if (text.length < 3 || text.length > 50) return NodeFilter.FILTER_REJECT;
-        if (keywords.test(text)) return NodeFilter.FILTER_ACCEPT;
-        return NodeFilter.FILTER_REJECT;
-      }
-    });
-
-    let node;
-    while (node = walker.nextNode()) {
-      // Navigate up to the nearest clickable ancestor (<a>, <button>, or element with click handler)
-      let clickable = node;
-      while (clickable && clickable.tagName !== 'A' && clickable.tagName !== 'BUTTON'
-        && !clickable.getAttribute('onclick')
-        && !clickable.getAttribute('href')) {
-        clickable = clickable.parentElement;
-        if (!clickable || clickable === document.body) break;
-      }
-      if (!clickable || clickable === document.body) clickable = node;
-
-      const id = extractId(clickable);
-      if (id && !seen.has(id)) {
-        seen.add(id);
-        buttons.push({ el: clickable, id, text: (node.textContent || '').trim().slice(0, 40) });
-      } else if (!id) {
-        // Log unmatched for debugging
-        const parentAttrs = [];
-        let p = clickable;
-        for (let i = 0; i < 5 && p && p !== document.body; i++) {
-          const tag = p.tagName.toLowerCase();
-          const attrs = [];
-          if (p.attributes) {
-            for (const a of p.attributes) {
-              if (a.name.startsWith('data-') || a.name === 'href' || a.name === 'id' || a.name === 'class') {
-                attrs.push(`${a.name}="${String(a.value).slice(0, 40)}"`);
-              }
-            }
-          }
-          parentAttrs.push(`  ${tag}[${attrs.join(' ')}]`);
-          p = p.parentElement;
-        }
-        unmatchedButtons.push({
-          text: (node.textContent || '').trim().slice(0, 30),
-          tag: clickable.tagName,
-          tree: parentAttrs.join('\n')
-        });
-      }
-    }
-
-    // Debug: show unmatched buttons with their parent tree
-    if (buttons.length === 0 && unmatchedButtons.length > 0) {
-      log(`🔍 Found ${unmatchedButtons.length} button(s) but no ID extracted:`);
-      unmatchedButtons.slice(0, 5).forEach(b => {
-        log(`  <${b.tag}> "${b.text}"`);
-        log(b.tree);
-      });
-      log('  Checking page URL for IDs...');
-      log(`  URL: ${window.location.href.slice(0, 100)}`);
-    }
-
-    // Strategy 3: Search for any Vue/React data with long numeric IDs in the DOM
-    const allEls = document.querySelectorAll('[data-u], [data-paper-id], [data-question-id], [data-sheet-id]');
-    for (const el of allEls) {
-      const id = extractId(el);
-      if (id && !seen.has(id)) {
-        seen.add(id);
-        buttons.push({ el, id, text: (el.textContent || '').trim().slice(0, 40) || `(data attr: ${id})` });
-      }
-    }
-
-    // Strategy 4: Scan ALL <a> tags with any numeric parameter
-    if (buttons.length === 0) {
-      const allLinks = document.querySelectorAll('a');
-      for (const a of allLinks) {
-        const href = a.getAttribute('href') || '';
-        const m = href.match(/(\d{15,20})/); // 15-20 digit IDs
-        if (m && !seen.has(m[1])) {
-          seen.add(m[1]);
-          buttons.push({ el: a, id: m[1], text: (a.textContent || '').trim().slice(0, 40) || `(ID: ${m[1].slice(0,10)}...)` });
-        }
-      }
-    }
-
-    // Debug: log what we found
-    if (buttons.length === 0) {
-      log('🔍 Debug: Scanning page structure...');
-      // Log all unique link patterns
-      const hrefPatterns = new Set();
-      document.querySelectorAll('a').forEach(a => {
-        const h = a.getAttribute('href') || '';
-        if (h && h.length > 5) hrefPatterns.add(h.slice(0, 80));
-      });
-      log(`  Found ${hrefPatterns.size} unique links on page`);
-      const samples = [...hrefPatterns].slice(0, 10);
-      samples.forEach(h => log(`  href: ${h}`));
-
-      // Log all elements with text containing key words
-      const textMatches = [];
-      document.querySelectorAll('*').forEach(el => {
-        if (el.children.length === 0) {
-          const t = (el.textContent || '').trim();
-          if (t.length >= 3 && t.length <= 100 && /(练习|practise|practice|开始|继续|start|begin|enter|go)/i.test(t)) {
-            textMatches.push(`<${el.tagName.toLowerCase()}> "${t.slice(0,50)}"`);
-          }
-        }
-      });
-      if (textMatches.length > 0) {
-        log(`  Text matches (${textMatches.length}):`);
-        textMatches.slice(0, 15).forEach(t => log(`  ${t}`));
-      }
-    }
-
-    return buttons;
-  }
-
-  // ── Direct API fetch using page's cookies (no page navigation needed!) ──
+  // ── Direct API fetch using page's cookies ──
   async function fetchPractiseDetail(uid) {
-    const apiUrl = `https://ielts.kmf.com/ielts-app/front/practise-detail?u=${uid}`;
+    var apiUrl = 'https://ielts.kmf.com/ielts-app/front/practise-detail?u=' + uid;
     try {
-      const res = await fetch(apiUrl, { credentials: 'include' });
-      const data = await res.json();
+      var res = await fetch(apiUrl, { credentials: 'include' });
+      var data = await res.json();
       if (data && data.result) {
         CAPTURED[uid] = data;
         return true;
       }
     } catch(e) {
-      log(`  ⚠ Fetch failed for ${uid}: ${e.message}`);
+      log('  ⚠ Fetch failed: ' + e.message);
     }
     return false;
   }
 
-  // ── Auto-fetch next in queue (no page navigation!) ──
+  // ── Scan for "继续练习" buttons ──
+  // ID is NOT in HTML — it's in Vue component data. We click to trigger navigation,
+  // intercept pushState to get the u= param, then go back and fetch directly.
+  function scanButtons() {
+    var buttons = [];
+
+    var allLinks = document.querySelectorAll('a');
+    for (var i = 0; i < allLinks.length; i++) {
+      var a = allLinks[i];
+      var text = (a.textContent || '').trim();
+      if (text === '继续练习' || text === '开始练习' || text === '继续刷题') {
+        // Get context from parent .part-item
+        var item = a.closest('.part-item');
+        var label = text;
+        if (item) {
+          var nameEl = item.querySelector('.seq_name, a[target]');
+          if (nameEl) label = (nameEl.textContent || '').trim() + ' - ' + text;
+        }
+        var group = a.closest('[id^="group-"]');
+        if (group) {
+          var groupName = group.querySelector('.part-header_title');
+          if (groupName) label = (groupName.textContent || '').trim() + ' / ' + label;
+        }
+
+        buttons.push({ el: a, label: label });
+      }
+    }
+
+    if (buttons.length === 0) {
+      log('⚠ No "继续练习" buttons found.');
+      log('  Make sure you are on a KMF test list page.');
+    }
+
+    return buttons;
+  }
+
+  // ── Auto-flow: click each button → capture ID from URL → go back → fetch API ──
   async function autoNext() {
     if (autoIndex >= autoQueue.length) {
       autoRunning = false;
       updatePanel();
-      log(`✅ All done! ${Object.keys(CAPTURED).length} items captured.`);
+      log('✅ Done! Now fetching all captured IDs via API...');
+      // Fetch APIs for all captured IDs
+      var ids = Object.keys(CAPTURED);
+      for (var i = 0; i < ids.length; i++) {
+        if (CAPTURED[ids[i]] && CAPTURED[ids[i]].result) continue; // already has full data
+        await fetchPractiseDetail(ids[i]);
+        updatePanel();
+      }
+      log('✅ All ' + ids.length + ' items captured!');
       return;
     }
 
-    const item = autoQueue[autoIndex];
+    var item = autoQueue[autoIndex];
     autoIndex++;
-    log(`[${autoIndex}/${autoTotal}] Fetching: ${item.text.slice(0, 30)} (u=${item.id})`);
+    log('[' + autoIndex + '/' + autoTotal + '] Clicking: ' + item.label);
 
-    const ok = await fetchPractiseDetail(item.id);
-    if (ok) {
-      log(`  ✅ Captured`);
+    // Record IDs before click
+    var beforeCount = pushStateIds.length;
+
+    // Click the button — triggers Vue navigation
+    item.el.click();
+
+    // Wait for pushState to fire
+    await new Promise(function(r) { setTimeout(r, 1500); });
+
+    // Check if a new ID was captured
+    var newIds = pushStateIds.slice(beforeCount);
+    if (newIds.length > 0) {
+      var uid = newIds[newIds.length - 1];
+      log('  ✅ Captured u=' + uid);
+      // Fetch API directly (don't wait for page to load)
+      await fetchPractiseDetail(uid);
     } else {
-      log(`  ❌ Failed — might need to be logged in`);
+      log('  ⚠ No ID captured from navigation. Trying direct API fetch from intercepted requests...');
     }
+
     updatePanel();
 
-    // Small delay to be nice to KMF server
-    setTimeout(() => autoNext(), 800);
+    // Go back to list page
+    window.history.back();
+    await new Promise(function(r) { setTimeout(r, 2000); });
+
+    // Next item
+    autoNext();
   }
 
   function startAuto() {
     if (autoRunning) return;
-
-    // Wait 1.5s for dynamic content to render, then scan
-    log('⏳ Scanning page for practice buttons...');
-    setTimeout(() => {
-      const buttons = scanButtons();
+    log('⏳ Scanning for practice buttons...');
+    setTimeout(function() {
+      var buttons = scanButtons();
       if (buttons.length === 0) {
-        log('⚠ No practice items with IDs found. See debug info above.');
-        log('💡 Try: navigate to a KMF page with test list, then click Auto Scan.');
         updatePanel();
         return;
       }
@@ -297,7 +183,7 @@
       autoIndex = 0;
       autoTotal = buttons.length;
       autoRunning = true;
-      log(`✅ Found ${autoTotal} items. Fetching directly via API (no page navigation)...`);
+      log('✅ Found ' + autoTotal + ' items. Auto-capturing (page will navigate briefly)...');
       updatePanel();
       autoNext();
     }, 1500);
@@ -310,23 +196,22 @@
   }
 
   // ── Log ──
-  const logLines = [];
+  var logLines = [];
   function log(msg) {
     logLines.push(msg);
     if (logLines.length > 50) logLines.shift();
     updatePanel();
   }
 
-  // ── Floating panel ──
   function updatePanel() {
-    const count = Object.keys(CAPTURED).length;
-    const countEl = document.getElementById('kmf-count');
-    const listEl = document.getElementById('kmf-list');
-    const logEl = document.getElementById('kmf-log');
-    const btnEl = document.getElementById('kmf-btn');
+    var count = Object.keys(CAPTURED).length;
+    var countEl = document.getElementById('kmf-count');
+    var listEl = document.getElementById('kmf-list');
+    var logEl = document.getElementById('kmf-log');
+    var btnEl = document.getElementById('kmf-btn');
     if (countEl) countEl.textContent = count;
-    if (listEl) listEl.innerHTML = Object.keys(CAPTURED).slice(-10).map(k => `<div>u=${k}</div>`).join('');
-    if (logEl) logEl.innerHTML = logLines.slice(-10).map(l => `<div>${l}</div>`).join('');
+    if (listEl) listEl.innerHTML = Object.keys(CAPTURED).slice(-10).map(function(k) { return '<div>u=' + k + '</div>'; }).join('');
+    if (logEl) logEl.innerHTML = logLines.slice(-10).map(function(l) { return '<div>' + l + '</div>'; }).join('');
     if (btnEl) {
       btnEl.textContent = autoRunning ? '⏹ Stop' : '🚀 Auto Scan';
       btnEl.className = autoRunning ? 'kmf-stop-btn' : 'kmf-scan-btn';
@@ -334,62 +219,59 @@
   }
 
   function downloadAll() {
-    const keys = Object.keys(CAPTURED);
+    var keys = Object.keys(CAPTURED);
     if (keys.length === 0) { alert('No data captured yet.'); return; }
 
-    // Single combined JSON
-    const blob = new Blob([JSON.stringify(CAPTURED, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
+    var blob = new Blob([JSON.stringify(CAPTURED, null, 2)], {type:'application/json'});
+    var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `kmf-data-${new Date().toISOString().slice(0,10)}.json`;
+    a.download = 'kmf-data-' + new Date().toISOString().slice(0,10) + '.json';
     a.click();
 
-    // Individual files (delayed)
-    setTimeout(() => {
-      for (const [uid, data] of Object.entries(CAPTURED)) {
-        const b = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-        const a2 = document.createElement('a');
+    setTimeout(function() {
+      for (var uid in CAPTURED) {
+        var b = new Blob([JSON.stringify(CAPTURED[uid], null, 2)], {type:'application/json'});
+        var a2 = document.createElement('a');
         a2.href = URL.createObjectURL(b);
-        a2.download = `kmf_${uid}.json`;
+        a2.download = 'kmf_' + uid + '.json';
         a2.click();
       }
     }, 500);
   }
 
   function createPanel() {
-    const panel = document.createElement('div');
+    var panel = document.createElement('div');
     panel.id = 'kmf-capture-panel';
-    panel.innerHTML = `
-      <style>
-        #kmf-capture-panel { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; }
-        .kmf-scan-btn { background:#4f46e5; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font:13px monospace; font-weight:bold; }
-        .kmf-stop-btn { background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font:13px monospace; font-weight:bold; }
-        .kmf-dl-btn { background:#059669; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font:12px monospace; }
-      </style>
-      <div style="position:fixed;bottom:20px;right:20px;z-index:99999;background:#1e293b;color:#fff;border-radius:12px;padding:16px;font:14px monospace;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:280px;max-width:360px;">
-        <div style="font-weight:bold;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-          <span>KMF Capture <span id="kmf-count" style="color:#34d399">0</span></span>
-          <div style="display:flex;gap:6px;">
-            <button id="kmf-btn" class="kmf-scan-btn" style="font-size:12px;">🚀 Auto Scan</button>
-            <button id="kmf-dl" class="kmf-dl-btn">⬇</button>
-          </div>
-        </div>
-        <div id="kmf-log" style="font-size:10px;max-height:100px;overflow-y:auto;color:#94a3b8;margin-bottom:6px;line-height:1.5;"></div>
-        <div id="kmf-list" style="font-size:11px;max-height:80px;overflow-y:auto;color:#64748b"></div>
-        <div style="margin-top:6px;font-size:10px;color:#475569;">
-          Finds practice IDs on page → fetches API data directly (no page navigation).
-        </div>
-      </div>
-    `;
+    panel.innerHTML =
+      '<style>' +
+        '#kmf-capture-panel { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace; }' +
+        '.kmf-scan-btn { background:#4f46e5; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font:13px monospace; font-weight:bold; }' +
+        '.kmf-stop-btn { background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font:13px monospace; font-weight:bold; }' +
+        '.kmf-dl-btn { background:#059669; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font:12px monospace; }' +
+      '</style>' +
+      '<div style="position:fixed;bottom:20px;right:20px;z-index:99999;background:#1e293b;color:#fff;border-radius:12px;padding:16px;font:14px monospace;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:300px;max-width:380px;">' +
+        '<div style="font-weight:bold;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">' +
+          '<span>KMF Capture <span id="kmf-count" style="color:#34d399">0</span></span>' +
+          '<div style="display:flex;gap:6px;">' +
+            '<button id="kmf-btn" class="kmf-scan-btn" style="font-size:12px;">🚀 Auto Scan</button>' +
+            '<button id="kmf-dl" class="kmf-dl-btn">⬇</button>' +
+          '</div>' +
+        '</div>' +
+        '<div id="kmf-log" style="font-size:10px;max-height:120px;overflow-y:auto;color:#94a3b8;margin-bottom:6px;line-height:1.5;"></div>' +
+        '<div id="kmf-list" style="font-size:11px;max-height:80px;overflow-y:auto;color:#64748b"></div>' +
+        '<div style="margin-top:6px;font-size:10px;color:#475569;">' +
+          'Clicks "继续练习" → captures u=ID from URL → goes back → fetches API.' +
+        '</div>' +
+      '</div>';
     document.body.appendChild(panel);
 
-    document.getElementById('kmf-btn').onclick = () => {
+    document.getElementById('kmf-btn').onclick = function() {
       if (autoRunning) stopAuto(); else startAuto();
     };
     document.getElementById('kmf-dl').onclick = downloadAll;
 
     updatePanel();
-    log('Ready. Click "Auto Scan" to start, or navigate manually.');
+    log('Ready. Click "Auto Scan" to start capturing.');
   }
 
   if (document.readyState === 'loading') {
