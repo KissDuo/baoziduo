@@ -166,79 +166,88 @@
     return buttons;
   }
 
-  // ── Auto-flow: open each button's link in new tab ──
-  async function autoNext() {
-    if (autoIndex >= autoQueue.length) {
-      autoRunning = false;
-      updatePanel();
-      log('✅ Done scanning. Fetching all API data...');
-      var allIds = Object.keys(CAPTURED);
-      for (var j = 0; j < pushStateIds.length; j++) {
-        if (allIds.indexOf(pushStateIds[j]) === -1) allIds.push(pushStateIds[j]);
+  // ── Auto-flow: open all buttons in new tabs, wait, close tabs, done ──
+  var openedTabIds = [];
+
+  function doAutoScan() {
+    var buttons = scanButtons();
+    if (buttons.length === 0) { log('⚠ No buttons found'); updatePanel(); return; }
+
+    autoQueue = buttons;
+    autoTotal = buttons.length;
+    autoRunning = true;
+    openedTabIds = [];
+    log('Opening ' + autoTotal + ' practice pages in new tabs...');
+
+    // Click all buttons with ctrlKey to open in new tabs (with small delay between)
+    function openNext(i) {
+      if (i >= autoQueue.length) {
+        // All tabs opened — wait 5 seconds then close them
+        log('All ' + autoTotal + ' tabs opened. Waiting 5s for API to capture...');
+        updatePanel();
+
+        setTimeout(function() {
+          // Close all opened practice tabs
+          if (openedTabIds.length > 0) {
+            log('Closing ' + openedTabIds.length + ' practice tabs...');
+            chrome.tabs.remove(openedTabIds, function() {
+              log('✅ Tabs closed.');
+              autoRunning = false;
+              // Refresh data from storage
+              chrome.storage.local.get('kmfCapture', function(res) {
+                if (res.kmfCapture) CAPTURED = res.kmfCapture;
+                log('🎉 Done! ' + Object.keys(CAPTURED).length + ' items captured.');
+                updatePanel();
+              });
+            });
+          } else {
+            autoRunning = false;
+            chrome.storage.local.get('kmfCapture', function(res) {
+              if (res.kmfCapture) CAPTURED = res.kmfCapture;
+              log('🎉 Done! ' + Object.keys(CAPTURED).length + ' items captured.');
+              updatePanel();
+            });
+          }
+        }, 5000);
+
+        return;
       }
-      for (var k = 0; k < allIds.length; k++) {
-        if (!CAPTURED[allIds[k]] || !CAPTURED[allIds[k]].result) {
-          log('  Fetching u=' + allIds[k] + '...');
-          await fetchPractiseDetail(allIds[k]);
-          updatePanel();
-        }
-      }
-      log('✅ Complete! ' + Object.keys(CAPTURED).length + ' items total.');
-      updatePanel();
-      return;
-    }
 
-    var item = autoQueue[autoIndex];
-    autoIndex++;
-    updatePanel();
+      var item = autoQueue[i];
+      log('[' + (i+1) + '/' + autoTotal + '] ' + item.label);
 
-    if (item.id) {
-      // Already have ID from Vue — fetch directly
-      log('[' + autoIndex + '/' + autoTotal + '] ' + item.label + ' (ID: ' + item.id + ')');
-      var ok = await fetchPractiseDetail(item.id);
-      log(ok ? '  ✅ Saved' : '  ⚠ Failed');
-      setTimeout(function() { autoNext(); }, 500);
-    } else {
-      // No ID — open in new tab to trigger API capture
-      log('[' + autoIndex + '/' + autoTotal + '] Opening in new tab: ' + item.label);
-      // Simulate ctrl+click to open in new tab
-      var evt = new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true, metaKey: true });
-      item.el.dispatchEvent(evt);
-
-      // Wait for the new tab to load and API to fire
-      await new Promise(function(r) { setTimeout(r, 3000); });
-
-      // Check if any new data was captured from the API interceptor in the new tab
-      // (chrome.storage is shared across tabs!)
-      var stored = await new Promise(function(resolve) {
-        chrome.storage.local.get('kmfCapture', function(r) { resolve(r.kmfCapture || {}); });
+      // Listen for new tab creation
+      var beforeTabCount = -1;
+      chrome.tabs.query({ currentWindow: true }, function(tabs) {
+        beforeTabCount = tabs.length;
       });
-      var newCount = Object.keys(stored).length - Object.keys(CAPTURED).length;
-      if (newCount > 0) {
-        CAPTURED = stored;
-        log('  ✅ ' + newCount + ' new item(s) captured from tab');
-      } else {
-        log('  ⚠ No new data from tab yet');
-      }
 
-      setTimeout(function() { autoNext(); }, 800);
+      // Click to open in new tab
+      item.el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
+
+      // After a short delay, find the new tab
+      setTimeout(function() {
+        chrome.tabs.query({ currentWindow: true }, function(tabs) {
+          // Find tabs that are practice pages and add to our list
+          for (var j = 0; j < tabs.length; j++) {
+            var url = tabs[j].url || '';
+            if (url.indexOf('ielts-practices') !== -1 && openedTabIds.indexOf(tabs[j].id) === -1) {
+              openedTabIds.push(tabs[j].id);
+            }
+          }
+          // Next button
+          setTimeout(function() { openNext(i + 1); }, 400);
+        });
+      }, 1500);
     }
+
+    openNext(0);
+    updatePanel();
   }
 
   function startAuto() {
     if (autoRunning) return;
-    log('⏳ Scanning...');
-    setTimeout(function() {
-      var buttons = scanButtons();
-      if (buttons.length === 0) { updatePanel(); return; }
-      autoQueue = buttons;
-      autoIndex = 0;
-      autoTotal = buttons.length;
-      autoRunning = true;
-      log('Starting auto-capture for ' + autoTotal + ' items...');
-      updatePanel();
-      autoNext();
-    }, 1000);
+    doAutoScan();
   }
 
   function stopAuto() {
@@ -335,7 +344,7 @@
         '<div id="kmf-log" style="font-size:10px;max-height:140px;overflow-y:auto;color:#94a3b8;margin-bottom:4px;line-height:1.5;"></div>' +
         '<div id="kmf-list" style="font-size:10px;max-height:60px;overflow-y:auto;color:#64748b"></div>' +
         '<div style="margin-top:4px;font-size:9px;color:#475569;">' +
-          'Scan: auto-detect on list page | Capture: grab current practice page | Data persists across tabs' +
+          'One-click: opens all practice pages in tabs → auto-captures → closes tabs → ready to download' +
         '</div>' +
       '</div>';
     document.body.appendChild(panel);

@@ -3,7 +3,7 @@
   "name": "KMF Data Capture",
   "version": "1.0",
   "description": "Auto-capture KMF practyse-detail API responses",
-  "permissions": ["storage", "downloads"],
+  "permissions": ["storage", "downloads", "tabs"],
   "host_permissions": ["https://*.kmf.com/*"],
   "content_scripts": [{
     "matches": ["https://*.kmf.com/*"],
