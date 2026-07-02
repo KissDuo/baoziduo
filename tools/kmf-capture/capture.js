@@ -83,29 +83,100 @@
   // ── Scan page for practice buttons ──
   function scanButtons() {
     const buttons = [];
-    // Look for links and buttons containing "开始练习" or "继续练习"
-    const selectors = 'a, button, div[class*="btn"], span[class*="btn"], div[class*="button"], div[role="button"]';
-    const all = document.querySelectorAll(selectors);
+    const seen = new Set();
 
-    for (const el of all) {
-      const text = (el.textContent || '').trim();
-      if (text.includes('开始练习') || text.includes('继续练习') || text.includes('继续刷题')) {
-        const id = extractId(el);
-        if (id) {
-          buttons.push({ el, id, text: text.slice(0, 30) });
+    // Strategy 1: Find ALL elements containing a long numeric ID (u param)
+    // Search href attributes first (most reliable)
+    const allWithHref = document.querySelectorAll('[href*="u="]');
+    for (const el of allWithHref) {
+      const href = el.getAttribute('href') || '';
+      const m = href.match(/[?&]u=(\d{10,})/);
+      if (m && !seen.has(m[1])) {
+        seen.add(m[1]);
+        buttons.push({ el, id: m[1], text: (el.textContent || '').trim().slice(0, 40) || href.slice(0, 40) });
+      }
+    }
+
+    // Strategy 2: Search ALL elements for text "练习"/"practise"/"practice"/"开始"/"继续"
+    const keywords = /(开始练习|继续练习|继续刷题|practise|practice|开始答题|进入练习|开始|继续)/i;
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
+      acceptNode: node => {
+        if (node.children.length > 0) return NodeFilter.FILTER_SKIP; // Only leaf nodes
+        const text = (node.textContent || '').trim();
+        if (text.length < 3 || text.length > 50) return NodeFilter.FILTER_REJECT;
+        if (keywords.test(text)) return NodeFilter.FILTER_ACCEPT;
+        return NodeFilter.FILTER_REJECT;
+      }
+    });
+
+    let node;
+    while (node = walker.nextNode()) {
+      // Walk up to find the clickable element
+      let clickable = node;
+      while (clickable && clickable.tagName !== 'A' && clickable.tagName !== 'BUTTON'
+        && !clickable.getAttribute('onclick') && !clickable.getAttribute('data-u')
+        && !clickable.getAttribute('href')) {
+        clickable = clickable.parentElement;
+        if (!clickable || clickable === document.body) break;
+      }
+      if (!clickable || clickable === document.body) clickable = node;
+
+      const id = extractId(clickable);
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        buttons.push({ el: clickable, id, text: (node.textContent || '').trim().slice(0, 40) });
+      }
+    }
+
+    // Strategy 3: Search for any Vue/React data with long numeric IDs in the DOM
+    const allEls = document.querySelectorAll('[data-u], [data-paper-id], [data-question-id], [data-sheet-id]');
+    for (const el of allEls) {
+      const id = extractId(el);
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        buttons.push({ el, id, text: (el.textContent || '').trim().slice(0, 40) || `(data attr: ${id})` });
+      }
+    }
+
+    // Strategy 4: Scan ALL <a> tags with any numeric parameter
+    if (buttons.length === 0) {
+      const allLinks = document.querySelectorAll('a');
+      for (const a of allLinks) {
+        const href = a.getAttribute('href') || '';
+        const m = href.match(/(\d{15,20})/); // 15-20 digit IDs
+        if (m && !seen.has(m[1])) {
+          seen.add(m[1]);
+          buttons.push({ el: a, id: m[1], text: (a.textContent || '').trim().slice(0, 40) || `(ID: ${m[1].slice(0,10)}...)` });
         }
       }
     }
 
-    // Also check for any link with practise-detail in href
-    const links = document.querySelectorAll('a[href*="practise-detail"], a[href*="practyse-detail"]');
-    for (const a of links) {
-      const m = (a.getAttribute('href') || '').match(/[?&]u=(\d+)/);
-      if (m) {
-        // Avoid duplicates
-        if (!buttons.find(b => b.id === m[1])) {
-          buttons.push({ el: a, id: m[1], text: (a.textContent || '').trim().slice(0, 30) || '(link)' });
+    // Debug: log what we found
+    if (buttons.length === 0) {
+      log('🔍 Debug: Scanning page structure...');
+      // Log all unique link patterns
+      const hrefPatterns = new Set();
+      document.querySelectorAll('a').forEach(a => {
+        const h = a.getAttribute('href') || '';
+        if (h && h.length > 5) hrefPatterns.add(h.slice(0, 80));
+      });
+      log(`  Found ${hrefPatterns.size} unique links on page`);
+      const samples = [...hrefPatterns].slice(0, 10);
+      samples.forEach(h => log(`  href: ${h}`));
+
+      // Log all elements with text containing key words
+      const textMatches = [];
+      document.querySelectorAll('*').forEach(el => {
+        if (el.children.length === 0) {
+          const t = (el.textContent || '').trim();
+          if (t.length >= 3 && t.length <= 100 && /(练习|practise|practice|开始|继续|start|begin|enter|go)/i.test(t)) {
+            textMatches.push(`<${el.tagName.toLowerCase()}> "${t.slice(0,50)}"`);
+          }
         }
+      });
+      if (textMatches.length > 0) {
+        log(`  Text matches (${textMatches.length}):`);
+        textMatches.slice(0, 15).forEach(t => log(`  ${t}`));
       }
     }
 
@@ -146,19 +217,27 @@
 
   function startAuto() {
     if (autoRunning) return;
-    const buttons = scanButtons();
-    if (buttons.length === 0) {
-      log('⚠ No practice buttons found on this page.');
-      return;
-    }
 
-    autoQueue = buttons;
-    autoIndex = 0;
-    autoTotal = buttons.length;
-    autoRunning = true;
-    log(`Found ${autoTotal} practice buttons. Starting auto-capture...`);
-    updatePanel();
-    autoNext();
+    // Wait 1s for dynamic content to render, then scan
+    log('⏳ Waiting for page to fully render...');
+    setTimeout(() => {
+      const buttons = scanButtons();
+      if (buttons.length === 0) {
+        log('⚠ No practice buttons found. Check debug info above.');
+        log('💡 Try: navigate to a KMF page with a list of tests (e.g. C18 listening), then click Auto Scan.');
+        updatePanel();
+        return;
+      }
+
+      autoQueue = buttons;
+      autoIndex = 0;
+      autoTotal = buttons.length;
+      autoRunning = true;
+      log(`✅ Found ${autoTotal} practice items. Starting auto-capture...`);
+      log(`   Each click triggers API call → captured automatically.`);
+      updatePanel();
+      autoNext();
+    }, 1500);
   }
 
   function stopAuto() {
