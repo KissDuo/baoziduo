@@ -3,78 +3,93 @@
 
   var CAPTURED = {};
   var DETAIL_URL = 'practise-detail';
-  var RECORDS_URL = 'web-index/records';  // Also capture this API!
+  var RECORDS_URL = 'web-index/records';
 
-  // ── Init: restore data + check state ──
-  function init() {
-    chrome.storage.local.get(['kmfCapture', 'kmfState'], function(res) {
-      if (res.kmfCapture) CAPTURED = res.kmfCapture;
-      var state = res.kmfState || {};
-      createPanel();
-      updatePanel();
+  // ── Init ──
+  chrome.storage.local.get('kmfCapture', function(res) {
+    if (res.kmfCapture) CAPTURED = res.kmfCapture;
+    createPanel();
+    log('📡 Ready. ' + realCount() + ' items stored.');
+    updatePanel();
+  });
 
-      // Auto-dismiss popups (继续练习/重新练习)
-      watchForPopup();
+  function save() { chrome.storage.local.set({ kmfCapture: CAPTURED }); }
+  function realCount() {
+    var c = 0;
+    for (var k in CAPTURED) { if (CAPTURED.hasOwnProperty(k) && CAPTURED[k] && CAPTURED[k].result) c++; }
+    return c;
+  }
 
-      var isPractice = location.href.indexOf('ielts-practices') !== -1;
-      var isList = !isPractice;
+  // ── Fetch all practise-detail for a list of exam_unique IDs ──
+  var fetchQueue = [];
+  var fetching = false;
 
-      if (state.phase === 'scanning') {
-        if (isPractice) {
-          // Arrived on practice page — wait for API
-          handlePracticePage(state);
-        } else {
-          // Back on list page — click next
-          handleListPage(state);
-        }
-      } else {
-        var count = realCount();
-        log('📡 Ready. ' + count + ' items stored.');
-        if (isList) {
-          var btns = countButtons();
-          if (btns.length > 0) {
-            log('💡 Found ' + btns.length + ' practice items. Click 🚀 to auto-scan.');
-          }
-        }
+  function fetchAllDetails(uids) {
+    // Add new IDs to queue (avoid duplicates)
+    for (var i = 0; i < uids.length; i++) {
+      if (fetchQueue.indexOf(uids[i]) === -1 && !(CAPTURED[uids[i]] && CAPTURED[uids[i]].result)) {
+        fetchQueue.push(uids[i]);
       }
-    });
+    }
+    if (!fetching) processQueue();
+  }
+
+  function processQueue() {
+    if (fetchQueue.length === 0) {
+      fetching = false;
+      log('🎉 Done! ' + realCount() + ' items captured.');
+      updatePanel();
+      return;
+    }
+    fetching = true;
+    var uid = fetchQueue.shift();
+    log('[' + realCount() + '/' + (realCount() + fetchQueue.length + 1) + '] Fetching...');
+
+    fetch('https://api.kmf.com/ielts-app/front/practise-detail?u=' + uid, { credentials: 'include' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.result) {
+          CAPTURED[uid] = data;
+          save();
+        }
+        updatePanel();
+        setTimeout(processQueue, 400);
+      })
+      .catch(function() {
+        log('  ⚠ Failed: ' + uid.slice(0,12) + '...');
+        updatePanel();
+        setTimeout(processQueue, 600);
+      });
   }
 
   // ── Intercept fetch ──
   var origFetch = window.fetch;
-  window.fetch = async function() {
+  window.fetch = function() {
     var args = arguments;
-    var res = await origFetch.apply(this, args);
     var url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url);
-    if (url && (url.indexOf(DETAIL_URL) !== -1 || url.indexOf(RECORDS_URL) !== -1)) {
-      var clone = res.clone();
-      clone.json().then(function(data) {
-        if (data && (data.result || data.data)) {
-          if (url.indexOf(RECORDS_URL) !== -1) {
-            // web-index/records — extract exam_unique IDs and fetch practise-detail for each
-            var records = data.result || data.data || [];
-            if (Array.isArray(records) && records.length > 0) {
-              var uids = records.map(function(r) { return r.exam_unique; }).filter(Boolean);
-              log('📋 Found ' + uids.length + ' practice IDs. Fetching all...');
-              save();
-              updatePanel();
-              // Fetch practise-detail for all IDs (with delay to avoid rate limit)
-              fetchAllDetails(uids, 0);
-            }
-          } else {
-            var u2 = new URL(url);
-            var uid = u2.searchParams.get('u');
-            if (uid) {
-              CAPTURED[uid] = data;
-              save();
-              updatePanel();
-              log('✅ u=' + uid.slice(0,12) + '... (' + realCount() + ' total)');
+    var isRecords = url && url.indexOf(RECORDS_URL) !== -1;
+    var isDetail = url && url.indexOf(DETAIL_URL) !== -1;
+
+    return origFetch.apply(this, args).then(function(res) {
+      if (isRecords || isDetail) {
+        var clone = res.clone();
+        clone.json().then(function(data) {
+          if (isRecords && data && data.result && Array.isArray(data.result)) {
+            var uids = data.result.map(function(r) { return r.exam_unique; }).filter(Boolean);
+            if (uids.length > 0) {
+              log('📋 Found ' + uids.length + ' practice IDs');
+              fetchAllDetails(uids);
             }
           }
-        }
-      }).catch(function(){});
-    }
-    return res;
+          if (isDetail && data && data.result) {
+            var u = new URL(url);
+            var uid = u.searchParams.get('u');
+            if (uid) { CAPTURED[uid] = data; save(); updatePanel(); }
+          }
+        }).catch(function(){});
+      }
+      return res;
+    });
   };
 
   // ── Intercept XHR ──
@@ -87,201 +102,32 @@
   XMLHttpRequest.prototype.send = function() {
     var self = this;
     this.addEventListener('load', function() {
-      if (self._kmf_url && (self._kmf_url.indexOf(DETAIL_URL) !== -1 || self._kmf_url.indexOf(RECORDS_URL) !== -1)) {
+      var url = self._kmf_url || '';
+      if (url.indexOf(RECORDS_URL) !== -1) {
         try {
           var data = JSON.parse(self.responseText);
-          if (data && (data.result || data.data)) {
-            if (self._kmf_url.indexOf(RECORDS_URL) !== -1) {
-              var records = data.result || data.data || [];
-              if (Array.isArray(records) && records.length > 0) {
-                var uids = records.map(function(r) { return r.exam_unique; }).filter(Boolean);
-                log('📋 Found ' + uids.length + ' IDs via XHR. Fetching...');
-                save();
-                updatePanel();
-                fetchAllDetails(uids, 0);
-              }
-            } else {
-              var u2 = new URL(self._kmf_url);
-              var uid = u2.searchParams.get('u');
-              if (uid) CAPTURED[uid] = data;
+          if (data && data.result && Array.isArray(data.result)) {
+            var uids = data.result.map(function(r) { return r.exam_unique; }).filter(Boolean);
+            if (uids.length > 0) {
+              log('📋 Found ' + uids.length + ' IDs (XHR)');
+              fetchAllDetails(uids);
             }
-            save();
-            updatePanel();
+          }
+        } catch(e) {}
+      }
+      if (url.indexOf(DETAIL_URL) !== -1) {
+        try {
+          var data2 = JSON.parse(self.responseText);
+          if (data2 && data2.result) {
+            var u = new URL(url);
+            var uid = u.searchParams.get('u');
+            if (uid) { CAPTURED[uid] = data2; save(); updatePanel(); }
           }
         } catch(e) {}
       }
     });
     return origSend.apply(this, arguments);
   };
-
-  // ── Popup auto-dismiss ──
-  function watchForPopup() {
-    var observer = new MutationObserver(function() {
-      // Try common modal selectors
-      var containers = document.querySelectorAll('[class*="modal"], [class*="dialog"], [class*="popup"], [class*="drawer"], [role="dialog"]');
-      for (var i = 0; i < containers.length; i++) {
-        var btns = containers[i].querySelectorAll('button, a, span[class*="btn"]');
-        for (var j = 0; j < btns.length; j++) {
-          var t = (btns[j].textContent || '').trim();
-          if (t === '继续练习') {
-            btns[j].click();
-            log('🤖 Dismissed popup: ' + t);
-            return;
-          }
-        }
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-
-  // ── Batch fetch all practise-detail APIs ──
-  function fetchAllDetails(uids, startIdx) {
-    if (startIdx >= uids.length) {
-      log('🎉 All ' + uids.length + ' items captured!');
-      updatePanel();
-      return;
-    }
-
-    var uid = uids[startIdx];
-    if (CAPTURED[uid] && CAPTURED[uid].result) {
-      // Already have it
-      log('[' + (startIdx+1) + '/' + uids.length + '] Already have u=' + uid.slice(0,12) + '...');
-      setTimeout(function() { fetchAllDetails(uids, startIdx + 1); }, 100);
-      return;
-    }
-
-    log('[' + (startIdx+1) + '/' + uids.length + '] Fetching u=' + uid.slice(0,12) + '...');
-    var apiUrl = 'https://api.kmf.com/ielts-app/front/practise-detail?u=' + uid;
-    fetch(apiUrl, { credentials: 'include' })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data && data.result) {
-          CAPTURED[uid] = data;
-          save();
-          log('  ✅ Saved (' + realCount() + ' total)');
-        } else {
-          log('  ⚠ No data');
-        }
-        updatePanel();
-        setTimeout(function() { fetchAllDetails(uids, startIdx + 1); }, 500);
-      })
-      .catch(function(e) {
-        log('  ❌ ' + e.message);
-        setTimeout(function() { fetchAllDetails(uids, startIdx + 1); }, 500);
-      });
-  }
-  function handlePracticePage(state) {
-    log('📍 Practice page [' + (state.idx + 1) + '/' + state.total + ']');
-    log('   Waiting for API capture...');
-    updatePanel();
-
-    var prevCount = realCount();
-    var waited = 0;
-    var maxWait = 25; // ~12 seconds max
-
-    function check() {
-      waited++;
-      chrome.storage.local.get('kmfCapture', function(r) {
-        var newData = r.kmfCapture || {};
-        var newCount = 0;
-        for (var k in newData) { if (newData.hasOwnProperty(k) && newData[k].result) newCount++; }
-
-        if (newCount > prevCount || waited >= maxWait) {
-          if (newCount > prevCount) {
-            CAPTURED = newData;
-            log('   ✅ Captured!');
-          } else {
-            log('   ⚠ Timeout — proceeding anyway');
-          }
-
-          var nextIdx = state.idx + 1;
-          if (nextIdx >= state.total) {
-            // ALL DONE!
-            chrome.storage.local.remove('kmfState');
-            log('🎉 ALL DONE! ' + newCount + ' items total.');
-            updatePanel();
-            // Navigate back to list
-            setTimeout(function() { history.go(-(state.total - state.idx + 1)); }, 300);
-          } else {
-            chrome.storage.local.set({ kmfState: { phase: 'scanning', idx: nextIdx, total: state.total, listUrl: state.listUrl } });
-            setTimeout(function() { history.back(); }, 300);
-          }
-        } else {
-          setTimeout(check, 600);
-        }
-      });
-    }
-
-    setTimeout(check, 1500); // Wait for redirect + API to fire
-  }
-
-  function handleListPage(state) {
-    log('📍 List page — clicking item [' + (state.idx + 1) + '/' + state.total + ']');
-    updatePanel();
-
-    // Find the nth button
-    var allLinks = document.querySelectorAll('a');
-    var count = 0;
-    var found = false;
-
-    for (var i = 0; i < allLinks.length; i++) {
-      var text = (allLinks[i].textContent || '').trim();
-      if (text === '继续练习' || text === '开始练习' || text === '继续刷题') {
-        if (count === state.idx) {
-          var label = text;
-          var item = allLinks[i].closest('.part-item');
-          if (item) {
-            var nameEl = item.querySelector('.seq_name, a[target]');
-            if (nameEl) label = (nameEl.textContent || '').trim();
-          }
-          log('   Clicking: ' + label);
-          // Save state BEFORE clicking (page will navigate away)
-          chrome.storage.local.set({ kmfState: { phase: 'scanning', idx: state.idx, total: state.total, listUrl: state.listUrl } });
-          setTimeout(function() { allLinks[i].click(); }, 200);
-          found = true;
-          break;
-        }
-        count++;
-      }
-    }
-
-    if (!found) {
-      log('   ⚠ Button not found at index ' + state.idx + ' — retrying...');
-      setTimeout(function() { handleListPage(state); }, 1000);
-    }
-  }
-
-  // ── Start scan ──
-  function startScan() {
-    var btns = countButtons();
-    if (btns === 0) {
-      log('⚠ No practice buttons found on this page.');
-      return;
-    }
-
-    log('🚀 Auto-scanning ' + btns + ' items...');
-    log('   Page will navigate automatically. Please wait.');
-
-    handleListPage({ phase: 'scanning', idx: 0, total: btns, listUrl: location.href });
-  }
-
-  function countButtons() {
-    var count = 0;
-    var allLinks = document.querySelectorAll('a');
-    for (var i = 0; i < allLinks.length; i++) {
-      var text = (allLinks[i].textContent || '').trim();
-      if (text === '继续练习' || text === '开始练习' || text === '继续刷题') count++;
-    }
-    return count;
-  }
-
-  function realCount() {
-    var c = 0;
-    for (var k in CAPTURED) { if (CAPTURED.hasOwnProperty(k) && CAPTURED[k] && CAPTURED[k].result) c++; }
-    return c;
-  }
-
-  function save() { chrome.storage.local.set({ kmfCapture: CAPTURED }); }
 
   // ── UI ──
   var logLines = [];
@@ -295,23 +141,21 @@
     var countEl = document.getElementById('kmf-count');
     if (!countEl) return;
     countEl.textContent = realCount();
-
     var listEl = document.getElementById('kmf-list');
     if (listEl) {
       var ids = [];
       for (var k in CAPTURED) { if (CAPTURED.hasOwnProperty(k) && CAPTURED[k] && CAPTURED[k].result) ids.push(k); }
-      listEl.innerHTML = ids.slice(-10).map(function(id) { return '<div>u=' + id + '</div>'; }).join('');
+      listEl.innerHTML = ids.slice(-8).map(function(id) { return '<div title="' + id + '">' + id.slice(0,15) + '...</div>'; }).join('');
     }
-
     var logEl = document.getElementById('kmf-log');
-    if (logEl) logEl.innerHTML = logLines.slice(-10).map(function(l) { return '<div>' + l + '</div>'; }).join('');
+    if (logEl) logEl.innerHTML = logLines.slice(-12).map(function(l) { return '<div>' + l + '</div>'; }).join('');
   }
 
   function downloadAll() {
     var items = {};
     for (var k in CAPTURED) { if (CAPTURED.hasOwnProperty(k) && CAPTURED[k] && CAPTURED[k].result) items[k] = CAPTURED[k]; }
     var keys = Object.keys(items);
-    if (keys.length === 0) { alert('No data yet.'); return; }
+    if (keys.length === 0) { alert('No data yet. Open a KMF practice list page first.'); return; }
 
     var blob = new Blob([JSON.stringify(items, null, 2)], {type:'application/json'});
     var a = document.createElement('a');
@@ -330,65 +174,11 @@
     }, 600);
   }
 
-  function debugIds() {
-    // Search for IDs in page
-    log('🔍 Searching for IDs...');
-
-    // 1. Check all elements for data attributes with numeric values
-    var found = [];
-    document.querySelectorAll('*').forEach(function(el) {
-      if (el.attributes) {
-        for (var i = 0; i < el.attributes.length; i++) {
-          var val = el.attributes[i].value;
-          if (val && /^\d{2,8}$/.test(val.trim())) {
-            found.push(el.attributes[i].name + '=' + val + ' on <' + el.tagName.toLowerCase() + '>');
-          }
-        }
-      }
-      // Check Vue data
-      if (el.__vue__) {
-        try {
-          var vue = el.__vue__;
-          for (var k in vue) {
-            if (vue.hasOwnProperty(k)) {
-              var sv = String(vue[k]);
-              if (sv.length >= 2 && sv.length <= 8 && /^\d+$/.test(sv) && parseInt(sv) > 100) {
-                found.push('Vue.' + k + '=' + sv + ' on <' + el.tagName.toLowerCase() + '>');
-              }
-            }
-          }
-        } catch(e) {}
-      }
-    });
-
-    if (found.length === 0) {
-      log('  No numeric data attributes found.');
-    } else {
-      log('  Found ' + found.length + ' numeric data attrs (showing unique):');
-      var seen = {};
-      for (var j = 0; j < found.length; j++) {
-        if (!seen[found[j]]) {
-          seen[found[j]] = true;
-          log('  ' + found[j]);
-        }
-      }
-    }
-
-    // 2. Also search for all <script> tags with embedded data
-    var scripts = document.querySelectorAll('script');
-    log('  Scripts on page: ' + scripts.length);
-    scripts.forEach(function(s, idx) {
-      var text = (s.textContent || s.innerText || '').slice(0, 200);
-      if (text.indexOf('sheet_id') !== -1 || text.indexOf('record') !== -1 || text.indexOf('ids') !== -1) {
-        log('  Script[' + idx + ']: contains sheet_id/record/ids — ' + text.slice(0, 100));
-      }
-    });
-
-    updatePanel();
-  }
+  function clearAll() {
     CAPTURED = {};
+    fetchQueue = [];
+    fetching = false;
     chrome.storage.local.remove('kmfCapture');
-    chrome.storage.local.remove('kmfState');
     log('🗑 Cleared.');
     updatePanel();
   }
@@ -399,37 +189,25 @@
     panel.innerHTML =
       '<style>' +
         '#kmf-capture-panel { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace; }' +
-        '.kmf-scan { background:#4f46e5; color:#fff; border:none; padding:5px 14px; border-radius:6px; cursor:pointer; font:12px monospace; font-weight:bold; }' +
-        '.kmf-dl { background:#059669; color:#fff; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font:11px monospace; }' +
+        '.kmf-dl { background:#059669; color:#fff; border:none; padding:5px 12px; border-radius:6px; cursor:pointer; font:11px monospace; }' +
         '.kmf-clr { background:#475569; color:#fff; border:none; padding:5px 8px; border-radius:6px; cursor:pointer; font:11px monospace; }' +
       '</style>' +
-      '<div style="position:fixed;bottom:16px;right:16px;z-index:99999;background:#1e293b;color:#fff;border-radius:12px;padding:12px 14px;font:13px monospace;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:280px;max-width:380px;">' +
+      '<div style="position:fixed;bottom:16px;right:16px;z-index:99999;background:#1e293b;color:#fff;border-radius:12px;padding:12px 14px;font:13px monospace;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:260px;max-width:360px;">' +
         '<div style="font-weight:bold;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">' +
           '<span>📡 KMF <span id="kmf-count" style="color:#34d399;font-size:16px;">0</span></span>' +
           '<div style="display:flex;gap:4px;">' +
-            '<button id="kmf-scan" class="kmf-scan">🚀 Start</button>' +
-            '<button id="kmf-dl" class="kmf-dl">⬇</button>' +
-            '<button id="kmf-dbg" class="kmf-clr" style="font-size:9px;">🔍</button>' +
+            '<button id="kmf-dl" class="kmf-dl">⬇ Download</button>' +
             '<button id="kmf-clr" class="kmf-clr">🗑</button>' +
           '</div>' +
         '</div>' +
         '<div id="kmf-log" style="font-size:9px;max-height:130px;overflow-y:auto;color:#94a3b8;margin-bottom:2px;line-height:1.5;"></div>' +
         '<div id="kmf-list" style="font-size:9px;max-height:50px;overflow-y:auto;color:#64748b"></div>' +
         '<div style="margin-top:2px;font-size:8px;color:#475569;">' +
-          'Click 🚀 on list page. Extension auto-navigates all items. Come back to download.' +
+          'Open any KMF practice list page — data auto-captures.' +
         '</div>' +
       '</div>';
     document.body.appendChild(panel);
-
-    document.getElementById('kmf-scan').onclick = startScan;
     document.getElementById('kmf-dl').onclick = downloadAll;
-    document.getElementById('kmf-dbg').onclick = debugIds;
     document.getElementById('kmf-clr').onclick = clearAll;
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
   }
 })();
