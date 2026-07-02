@@ -8,20 +8,43 @@
   let autoIndex = 0;
   let autoTotal = 0;
 
-  // ── Intercept pushState to capture practice IDs from URL changes ──
-  const origPushState = history.pushState;
+  // ── Intercept pushState/replaceState to capture practice IDs from URL changes ──
+  var pushStateIds = [];
+
+  function captureIdFromUrl(url) {
+    if (!url) return null;
+    var s = String(url);
+    // Pattern 1: /start/178256320270442826 (the practice ID)
+    var m = s.match(/\/start\/(\d{15,20})/);
+    if (m) return m[1];
+    // Pattern 2: ?u=1234567890... in query string
+    m = s.match(/[?&]u=(\d{10,})/);
+    if (m) return m[1];
+    // Pattern 3: /claw/178256320270442826/xxx
+    m = s.match(/\/claw\/(\d{15,20})/);
+    if (m) return m[1];
+    return null;
+  }
+
+  var origPushState = history.pushState;
   history.pushState = function(state, title, url) {
-    if (url) {
-      const m = String(url).match(/[?&]u=(\d{10,})/);
-      if (m && m[1] && !CAPTURED[m[1]]) {
-        log(`  🔗 Found u=${m[1]} from URL: ${String(url).slice(0, 60)}`);
-        pushStateIds.push(m[1]);
-      }
+    var id = captureIdFromUrl(url);
+    if (id && pushStateIds.indexOf(id) === -1) {
+      log('  🔗 Captured ID: ' + id);
+      pushStateIds.push(id);
     }
     return origPushState.apply(this, arguments);
   };
 
-  const pushStateIds = [];
+  var origReplaceState = history.replaceState;
+  history.replaceState = function(state, title, url) {
+    var id = captureIdFromUrl(url);
+    if (id && pushStateIds.indexOf(id) === -1) {
+      log('  🔗 Captured ID (replace): ' + id);
+      pushStateIds.push(id);
+    }
+    return origReplaceState.apply(this, arguments);
+  };
 
   // ── Intercept fetch ──
   const origFetch = window.fetch;
@@ -82,6 +105,31 @@
     return false;
   }
 
+  // ── Extract practice ID from Vue component instance ──
+  function extractVueId(el) {
+    var p = el;
+    while (p && p !== document.body) {
+      if (p.__vue__) {
+        try {
+          var vue = p.__vue__;
+          if (vue.paperId) return String(vue.paperId);
+          if (vue.practiseId) return String(vue.practiseId);
+          if (vue.examId) return String(vue.examId);
+          if (vue.sheetId) return String(vue.sheetId);
+          // Check all own properties for 15-20 digit numbers
+          for (var k in vue) {
+            if (vue.hasOwnProperty(k)) {
+              var sv = String(vue[k]);
+              if (/^\d{15,20}$/.test(sv)) return sv;
+            }
+          }
+        } catch(e) {}
+      }
+      p = p.parentElement;
+    }
+    return null;
+  }
+
   // ── Scan for "继续练习" buttons ──
   // ID is NOT in HTML — it's in Vue component data. We click to trigger navigation,
   // intercept pushState to get the u= param, then go back and fetch directly.
@@ -118,55 +166,86 @@
     return buttons;
   }
 
-  // ── Auto-flow: click each button → capture ID from URL → go back → fetch API ──
+  // ── Auto-flow: try Vue ID → fallback click + beforeunload capture → fetch API ──
   async function autoNext() {
     if (autoIndex >= autoQueue.length) {
       autoRunning = false;
       updatePanel();
-      log('✅ Done! Now fetching all captured IDs via API...');
-      // Fetch APIs for all captured IDs
-      var ids = Object.keys(CAPTURED);
-      for (var i = 0; i < ids.length; i++) {
-        if (CAPTURED[ids[i]] && CAPTURED[ids[i]].result) continue; // already has full data
-        await fetchPractiseDetail(ids[i]);
+      // Final pass: ensure all IDs have API data
+      log('✅ Scan complete. Ensuring all data is fetched...');
+      var allIds = [];
+      for (var i = 0; i < autoQueue.length; i++) {
+        if (autoQueue[i].id) allIds.push(autoQueue[i].id);
+      }
+      for (var j = 0; j < pushStateIds.length; j++) {
+        if (allIds.indexOf(pushStateIds[j]) === -1) allIds.push(pushStateIds[j]);
+      }
+      for (var k = 0; k < allIds.length; k++) {
+        if (!CAPTURED[allIds[k]] || !CAPTURED[allIds[k]].result) {
+          await fetchPractiseDetail(allIds[k]);
+        }
         updatePanel();
       }
-      log('✅ All ' + ids.length + ' items captured!');
+      log('✅ Complete! ' + Object.keys(CAPTURED).length + ' items captured.');
+      updatePanel();
       return;
     }
 
     var item = autoQueue[autoIndex];
+
+    // Strategy 1: try Vue component data (no navigation!)
+    if (!item.id) {
+      var vueId = extractVueId(item.el);
+      if (vueId) {
+        item.id = vueId;
+        log('[' + (autoIndex + 1) + '/' + autoTotal + '] Vue: ' + vueId + ' - ' + item.label);
+      }
+    }
+
+    // Strategy 2: click and capture URL from beforeunload
+    if (!item.id) {
+      log('[' + (autoIndex + 1) + '/' + autoTotal + '] Click: ' + item.label);
+      var capturedBeforeUnload = null;
+
+      function onBefore() { capturedBeforeUnload = window.location.href; }
+      window.addEventListener('beforeunload', onBefore);
+
+      var beforeCount = pushStateIds.length;
+      item.el.click();
+      await new Promise(function(r) { setTimeout(r, 2000); });
+      window.removeEventListener('beforeunload', onBefore);
+
+      // Extract from beforeunload URL
+      if (capturedBeforeUnload) {
+        item.id = captureIdFromUrl(capturedBeforeUnload);
+        if (item.id) log('  ✅ From URL: ' + item.id);
+      }
+      // Fallback: pushState interception
+      if (!item.id) {
+        var newIds = pushStateIds.slice(beforeCount);
+        if (newIds.length > 0) {
+          item.id = newIds[0];
+          log('  ✅ From pushState: ' + item.id);
+        }
+      }
+
+      // Go back to list
+      window.history.back();
+      await new Promise(function(r) { setTimeout(r, 2000); });
+    }
+
     autoIndex++;
-    log('[' + autoIndex + '/' + autoTotal + '] Clicking: ' + item.label);
 
-    // Record IDs before click
-    var beforeCount = pushStateIds.length;
-
-    // Click the button — triggers Vue navigation
-    item.el.click();
-
-    // Wait for pushState to fire
-    await new Promise(function(r) { setTimeout(r, 1500); });
-
-    // Check if a new ID was captured
-    var newIds = pushStateIds.slice(beforeCount);
-    if (newIds.length > 0) {
-      var uid = newIds[newIds.length - 1];
-      log('  ✅ Captured u=' + uid);
-      // Fetch API directly (don't wait for page to load)
-      await fetchPractiseDetail(uid);
+    // Fetch API data for this ID
+    if (item.id) {
+      var ok = await fetchPractiseDetail(item.id);
+      if (ok) log('  ✅ Saved'); else log('  ⚠ Fetch failed for ' + item.id);
     } else {
-      log('  ⚠ No ID captured from navigation. Trying direct API fetch from intercepted requests...');
+      log('  ❌ No ID found');
     }
 
     updatePanel();
-
-    // Go back to list page
-    window.history.back();
-    await new Promise(function(r) { setTimeout(r, 2000); });
-
-    // Next item
-    autoNext();
+    setTimeout(function() { autoNext(); }, 400);
   }
 
   function startAuto() {
